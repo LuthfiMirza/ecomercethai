@@ -7,10 +7,16 @@
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="resources/css/app.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for interactive UI -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak]{display:none !important}</style>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -38,9 +44,9 @@
         .product-card {
             transition: all 0.3s ease;
         }
-        .product-card:hover {
-            box-shadow: 0 0 15px rgba(255, 112, 67, 0.3);
-        }
+        .product-card:hover { box-shadow: 0 0 15px rgba(255, 112, 67, 0.3); }
+        .glass-card { backdrop-filter: blur(10px); background: rgba(255,255,255,0.6); }
+        .badge-counter { min-width: 1.25rem; height: 1.25rem; font-size: .75rem; }
     </style>
     
     <!-- Google Fonts - Press Start 2P -->
@@ -82,83 +88,129 @@
     </style>
 </head>
 <body class="bg-primary text-secondary">
-    <!-- Header & Navbar -->
-    <header class="bg-secondary shadow-lg fixed w-full top-0 z-50">
-        <nav class="container mx-auto px-4 py-3">
-            <div class="flex justify-between items-center">
-                <!-- Logo -->
-                <div class="flex-shrink-0">
-                    <img src="/logo.png" alt="Toko Thailand" class="h-12">
-                </div>
-
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <a href="#" class="text-primary hover:text-cream">Computer Set</a>
-                    <a href="#" class="text-primary hover:text-cream">Hardware & Components</a>
-                </div>
-
-                <!-- Right Icons -->
-                <div class="hidden md:flex items-center space-x-6">
-                    <button class="text-primary hover:text-cream">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </button>
-                    <!-- Social Media Icons -->
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-cream hover:text-accent"><i class="fab fa-facebook"></i></a>
-                        <a href="#" class="text-cream hover:text-accent"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="text-cream hover:text-accent"><i class="fab fa-youtube"></i></a>
-                        <a href="#" class="text-cream hover:text-accent"><i class="fab fa-tiktok"></i></a>
-                    </div>
-                    <!-- User Icons -->
-                    <div class="flex space-x-4">
-                        <button class="text-primary hover:text-cream">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                            </svg>
-                        </button>
-                        <button class="text-primary hover:text-cream">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </button>
-                        <button class="text-primary hover:text-cream">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- Language Selector -->
-                    <select class="bg-primary text-accent border-cream rounded">
-                        <option value="en">EN</option>
-                        <option value="th">TH</option>
-                    </select>
-                </div>
-
-                <!-- Mobile Menu Button -->
-                <button class="md:hidden text-cream hover:text-accent">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Mobile Menu -->
-            <div class="hidden md:hidden mt-4">
-                <div class="flex flex-col space-y-4">
-                    <a href="#" class="text-cream hover:text-accent">Computer Set</a>
-                    <a href="#" class="text-cream hover:text-accent">Hardware & Components</a>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <x-navbar />
 
     <!-- Add padding to body to prevent content from hiding behind fixed header -->
     <div class="pt-[72px]">
         @yield('content')
     </div>
-</body>
-@include('partials.footer')
+
+    <!-- Compare Drawer -->
+    <div id="compare-drawer" class="fixed right-4 bottom-4 z-50 hidden w-[380px] max-w-[90vw] p-0 shadow-2xl rounded-2xl overflow-hidden bg-white">
+        <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+            <div class="font-semibold">Compare Products</div>
+            <div class="space-x-2">
+                <button id="compare-clear" class="text-white/90 hover:text-white text-sm">Clear</button>
+                <button id="compare-close" class="text-white/90 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        <div id="compare-items" class="max-h-72 overflow-auto divide-y"></div>
+        <div class="p-3 flex justify-end gap-2">
+            <a href="{{ url('/compare') }}" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm">Open Compare Page</a>
+        </div>
+    </div>
+
+    <!-- Floating Compare Toggle Button -->
+    <button id="compare-toggle" class="fixed right-4 bottom-4 z-40 bg-orange-500 hover:bg-orange-600 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
+        <i class="fa-solid fa-code-compare"></i>
+    </button>
+
+    <script>
+        (function(){
+            const KEY = 'compareItems';
+            const getItems = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+            const setItems = (items) => localStorage.setItem(KEY, JSON.stringify(items));
+
+            function updateCount(){
+                const c = document.getElementById('compare-count');
+                if(!c) return;
+                const n = getItems().length;
+                c.textContent = n;
+                c.classList.toggle('hidden', n === 0);
+            }
+
+            function renderDrawer(){
+                const wrap = document.getElementById('compare-items');
+                if(!wrap) return;
+                const items = getItems();
+                if(items.length === 0){
+                    wrap.innerHTML = '<div class="p-4 text-sm text-gray-600">No items added. Use "Add to Compare" on products.</div>';
+                    return;
+                }
+                wrap.innerHTML = items.map((p,idx)=>`
+                    <div class=\"flex items-center gap-3 p-3\">
+                        <img src=\"${p.image || ''}\" onerror=\"this.style.display='none'\" class=\"w-12 h-12 object-cover rounded-md\"/>
+                        <div class=\"flex-1\">
+                            <div class=\"text-sm font-semibold text-gray-800\">${p.name || 'Product'}</div>
+                            <div class=\"text-xs text-gray-500\">${p.price ? '$'+p.price : ''}</div>
+                        </div>
+                        <button data-remove=\"${idx}\" class=\"text-red-500 hover:text-red-600 text-sm\">Remove</button>
+                    </div>`).join('');
+            }
+
+            const drawer = document.getElementById('compare-drawer');
+            const toggleBtn = document.getElementById('compare-toggle');
+            const closeBtn = document.getElementById('compare-close');
+            const clearBtn = document.getElementById('compare-clear');
+            function openDrawer(){ drawer && drawer.classList.remove('hidden'); }
+            function closeDrawer(){ drawer && drawer.classList.add('hidden'); }
+            toggleBtn && toggleBtn.addEventListener('click', ()=>{ renderDrawer(); openDrawer(); });
+            closeBtn && closeBtn.addEventListener('click', closeDrawer);
+            clearBtn && clearBtn.addEventListener('click', ()=>{ setItems([]); renderDrawer(); updateCount(); });
+            drawer && drawer.addEventListener('click', (e)=>{
+                const btn = e.target.closest('[data-remove]');
+                if(btn){
+                    const idx = parseInt(btn.getAttribute('data-remove'));
+                    const arr = getItems();
+                    arr.splice(idx,1); setItems(arr); renderDrawer(); updateCount();
+                }
+            });
+
+            document.addEventListener('click', function(e){
+                const btn = e.target.closest('[data-compare]');
+                if(!btn) return;
+                const dataset = btn.dataset;
+                const item = { name: dataset.name, price: dataset.price, image: dataset.image, rating: dataset.rating || '', stock: dataset.stock || '', brand: dataset.brand || '', variation: dataset.variation || '' };
+                const arr = getItems();
+                if(!arr.some(p => (p.name||'')=== (item.name||'') && (p.price||'') === (item.price||''))){
+                    arr.push(item); setItems(arr); updateCount();
+                }
+                renderDrawer(); openDrawer();
+            });
+
+            updateCount();
+        })();
+    </script>
+
+    <script>
+      // Global wishlist/cart interactions (localStorage-backed)
+      (function(){
+        function qs(id){ return document.getElementById(id); }
+        function refresh(){
+          const w = JSON.parse(localStorage.getItem('wishlistItems')||'[]');
+          const c = parseInt(localStorage.getItem('cartCount')||'0',10);
+          if(qs('wishlist-count')){ qs('wishlist-count').textContent = w.length; if(w.length===0) qs('wishlist-count').classList.add('hidden'); else qs('wishlist-count').classList.remove('hidden'); }
+          if(qs('cart-count')){ qs('cart-count').textContent = c; if(c===0) qs('cart-count').classList.add('hidden'); else qs('cart-count').classList.remove('hidden'); }
+        }
+        document.addEventListener('click', function(e){
+          const w = e.target.closest('[data-wishlist]');
+          if(w){
+            const items = JSON.parse(localStorage.getItem('wishlistItems')||'[]');
+            const d = w.dataset; const item = { name:d.name, price:d.price, image:d.image };
+            if(!items.some(i=>i.name===item.name && i.price===item.price)){ items.push(item); localStorage.setItem('wishlistItems', JSON.stringify(items)); }
+            refresh(); return;
+          }
+          const c = e.target.closest('[data-cart-add]');
+          if(c){
+            const count = parseInt(localStorage.getItem('cartCount')||'0',10)+1; localStorage.setItem('cartCount', String(count)); refresh(); return;
+          }
+        });
+        refresh();
+      })();
+    </script>
+
+    <x-footer />
 </body>
 </html>
