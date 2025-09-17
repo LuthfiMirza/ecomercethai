@@ -15,3 +15,5 @@ Route::view('/catalog', 'pages.catalog');
 Route::view('/product', 'pages.product');
 Route::view('/cart', 'pages.cart');
 Route::view('/checkout', 'pages.checkout');
+Route::view('/wishlist', 'pages.wishlist');
+Route::view('/account', 'pages.account');
