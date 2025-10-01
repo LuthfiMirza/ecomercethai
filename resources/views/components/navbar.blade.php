@@ -84,21 +84,27 @@
         </a>
 
         <!-- Wishlist -->
-        <a href="{{ url('/wishlist') }}" class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Wishlist">
+        <a href="{{ url('/wishlist') }}" data-open-wishlist class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Wishlist">
           <i class="fa-regular fa-heart text-neutral-700 dark:text-neutral-200"></i>
           <span id="wishlist-count" class="absolute -top-1 -right-1 bg-secondary-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
 
         <!-- Cart -->
-        <a href="{{ url('/cart') }}" class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Open cart">
+        <a href="{{ url('/cart') }}" data-open-cart class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Open cart">
           <i class="fa-solid fa-cart-shopping text-neutral-700 dark:text-neutral-200"></i>
           <span id="cart-count" class="absolute -top-1 -right-1 bg-primary-600 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
 
         <!-- Account -->
-        <a href="{{ url('/account') }}" class="hidden sm:inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Account menu">
-          <i class="fa-solid fa-user text-neutral-700 dark:text-neutral-200"></i>
+        @auth
+        <a href="{{ route('account') }}" class="hidden sm:inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Account menu">
+          <i class="fa-solid fa-user-check text-neutral-700 dark:text-neutral-200"></i>
         </a>
+        @else
+        <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Account menu">
+          <i class="fa-regular fa-user text-neutral-700 dark:text-neutral-200"></i>
+        </a>
+        @endauth
 
         <!-- Mobile search button -->
         <button class="md:hidden p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" x-on:click="openSearch = true" aria-label="Open search">
@@ -125,7 +131,7 @@
         <!-- Cart summary with hover preview (desktop) -->
         <div class="relative" x-data="{open:false, items:[], subtotal:0, load(){ try{ this.items=JSON.parse(localStorage.getItem('cartItems')||'[]'); this.subtotal=this.items.reduce((s,i)=>s+Number(i.price||0),0);}catch(e){ this.items=[]; this.subtotal=0; } }}"
              x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
-          <a href="{{ url('/cart') }}" class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
+          <a href="{{ url('/cart') }}" data-open-cart class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
             <i class="fa-solid fa-cart-shopping text-xl"></i>
             <div class="leading-tight">
               <div class="text-sm font-semibold text-red-500">$0.00</div>
@@ -182,21 +188,90 @@
           <i class="fa-solid fa-chevron-down text-xs"></i>
         </button>
         <a href="{{ url('/catalog') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-text="t('catalog')">Katalog</a>
-        <a href="{{ url('/deals') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-text="t('deals')">Promo</a>
-        <a href="{{ url('/support') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-text="t('support')">Support</a>
       </div>
 
       <!-- Right: wishlist + login/register (back to bottom row) -->
       <div class="ml-auto flex items-center gap-4">
-        <a href="{{ url('/wishlist') }}" class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
-          <i class="fa-regular fa-heart"></i>
-          <span>Wishlist</span>
-        </a>
-        <span class="text-neutral-300" aria-hidden="true">|</span>
-        <a href="{{ url('/account') }}" class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
-          <i class="fa-regular fa-user"></i>
-          <span>Login / Register</span>
-        </a>
+        <div class="relative" x-data="{
+              open:false,
+              items:[],
+              load(){
+                try {
+                  const raw = localStorage.getItem('wishlistItems') || '[]';
+                  const parsed = JSON.parse(raw);
+                  this.items = Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                  this.items = [];
+                }
+              },
+              init(){
+                this.load();
+                const update = (e)=>{ if(e?.detail?.items){ this.items = e.detail.items; } else { this.load(); } };
+                window.addEventListener('wishlist:update', update);
+                window.addEventListener('storage', ()=>this.load());
+              }
+            }"
+             x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
+          <a href="{{ url('/wishlist') }}" data-open-wishlist class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
+            <i class="fa-regular fa-heart"></i>
+            <span>Wishlist</span>
+            <span x-show="items.length>0" x-text="items.length"
+                  class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-secondary-500 px-1 text-xs font-semibold text-white"></span>
+          </a>
+          <div x-cloak x-show="open" x-transition.origin.top.right
+               class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-elevated overflow-hidden z-[100]"
+               x-on:mouseenter="open=true" x-on:mouseleave="open=false">
+            <template x-if="items.length===0">
+              <div class="p-3 text-sm text-neutral-600 dark:text-neutral-300">Wishlist is empty.</div>
+            </template>
+            <template x-if="items.length>0">
+              <div>
+                <ul class="max-h-60 overflow-auto divide-y divide-neutral-100 dark:divide-neutral-800">
+                  <template x-for="(p,idx) in items" :key="idx">
+                    <li class="flex items-center gap-3 p-3">
+                      <img :src="p.image" onerror="this.style.display='none'" class="w-12 h-12 object-cover rounded" alt=""/>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate" x-text="p.name || 'Product'"></div>
+                        <div class="text-xs text-neutral-500" x-text="p.price ? ('$' + (Number(p.price)||0).toFixed(2)) : ''"></div>
+                      </div>
+                    </li>
+                  </template>
+                </ul>
+                <div class="p-3 pt-0 grid grid-cols-1 gap-2">
+                  <a href="{{ url('/wishlist') }}" class="px-3 py-2 text-sm rounded-md bg-accent-500 hover:bg-accent-600 text-white text-center">View Wishlist</a>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        @auth
+        <div class="relative" x-data="{open:false}" x-on:keydown.escape.window="open=false">
+          <button type="button" class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-on:click="open=!open">
+            <i class="fa-regular fa-user"></i>
+            <span>{{ \Illuminate\Support\Str::limit(auth()->user()->name, 18) }}</span>
+            <i class="fa-solid fa-chevron-down text-xs opacity-80"></i>
+          </button>
+          <div x-cloak x-show="open" x-transition.origin.top.right
+               class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-elevated overflow-hidden z-[100]"
+               x-on:mouseenter="open=true" x-on:mouseleave="open=false">
+            <a href="{{ route('account') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">Dashboard</a>
+            @role('admin')
+              <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">Admin Panel</a>
+            @endrole
+            <div class="border-t border-neutral-200 dark:border-neutral-800"></div>
+            <form method="POST" action="{{ route('logout') }}">
+              @csrf
+              <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-neutral-800">Keluar</button>
+            </form>
+          </div>
+        </div>
+        @else
+        <div class="flex items-center gap-3">
+          <a href="{{ route('login') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">Masuk</a>
+          <span class="text-neutral-300" aria-hidden="true">|</span>
+          <a href="{{ route('register') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">Daftar</a>
+        </div>
+        @endauth
       </div>
     </nav>
   </div>
@@ -299,10 +374,20 @@
         </details>
         <div class="py-2 flex flex-col gap-2">
           <a href="{{ url('/catalog') }}" class="text-neutral-700 dark:text-neutral-200">Katalog</a>
-          <a href="{{ url('/deals') }}" class="text-neutral-700 dark:text-neutral-200">Promo</a>
-          <a href="{{ url('/support') }}" class="text-neutral-700 dark:text-neutral-200">Support</a>
           <a href="{{ url('/wishlist') }}" class="text-neutral-700 dark:text-neutral-200">Wishlist</a>
-          <a href="{{ url('/account') }}" class="text-neutral-700 dark:text-neutral-200">Login / Register</a>
+          @auth
+            @role('admin')
+              <a href="{{ route('admin.dashboard') }}" class="text-neutral-700 dark:text-neutral-200">Admin Panel</a>
+            @endrole
+            <a href="{{ route('account') }}" class="text-neutral-700 dark:text-neutral-200">Akun Saya</a>
+            <form method="POST" action="{{ route('logout') }}">
+              @csrf
+              <button type="submit" class="w-full text-left text-neutral-700 dark:text-neutral-200">Keluar</button>
+            </form>
+          @else
+            <a href="{{ route('login') }}" class="text-neutral-700 dark:text-neutral-200">Masuk</a>
+            <a href="{{ route('register') }}" class="text-neutral-700 dark:text-neutral-200">Daftar</a>
+          @endauth
         </div>
       </div>
     </aside>
@@ -328,8 +413,8 @@
         isDark: document.documentElement.classList.contains('dark'),
         lang: localStorage.getItem('lang') || 'en',
         dict: {
-          en: { search_placeholder: 'Search products…', categories: 'Categories', catalog:'Catalog', deals:'Deals', support:'Support' },
-          th: { search_placeholder: 'ค้นหาสินค้า…', categories: 'หมวดหมู่', catalog:'แคตตาล็อก', deals:'โปรโมชัน', support:'บริการ' },
+          en: { search_placeholder: 'Search products…', categories: 'Categories', catalog:'Catalog' },
+          th: { search_placeholder: 'ค้นหาสินค้า…', categories: 'หมวดหมู่', catalog:'แคตตาล็อก' },
         },
         t(key){ return (this.dict[this.lang]||{})[key] || key; },
         toggleTheme(){

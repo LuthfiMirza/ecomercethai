@@ -20,3 +20,35 @@
     @apply bg-[#FF7043] text-white px-4 py-2 rounded hover:bg-[#FF7043]/90 transition-colors pixel-text;
   }
 }
+
+
+@layer base {
+  :root {
+    --color-primary-600: 60 80 224;
+    --color-primary-700: 43 63 199;
+    --radius: 1rem;
+    --pad: 1rem;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+}
+
+@layer utilities {
+  .bg-primary-600 { background-color: rgb(var(--color-primary-600)); }
+  .hover\:bg-primary-700:hover { background-color: rgb(var(--color-primary-700)); }
+  .text-primary-600 { color: rgb(var(--color-primary-600)); }
+  .border-primary-600 { border-color: rgb(var(--color-primary-600)); }
+  .ring-primary-600 { --tw-ring-color: rgb(var(--color-primary-600)); }
+  .rounded-theme { border-radius: var(--radius); }
+  .card { @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm; border-radius: var(--radius); }
+  .btn { @apply inline-flex items-center justify-center gap-2 h-10 px-3 text-sm rounded-theme border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition; }
+  .btn-primary { @apply btn text-white; background-color: rgb(var(--color-primary-600)); }
+  .btn-primary:hover { background-color: rgb(var(--color-primary-700)); }
+  .input { @apply h-10 w-full rounded-theme border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm; }
+  .density-compact .card { padding: calc(var(--pad) * 0.75); }
+  .density-compact .input { @apply h-9 px-3; }
+  .density-compact .btn { @apply h-9 px-2.5; }
+  .focus-ring:focus-visible { @apply outline-none ring-2 ring-primary-600; }
+}

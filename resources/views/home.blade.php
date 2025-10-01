@@ -1,6 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+    $bannerCollection = $banners ?? collect();
+    $findBanner = static function ($placement) use ($bannerCollection) {
+        return $bannerCollection->firstWhere('placement', $placement);
+    };
+    $bannerUrl = static function ($banner) {
+        if (! $banner) {
+            return null;
+        }
+        $path = $banner->image_path;
+        return \Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])
+            ? $path
+            : \Illuminate\Support\Facades\Storage::url($path);
+    };
+    $topBanner = $findBanner('homepage_top');
+    $midBanner = $findBanner('homepage_sidebar');
+    $bottomBanner = $findBanner('homepage_bottom');
+@endphp
 <!-- Hero Section / Slider -->
 <div class="hero-slider relative h-[600px] overflow-hidden">
     <div class="container mx-auto px-4 h-full flex items-center">
@@ -83,56 +101,39 @@
 <div class="container mx-auto px-6">
     <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Rekomendasi Produk</h2>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @forelse(($featuredProducts ?? collect()) as $product)
         @php
-        $recommendedProducts = [
-            ['name' => 'Gaming Laptop ROG', 'price' => '1,499.99', 'image' => '/image/monkeyHack.png'],
-            ['name' => 'Mechanical Keyboard', 'price' => '199.99', 'image' => 'https://via.placeholder.com/300x200?text=Keyboard'],
-            ['name' => 'Gaming Mouse', 'price' => '89.99', 'image' => 'https://via.placeholder.com/300x200?text=Mouse']
-        ];
+            $formattedPrice = number_format($product->price, 2);
+            $image = 'https://source.unsplash.com/600x400/?' . urlencode($product->name);
         @endphp
-
-        @foreach($recommendedProducts as $product)
         <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 border border-orange-100 overflow-hidden relative">
-            <!-- Badge -->
-            <div class="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                New
-            </div>
-            
-            <!-- Product Image -->
+            <div class="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">New</div>
             <div class="relative h-48 overflow-hidden">
-                <img src="{{ $product['image'] }}" 
-                     alt="{{ $product['name'] }}" 
-                     class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
+                <img src="{{ $image }}" alt="{{ $product->name }}" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
             </div>
-            
-            <!-- Product Info -->
             <div class="p-4 border-t border-orange-100">
-                <h3 class="font-bold text-lg text-gray-800 mb-2">{{ $product['name'] }}</h3>
-                
-                <!-- Price and Rating -->
+                <h3 class="font-bold text-lg text-gray-800 mb-2">{{ $product->name }}</h3>
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-orange-500 font-bold text-xl">${{ $product['price'] }}</span>
+                    <span class="text-orange-500 font-bold text-xl">${{ $formattedPrice }}</span>
                     <div class="flex items-center">
-                        <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                        </svg>
+                        <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
                         <span class="text-gray-600 text-sm ml-1">4.5</span>
                     </div>
                 </div>
-                
-                <!-- Buy Button -->
-                <button class="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    Buy Now
+                <button data-cart-add data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Buy Now
                 </button>
-                <button data-compare data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-image="{{ $product['image'] }}" data-brand="BrandX" data-stock="In stock" data-variation="Default" data-rating="4.5" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                <button data-wishlist data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                    <i class="fa-regular fa-heart mr-2"></i> Wishlist
+                </button>
+                <button data-compare data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" data-brand="BrandX" data-stock="In stock" data-variation="Default" data-rating="4.5" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
                     <i class="fa-solid fa-code-compare mr-2"></i> Add to Compare
                 </button>
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="bg-white rounded-lg shadow-lg border border-orange-100 p-6 col-span-full">Belum ada produk rekomendasi. Tambahkan produk melalui panel admin.</div>
+        @endforelse
     </div>
 </div>
 
@@ -149,87 +150,49 @@
 <!-- Horizontal Banner Between Sections -->
 <div class="container mx-auto px-6 py-8">
     <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-        <img src="{{ asset('image/iklan.jpg') }}" alt="Wide Banner" class="w-full h-40 object-cover">
+        @if($bottomBanner && ($src = $bannerUrl($bottomBanner)))
+            <img src="{{ $src }}" alt="{{ $bottomBanner->title }}" class="w-full h-40 object-cover">
+        @else
+            <img src="{{ asset('image/iklan.jpg') }}" alt="Wide Banner" class="w-full h-40 object-cover">
+        @endif
     </div>
 </div>
 
 <!-- Product Catalog Section (Redesigned from here downward) -->
-<section class="container mx-auto px-6 py-12" x-data="{ 
-  products: [
-    {id:1, name:'RTX 4070 Ti', price:899, image:'https://source.unsplash.com/600x600/?gpu', cat:'GPU'},
-    {id:2, name:'Ryzen 7 7800X', price:399, image:'https://source.unsplash.com/600x600/?cpu', cat:'CPU'},
-    {id:3, name:'SSD NVMe 1TB', price:129, image:'https://source.unsplash.com/600x600/?ssd', cat:'SSD'},
-    {id:4, name:'27\" 144Hz Monitor', price:229, image:'https://source.unsplash.com/600x600/?monitor', cat:'Monitor'},
-    {id:5, name:'Mechanical Keyboard', price:99, image:'https://source.unsplash.com/600x600/?keyboard', cat:'Accessories'},
-    {id:6, name:'Gaming Mouse', price:49, image:'https://source.unsplash.com/600x600/?mouse', cat:'Accessories'},
-    {id:7, name:'All-in-One Cooler', price:149, image:'https://source.unsplash.com/600x600/?cooler', cat:'Accessories'},
-    {id:8, name:'PSU 750W 80+ Gold', price:119, image:'https://source.unsplash.com/600x600/?psu', cat:'Accessories'},
-    {id:9, name:'DDR5 32GB Kit', price:169, image:'https://source.unsplash.com/600x600/?ram', cat:'Accessories'},
-    {id:10, name:'4TB HDD', price:89, image:'https://source.unsplash.com/600x600/?hdd', cat:'Accessories'},
-    {id:11, name:'Ultrawide Monitor', price:399, image:'https://source.unsplash.com/600x600/?ultrawide', cat:'Monitor'},
-    {id:12, name:'Ryzen 5 7600', price:279, image:'https://source.unsplash.com/600x600/?processor', cat:'CPU'},
-  ],
-  categories:['All','GPU','CPU','SSD','Monitor','Accessories'],
-  cat:'All', sort:'popular', show:8,
-  filtered(){
-    let arr = [...this.products];
-    if(this.cat !== 'All') arr = arr.filter(p => p.cat === this.cat);
-    switch(this.sort){
-      case 'price_low': arr.sort((a,b)=>a.price-b.price); break;
-      case 'price_high': arr.sort((a,b)=>b.price-a.price); break;
-      case 'latest': arr.sort((a,b)=>b.id-a.id); break;
-      default: break; // popular: keep default order
-    }
-    return arr;
-  }
-}">
+<section class="container mx-auto px-6 py-12">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Our Products</h2>
-    <div class="flex items-center gap-2">
-      <label class="text-sm text-neutral-600 dark:text-neutral-300">Sort:</label>
-      <select x-model="sort" class="rounded-md border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500">
-        <option value="popular">Most popular</option>
-        <option value="latest">Latest</option>
-        <option value="price_low">Price: Low to High</option>
-        <option value="price_high">Price: High to Low</option>
-      </select>
-    </div>
+    <p class="text-sm text-neutral-600 dark:text-neutral-300">Latest products curated by our team.</p>
   </div>
 
-  <!-- Category chips -->
-  <div class="mt-4 flex gap-2 overflow-auto pb-1">
-    <template x-for="c in categories" :key="c">
-      <button @click="cat=c" :class="cat===c ? 'bg-accent-500 text-white' : 'border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200'" class="px-3 py-1.5 rounded-full text-sm whitespace-nowrap">
-        <span x-text="c"></span>
-      </button>
-    </template>
-  </div>
-
-  <!-- Products grid -->
   <div class="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-    <template x-for="p in filtered().slice(0, show)" :key="p.id">
+    @forelse(($catalogProducts ?? collect()) as $product)
+      @php
+        $price = number_format($product->price, 2);
+        $image = 'https://source.unsplash.com/600x600/?' . urlencode($product->name);
+      @endphp
       <article class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden">
         <a href="{{ url('/product') }}" class="block">
           <div class="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
-            <img :src="p.image" :alt="p.name" class="absolute inset-0 w-full h-full object-cover"/>
+            <img src="{{ $image }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover"/>
           </div>
-          <div class="p-4">
-            <h3 class="text-sm font-medium text-neutral-900 dark:text-neutral-100 leading-snug" x-text="p.name" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; overflow:hidden; min-height:3rem;"></h3>
-            <div class="mt-2 flex items-baseline gap-2">
-              <div class="text-base font-semibold text-neutral-900 dark:text-neutral-100" x-text="'$'+p.price"></div>
+          <div class="p-4 space-y-3">
+            <h3 class="text-sm font-medium text-neutral-900 dark:text-neutral-100 leading-snug" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; overflow:hidden; min-height:3rem;">{{ $product->name }}</h3>
+            <div class="flex items-baseline gap-2">
+              <div class="text-base font-semibold text-neutral-900 dark:text-neutral-100">${{ $price }}</div>
+              <span class="text-xs text-neutral-500">In stock: {{ $product->stock }}</span>
             </div>
-            <div class="mt-3 flex gap-2">
-              <button class="flex-1 px-3 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white text-sm">Add to Cart</button>
-              <button class="px-3 py-2 rounded-md border border-neutral-200 dark:border-neutral-700 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">Wishlist</button>
-            </div>
+            <button data-cart-add data-name="{{ $product->name }}" data-price="{{ $price }}" data-image="{{ $image }}" class="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">
+              <i class="fa-solid fa-cart-shopping"></i> Add to cart
+            </button>
           </div>
         </a>
       </article>
-    </template>
-  </div>
-
-  <div class="mt-6 text-center" x-show="filtered().length > show">
-    <button @click="show += 8" class="px-4 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800">Load more</button>
+    @empty
+      <div class="col-span-full rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 text-center text-neutral-600 dark:text-neutral-300">
+        Belum ada produk yang tersedia. Silakan tambahkan produk melalui panel admin.
+      </div>
+    @endforelse
   </div>
 </section>
 
