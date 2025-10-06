@@ -64,7 +64,7 @@
         ];
       @endphp
       @foreach(array_keys($icons) as $category)
-        <a href="{{ url('/catalog?category='.urlencode($category)) }}" class="group text-center">
+        <a href="{{ route('catalog', ['category' => $category]) }}" class="group text-center">
           <div class="w-16 h-16 mx-auto rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft flex items-center justify-center transition-transform group-hover:-translate-y-1">
             <i class="fa-solid {{ $icons[$category] }} text-xl text-neutral-700 dark:text-neutral-200"></i>
           </div>
@@ -80,7 +80,7 @@
   <h2 class="text-2xl font-bold text-gray-900 mb-6">Hot Categories</h2>
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
     @foreach(['GPU','CPU','SSD','Monitor','Keyboard','Mouse','Headset','Motherboard','RAM','PSU','Cooler','Laptop'] as $cat)
-      <a href="/catalog?category={{ urlencode($cat) }}" class="group rounded-xl border bg-white hover:shadow-soft transition p-4 flex flex-col items-center text-center">
+      <a href="{{ route('catalog', ['category' => $cat]) }}" class="group rounded-xl border bg-white hover:shadow-soft transition p-4 flex flex-col items-center text-center">
         <img loading="lazy" src="https://source.unsplash.com/120x120/?{{ urlencode($cat) }}" alt="{{ $cat }}" class="w-16 h-16 object-cover rounded-md"/>
         <span class="mt-2 text-sm font-medium text-gray-800">{{ $cat }}</span>
       </a>
@@ -126,9 +126,6 @@
                 <button data-wishlist data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
                     <i class="fa-regular fa-heart mr-2"></i> Wishlist
                 </button>
-                <button data-compare data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" data-brand="BrandX" data-stock="In stock" data-variation="Default" data-rating="4.5" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
-                    <i class="fa-solid fa-code-compare mr-2"></i> Add to Compare
-                </button>
             </div>
         </div>
         @empty
@@ -172,7 +169,7 @@
         $image = 'https://source.unsplash.com/600x600/?' . urlencode($product->name);
       @endphp
       <article class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden">
-        <a href="{{ url('/product') }}" class="block">
+        <a href="{{ route('catalog') }}" class="block">
           <div class="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
             <img src="{{ $image }}" alt="{{ $product->name }}" class="absolute inset-0 w-full h-full object-cover"/>
           </div>

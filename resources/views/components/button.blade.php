@@ -6,18 +6,18 @@
   'type' => 'button',
 ])
 @php
-  $base = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-accent-500 disabled:opacity-50 disabled:cursor-not-allowed';
+  $base = 'inline-flex items-center justify-center font-medium rounded-2xl transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-200/70 disabled:opacity-50 disabled:cursor-not-allowed';
   $sizes = [
-    'sm' => 'px-3 py-1.5 text-sm',
-    'md' => 'px-4 py-2 text-sm',
-    'lg' => 'px-5 py-3 text-base',
-  ][$size] ?? 'px-4 py-2 text-sm';
+    'sm' => 'px-3.5 py-2 text-sm',
+    'md' => 'px-5 py-2.5 text-sm',
+    'lg' => 'px-6 py-3 text-base',
+  ][$size] ?? 'px-5 py-2.5 text-sm';
   $variants = [
-    'primary' => 'bg-accent-500 hover:bg-accent-600 text-white',
-    'secondary' => 'bg-neutral-800 hover:bg-neutral-900 text-white dark:bg-neutral-700 dark:hover:bg-neutral-600',
-    'outline' => 'border border-neutral-300 hover:border-neutral-400 text-neutral-800 dark:text-neutral-100 dark:border-neutral-600',
-    'ghost' => 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-100',
-  ][$variant] ?? 'bg-accent-500 hover:bg-accent-600 text-white';
+    'primary' => 'bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-white shadow-[0_18px_40px_-25px_rgba(56,132,255,0.75)] hover:-translate-y-0.5',
+    'secondary' => 'bg-neutral-900 text-white shadow-md hover:bg-neutral-800 dark:bg-neutral-700 dark:hover:bg-neutral-600',
+    'outline' => 'border border-white/60 bg-white/80 text-neutral-700 shadow-inner hover:border-sky-300 backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100',
+    'ghost' => 'bg-transparent text-neutral-700 hover:bg-white/70 dark:text-neutral-200 dark:hover:bg-neutral-800/60',
+  ][$variant] ?? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-white shadow-[0_18px_40px_-25px_rgba(56,132,255,0.75)] hover:-translate-y-0.5';
   $classes = "$base $sizes $variants ".$attributes->get('class');
   $Tag = $as ?? ($href ? 'a' : 'button');
 @endphp

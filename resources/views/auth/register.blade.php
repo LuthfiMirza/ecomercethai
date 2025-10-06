@@ -1,64 +1,58 @@
-@extends('layouts.auth')
+@extends('layouts.app')
+
+@section('title', 'Register')
 
 @section('content')
-<section class="rounded-[34px] border-[3px] border-[#ffd9df] bg-white/80 dark:bg-neutral-900/85 shadow-[0_30px_80px_-25px_rgba(255,120,150,0.45)] backdrop-blur-xl overflow-hidden">
-    <div class="grid md:grid-cols-[1.05fr_1fr]">
-        <div class="hidden md:flex flex-col justify-between bg-gradient-to-b from-[#ffe5ef] via-[#ffeff6] to-[#ffe9ef] p-10 lg:p-12">
-            <div class="flex items-center justify-between text-sm font-semibold text-rose-500">
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
-                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff4f8] shadow-sm">
-                        <i class="fa-solid fa-gift"></i>
-                    </span>
-                    <span class="uppercase tracking-[0.32em] text-xs text-rose-400">TOKO THAILAND</span>
-                </a>
-                <span class="inline-flex h-9 items-center rounded-full bg-white/70 px-4 text-rose-400" data-i18n="register.badge">New here?</span>
-            </div>
-            <div class="flex-1 flex items-center justify-center">
-                <img src="{{ asset('images/auth-illustration.svg') }}" alt="Register illustration" class="max-w-full drop-shadow-xl" loading="lazy">
-            </div>
-            <ul class="mt-6 flex flex-col gap-2 text-sm text-rose-500/80">
-                <li class="inline-flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span><span data-i18n="register.highlights.reward">Get exclusive promotions and launch alerts.</span></li>
-                <li class="inline-flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span><span data-i18n="register.highlights.wishlist">Keep wishlist items synced everywhere.</span></li>
-                <li class="inline-flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-rose-400"></span><span data-i18n="register.highlights.checkout">Check out quickly with saved details.</span></li>
-            </ul>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Create your account
+            </h2>
         </div>
+        <form class="mt-8 space-y-6" action="{{ route('register') }}" method="POST">
+            @csrf
+            <input type="hidden" name="remember" value="true">
+            <div class="rounded-md shadow-sm -space-y-px">
+                <div>
+                    <label for="name" class="sr-only">Name</label>
+                    <input id="name" name="name" type="text" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Full Name" value="{{ old('name') }}">
+                    @error('name')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Email address" value="{{ old('email') }}">
+                    @error('email')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Password">
+                    @error('password')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <label for="password_confirmation" class="sr-only">Confirm Password</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm" placeholder="Confirm Password">
+                </div>
+            </div>
 
-        <div class="relative bg-white/95 dark:bg-neutral-900/90">
-            <a href="{{ route('login') }}" class="md:hidden absolute right-6 top-6 text-rose-400 hover:text-rose-500" aria-label="Close">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </a>
-            <div class="p-8 sm:p-10 lg:p-12">
-                <div class="mb-6 md:hidden overflow-hidden rounded-3xl border border-[#ffd6de] bg-gradient-to-br from-[#ffe8f1] to-[#ffd4df] p-6">
-                    <img src="{{ asset('images/auth-illustration.svg') }}" alt="Register illustration" class="mx-auto h-48" loading="lazy">
-                </div>
-                <div class="mb-8 space-y-3 text-center md:text-left">
-                    <h1 class="text-3xl font-semibold text-neutral-900 dark:text-neutral-100" data-i18n="register.heading">Create your account</h1>
-                    <p class="text-base text-neutral-600 dark:text-neutral-300" data-i18n="register.subtitle">Join our community and unlock member-only deals.</p>
-                </div>
-                <div class="space-y-8">
-                    @include('auth.partials.register-form')
-                    <div class="relative text-center text-sm text-neutral-500 before:absolute before:left-0 before:top-1/2 before:h-px before:w-full before:bg-neutral-200 before:content-[''] dark:text-neutral-400 dark:before:bg-neutral-800">
-                        <span class="relative bg-white dark:bg-neutral-900 px-3" data-i18n="register.social_divider">Or sign up with</span>
-                    </div>
-                    <div class="flex items-center justify-center gap-4">
-                        <button type="button" class="h-12 w-12 rounded-full border border-[#ffd7de] bg-white shadow-sm text-[#ea4335] hover:border-[#ffb4c1]">
-                            <i class="fa-brands fa-google text-lg"></i>
-                        </button>
-                        <button type="button" class="h-12 w-12 rounded-full border border-[#ffd7de] bg-white shadow-sm text-[#1877f2] hover:border-[#ffb4c1]">
-                            <i class="fa-brands fa-facebook-f text-lg"></i>
-                        </button>
-                        <button type="button" class="h-12 w-12 rounded-full border border-[#ffd7de] bg-white shadow-sm text-neutral-900 hover:border-[#ffb4c1]">
-                            <i class="fa-brands fa-apple text-xl"></i>
-                        </button>
-                    </div>
-                    <p class="text-sm text-center text-neutral-500 dark:text-neutral-300">
-                        <span data-i18n="register.have_account">Already have an account?</span>
-                        <a href="{{ route('login') }}" class="font-semibold text-rose-500 hover:text-rose-400" data-i18n="register.have_account_cta">Sign in</a>
-                    </p>
-                </div>
+            <div>
+                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Register
+                </button>
             </div>
-        </div>
+            
+            <div class="text-sm text-center">
+                <a href="{{ route('admin.login') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Already have an account? Sign in
+                </a>
+            </div>
+        </form>
     </div>
-</section>
-@include('auth.partials.i18n-scripts')
+</div>
 @endsection

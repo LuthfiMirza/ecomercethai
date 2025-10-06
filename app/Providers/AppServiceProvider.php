@@ -2,7 +2,10 @@
 
 namespace App\Providers;
 
+use App\Support\MegaMenuBuilder;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +22,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('components.navbar', function ($view) {
+            $categories = [];
+
+            try {
+                $categories = MegaMenuBuilder::build();
+            } catch (Throwable $exception) {
+                report($exception);
+                $categories = [];
+            }
+
+            $view->with('navMegaCategories', $categories);
+        });
     }
 }

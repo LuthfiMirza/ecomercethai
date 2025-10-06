@@ -1,47 +1,71 @@
 @extends('layouts.admin')
-@section('title', __('Products'))
+
+@section('header', 'Products')
+
 @section('content')
-<x-admin.header title="Products" :breadcrumbs="[['label'=>'Admin','href'=>route('admin.dashboard')],['label'=>'Products']]">
-  <form method="GET" action="{{ route('admin.products.index') }}" class="flex items-center gap-2">
-    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search products..." class="h-10 w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm" />
-    @if(request('q'))
-      <a href="{{ route('admin.products.index') }}" class="text-sm text-gray-600">Clear</a>
-    @endif
-    <a href="{{ route('admin.products.create') }}" class="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">New Product</a>
-  </form>
-</x-admin.header>
-<div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
+<x-table 
+  title="Products List"
+  :export-items="[
+    ['label' => 'CSV', 'href' => route('admin.products.export.csv')],
+    ['label' => 'Excel', 'href' => route('admin.products.export.excel')],
+    ['label' => 'PDF', 'href' => route('admin.products.export.pdf')],
+  ]"
+  add-url="{{ route('admin.products.create') }}"
+  add-label="Add Product"
+  :search="true"
+  search-placeholder="Search by name..."
+  :search-value="$q ?? request('q')"
+  action="{{ route('admin.products.index') }}"
+  :pagination="$products"
+>
+  <x-slot:filters>
+    <div>
+      <label class="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-300">Category</label>
+      <select name="category_id" class="w-full rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-8 text-sm focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
+        <option value="">All Categories</option>
+        @foreach(($categories ?? []) as $cat)
+          <option value="{{ $cat->id }}" @selected(($category_id ?? request('category_id')) == $cat->id)>{{ $cat->name }}</option>
+        @endforeach
+      </select>
+    </div>
+  </x-slot:filters>
+
+  <x-slot:head>
+    <tr>
+      <th>Product</th>
+      <th>Category</th>
+      <th>Price</th>
+      <th>Stock</th>
+      <th></th>
+    </tr>
+  </x-slot:head>
+
+  <x-slot:body>
+    @forelse ($products as $product)
       <tr>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-        <th class="px-4 py-2">Price</th>
-        <th class="px-4 py-2">Stock</th>
-        <th class="px-4 py-2">Active</th>
-        <th class="px-4 py-2"></th>
+        <td>
+          <div class="flex items-center">
+            <div class="h-10 w-10 flex-shrink-0">
+              <img class="h-10 w-10 rounded-md object-cover" src="{{ $product->image_url ?? 'https://via.placeholder.com/40' }}" alt="">
+            </div>
+            <div class="ml-4">
+              <div class="font-medium text-slate-900 dark:text-slate-200">{{ $product->name }}</div>
+            </div>
+          </div>
+        </td>
+        <td>{{ $product->category->name ?? 'N/A' }}</td>
+        <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
+        <td>{{ $product->stock }}</td>
+        <td class="cell-actions">
+          <a href="{{ route('admin.products.edit', $product) }}" class="btn-outline text-xs">Edit</a>
+          <x-confirm-delete action="{{ route('admin.products.destroy', $product) }}">Delete</x-confirm-delete>
+        </td>
       </tr>
-    </thead>
-    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200/70 dark:divide-gray-700">
-      @foreach($products as $product)
+    @empty
       <tr>
-        <td class="px-4 py-2">
-          <div class="font-medium text-gray-900">{{ $product->name }}</div>
-          <div class="text-gray-500 text-sm line-clamp-1">{{ $product->description }}</div>
-        </td>
-        <td class="px-4 py-2">${{ number_format($product->price, 2) }}</td>
-        <td class="px-4 py-2">{{ $product->stock }}</td>
-        <td class="px-4 py-2">{!! $product->is_active ? '<span class="text-green-600">Yes</span>' : '<span class="text-gray-400">No</span>' !!}</td>
-        <td class="px-4 py-2 text-right">
-          <a href="{{ route('admin.products.edit', $product) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
-          <form action="{{ route('admin.products.destroy', $product) }}" method="POST" class="inline" onsubmit="return confirm('Delete this product?')">
-            @csrf @method('DELETE')
-            <button class="text-red-600 hover:underline">Delete</button>
-          </form>
-        </td>
+        <td colspan="5" class="py-6 text-center text-slate-500 dark:text-slate-400">No products found.</td>
       </tr>
-      @endforeach
-    </tbody>
-  </table>
-</div>
-<div class="mt-4">{{ $products->links() }}</div>
+    @endforelse
+  </x-slot:body>
+</x-table>
 @endsection

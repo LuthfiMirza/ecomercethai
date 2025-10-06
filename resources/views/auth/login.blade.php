@@ -5,7 +5,7 @@
     <div class="grid md:grid-cols-[1.05fr_1fr]">
         <div class="hidden md:flex flex-col justify-between bg-gradient-to-b from-[#ffe5ef] via-[#ffeff6] to-[#ffe9ef] p-10 lg:p-12">
             <div class="flex items-center justify-between text-sm font-semibold text-rose-500">
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
+                <a href="{{ route('home') }}" class="inline-flex items-center gap-2">
                     <span class="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff4f8] shadow-sm">
                         <i class="fa-solid fa-store"></i>
                     </span>
@@ -24,7 +24,7 @@
         </div>
 
         <div class="relative bg-white/95 dark:bg-neutral-900/90">
-            <a href="{{ url('/') }}" class="md:hidden absolute right-6 top-6 text-rose-400 hover:text-rose-500" aria-label="Close">
+            <a href="{{ route('home') }}" class="md:hidden absolute right-6 top-6 text-rose-400 hover:text-rose-500" aria-label="Close">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </a>
             <div class="p-8 sm:p-10 lg:p-12">

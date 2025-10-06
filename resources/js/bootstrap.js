@@ -13,13 +13,19 @@ import Pusher from 'pusher-js';
 
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
-    broadcaster: 'pusher',
-    key: import.meta.env.VITE_PUSHER_APP_KEY,
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
-    wsHost: import.meta.env.VITE_PUSHER_HOST ?? window.location.hostname,
-    wsPort: Number(import.meta.env.VITE_PUSHER_PORT ?? window.location.port ?? 80),
-    wssPort: Number(import.meta.env.VITE_PUSHER_PORT ?? 443),
-    forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-});
+const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+
+if (typeof pusherKey === 'string' && pusherKey.trim() !== '') {
+    window.Echo = new Echo({
+        broadcaster: 'pusher',
+        key: pusherKey,
+        cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
+        wsHost: import.meta.env.VITE_PUSHER_HOST ?? window.location.hostname,
+        wsPort: Number(import.meta.env.VITE_PUSHER_PORT ?? window.location.port ?? 80),
+        wssPort: Number(import.meta.env.VITE_PUSHER_PORT ?? 443),
+        forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
+        enabledTransports: ['ws', 'wss'],
+    });
+} else {
+    console.warn('[Echo] Pusher key missing; realtime features disabled. Set VITE_PUSHER_APP_KEY in your .env.');
+}

@@ -27,10 +27,9 @@
         <div class="text-sm flex justify-between"><span>Pengiriman</span><span>฿ 0</span></div>
         <div class="text-sm flex justify-between"><span>Pajak</span><span>—</span></div>
         <div class="mt-2 border-t pt-2 font-semibold flex justify-between"><span>Total</span><span>฿ 1,099.00</span></div>
-        <x-button href="{{ url('/checkout') }}" class="w-full mt-4">Checkout</x-button>
+        <x-button href="{{ route('checkout') }}" class="w-full mt-4">Checkout</x-button>
       </div>
     </aside>
   </div>
 </main>
 @endsection
-

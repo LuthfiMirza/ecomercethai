@@ -3,79 +3,158 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
+use App\Models\User;
+use App\Models\Order;
+use App\Models\UserStatusLog;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Display a listing of the users.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
     {
-        $q = trim($request->query('q', ''));
-
-        $users = User::with('roles')
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('name', 'like', "%$q%")
-                        ->orWhere('email', 'like', "%$q%");
-                });
-            })
-            ->orderByDesc('created_at')
-            ->paginate(12)
-            ->appends(['q' => $q]);
-
-        return view('admin.users.index', compact('users', 'q'));
+        $users = User::paginate(10);
+        return view('admin.users.index', compact('users'));
     }
 
+    /**
+     * Show the form for creating a new user.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function create()
     {
-        abort(404);
+        return view('admin.users.create');
     }
 
+    /**
+     * Store a newly created user in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(Request $request)
     {
-        abort(404);
-    }
-
-    public function show(string $id)
-    {
-        return redirect()->route('admin.users.edit', $id);
-    }
-
-    public function edit(string $id)
-    {
-        $user = User::findOrFail($id);
-        $roles = Role::all();
-
-        return view('admin.users.edit', compact('user', 'roles'));
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $user = User::findOrFail($id);
-
-        $data = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'roles' => 'array',
-            'roles.*' => 'string',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'is_admin' => 'required|boolean',
         ]);
-
-        $user->update([
-            'name' => $data['name'],
-            'email' => $data['email'],
+        
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'is_admin' => (bool) $request->is_admin,
         ]);
-
-        $user->syncRoles($data['roles'] ?? []);
-
-        return redirect()->route('admin.users.index')->with('status', 'User updated');
+        
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
-    public function destroy(string $id)
+    /**
+     * Show the form for editing the specified user.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $user = User::findOrFail($id);
+        return view('admin.users.edit', compact('user'));
+    }
+
+    /**
+     * Update the specified user in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$id,
+            'is_admin' => 'required|boolean',
+        ]);
+        
+        $user = User::findOrFail($id);
+        
+        $user->update($request->except('password'));
+        
+        if ($request->password) {
+            $user->update(['password' => bcrypt($request->password)]);
+        }
+        
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Remove the specified user from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
     {
         $user = User::findOrFail($id);
         $user->delete();
+        
+        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+    }
 
-        return back()->with('status', 'User deleted');
+    /**
+     * Show a user's profile and order history.
+     */
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
+        $orders = Order::with('orderItems')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->paginate(10)
+            ->appends(request()->query());
+        $recentOrders = Order::where('user_id', $user->id)->latest()->take(3)->get();
+        $statusLogs = UserStatusLog::where('user_id', $user->id)->latest()->take(10)->get();
+
+        return view('admin.users.show', compact('user', 'orders', 'recentOrders', 'statusLogs'));
+    }
+
+    /** Ban user */
+    public function ban($id)
+    {
+        $user = User::findOrFail($id);
+        $before = $user->is_banned;
+        $user->update(['is_banned' => true]);
+        UserStatusLog::create([
+            'user_id' => $user->id,
+            'admin_id' => Auth::id(),
+            'action' => 'ban',
+            'from_state' => $before ? 'banned' : 'active',
+            'to_state' => 'banned',
+        ]);
+        return back()->with('success', 'User banned successfully.');
+    }
+
+    /** Activate user */
+    public function activate($id)
+    {
+        $user = User::findOrFail($id);
+        $before = $user->is_banned;
+        $user->update(['is_banned' => false]);
+        UserStatusLog::create([
+            'user_id' => $user->id,
+            'admin_id' => Auth::id(),
+            'action' => 'activate',
+            'from_state' => $before ? 'banned' : 'active',
+            'to_state' => 'active',
+        ]);
+        return back()->with('success', 'User activated successfully.');
     }
 }

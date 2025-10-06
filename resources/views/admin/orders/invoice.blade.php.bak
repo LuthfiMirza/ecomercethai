@@ -1,0 +1,113 @@
+@extends('layouts.admin')
+
+@section('header', 'Invoice')
+
+@section('head')
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        body { background: #fff !important; }
+    }
+</style>
+@endsection
+
+@section('content')
+<div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+    <div class="flex items-start justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold">Invoice #ORD{{ $order->id }}</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ $order->created_at?->format('d M Y H:i') }}</p>
+        </div>
+        <div class="text-right">
+            <p class="text-sm">Status:</p>
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                @switch($order->status)
+                    @case('pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 @break
+                    @case('processing') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 @break
+                    @case('shipped') bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300 @break
+                    @case('completed') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 @break
+                    @case('cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 @break
+                    @default bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300
+                @endswitch">
+                {{ ucfirst($order->status) }}
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+            <h3 class="font-semibold mb-2">Bill To</h3>
+            <div class="text-sm">
+                <p class="font-medium">{{ $order->user->name ?? 'Customer' }}</p>
+                <p>{{ $order->user->email ?? '-' }}</p>
+                @if(isset($order->shipping_address))
+                    <p class="mt-1">{!! nl2br(e($order->shipping_address)) !!}</p>
+                @endif
+            </div>
+        </div>
+        <div>
+            <h3 class="font-semibold mb-2">Invoice Details</h3>
+            <div class="text-sm">
+                <p><span class="w-28 inline-block">Order ID</span>: ORD{{ $order->id }}</p>
+                <p><span class="w-28 inline-block">Date</span>: {{ $order->created_at?->format('d M Y') }}</p>
+                <p><span class="w-28 inline-block">Payment</span>: {{ $order->payment_method ?? '—' }}</p>
+                <p><span class="w-28 inline-block">Shipping</span>: {{ $order->shipping_method ?? '—' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-slate-50 dark:bg-slate-700">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium uppercase">Product</th>
+                    <th class="px-4 py-2 text-right text-xs font-medium uppercase">Qty</th>
+                    <th class="px-4 py-2 text-right text-xs font-medium uppercase">Price</th>
+                    <th class="px-4 py-2 text-right text-xs font-medium uppercase">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                @foreach($order->orderItems as $item)
+                    <tr>
+                        <td class="px-4 py-2">{{ $item->product->name ?? 'Product' }}</td>
+                        <td class="px-4 py-2 text-right">{{ $item->quantity }}</td>
+                        <td class="px-4 py-2 text-right">Rp {{ number_format($item->price,0,',','.') }}</td>
+                        <td class="px-4 py-2 text-right">Rp {{ number_format($item->price * $item->quantity,0,',','.') }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="flex justify-end mt-6">
+        <div class="w-full md:w-1/2 lg:w-1/3">
+            <div class="flex justify-between py-2">
+                <span>Subtotal</span>
+                <span>Rp {{ number_format($order->total_amount ?? 0,0,',','.') }}</span>
+            </div>
+            @if(!empty($order->shipping_cost))
+            <div class="flex justify-between py-2">
+                <span>Shipping</span>
+                <span>Rp {{ number_format($order->shipping_cost,0,',','.') }}</span>
+            </div>
+            @endif
+            @if(!empty($order->discount))
+            <div class="flex justify-between py-2">
+                <span>Discount</span>
+                <span>- Rp {{ number_format($order->discount,0,',','.') }}</span>
+            </div>
+            @endif
+            <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 mt-2 font-semibold">
+                <span>Total</span>
+                <span>Rp {{ number_format(($order->total_amount ?? 0) + ($order->shipping_cost ?? 0) - ($order->discount ?? 0),0,',','.') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-6 flex gap-3 no-print">
+        <a href="{{ route('admin.orders.invoice.pdf', $order) }}" class="px-4 py-2 rounded neon-button">Download PDF</a>
+        <button onclick="window.print()" class="px-4 py-2 rounded bg-slate-800 text-white hover:bg-slate-700 dark:bg-slate-700">Print</button>
+    </div>
+</div>
+@endsection
+

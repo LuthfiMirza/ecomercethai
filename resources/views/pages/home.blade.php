@@ -9,8 +9,8 @@
         <h1 class="text-3xl md:text-5xl font-bold leading-tight">Rakitan PC Modern untuk Semua Kebutuhan</h1>
         <p class="mt-4 text-neutral-300">Dari gaming hingga kreator, temukan komponen berkualitas dengan harga bersaing.</p>
         <div class="mt-6 flex gap-3">
-          <x-button href="{{ url('/catalog') }}">Belanja Sekarang</x-button>
-          <x-button href="{{ url('/deals') }}" variant="outline">Lihat Promo</x-button>
+          <x-button href="{{ route('catalog') }}">Belanja Sekarang</x-button>
+          <x-button href="{{ localized_url('deals') }}" variant="outline">Lihat Promo</x-button>
         </div>
       </div>
       <div class="relative">
@@ -45,7 +45,7 @@
   <section class="container py-8 md:py-12">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl md:text-2xl font-semibold">Produk Unggulan</h2>
-      <a href="{{ url('/catalog') }}" class="text-accent-600 hover:text-accent-700 text-sm">Lihat semua</a>
+      <a href="{{ route('catalog') }}" class="text-accent-600 hover:text-accent-700 text-sm">Lihat semua</a>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       @foreach([
@@ -60,4 +60,3 @@
   </section>
 </main>
 @endsection
-

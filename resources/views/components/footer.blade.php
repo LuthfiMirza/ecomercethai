@@ -8,9 +8,9 @@
       <div>
         <h2 class="text-sm font-semibold tracking-wide text-neutral-500">Links</h2>
         <ul class="mt-3 space-y-2 text-sm">
-          <li><a href="{{ url('/catalog') }}" class="hover:text-accent-600">Catalog</a></li>
-          <li><a href="{{ url('/deals') }}" class="hover:text-accent-600">Deals</a></li>
-          <li><a href="{{ url('/support') }}" class="hover:text-accent-600">Support</a></li>
+          <li><a href="{{ route('catalog') }}" class="hover:text-accent-600">Catalog</a></li>
+          <li><a href="{{ localized_url('deals') }}" class="hover:text-accent-600">Deals</a></li>
+          <li><a href="{{ localized_url('support') }}" class="hover:text-accent-600">Support</a></li>
         </ul>
       </div>
       <div>

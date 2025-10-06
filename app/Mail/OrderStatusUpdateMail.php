@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Mail;
+
+use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Queue\SerializesModels;
+
+class OrderStatusUpdateMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    public $order;
+    public $status;
+
+    /**
+     * Create a new message instance.
+     */
+    public function __construct(Order $order, string $status)
+    {
+        $this->order = $order;
+        $this->status = $status;
+    }
+
+    /**
+     * Get the message envelope.
+     */
+    public function envelope(): Envelope
+    {
+        return new Envelope(
+            subject: __('mail.order_status_update_subject', ['order_id' => $this->order->id]),
+        );
+    }
+
+    /**
+     * Get the message content definition.
+     */
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.order-status-update',
+        );
+    }
+
+    /**
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     */
+    public function attachments(): array
+    {
+        return [];
+    }
+}

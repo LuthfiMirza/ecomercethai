@@ -1,39 +1,32 @@
-<header x-data="Object.assign(navbar(), { openMega:false, lastFocus:null, headerH:72, updateHeader(){ const r=this.$refs.hdr?.getBoundingClientRect?.(); this.headerH=r?Math.round(r.height):72; } })"
-        x-init="updateHeader(); window.addEventListener('resize', ()=>updateHeader())"
+<header x-data="navbar()"
         x-ref="hdr"
         class="sticky top-0 z-[90] bg-white/90 dark:bg-neutral-900/80 backdrop-blur"
         role="banner">
   <!-- Topbar -->
   <div class="hidden md:block bg-[#0b0720] text-neutral-300">
-    <div class="container mx-auto px-4 text-xs flex items-center justify-between h-9">
+    <div class="container mx-auto px-5 text-xs flex items-center justify-between h-12">
       <!-- Left items with separators, no edges -->
       <nav class="flex items-center divide-x divide-neutral-700">
-        <a href="#" class="px-3 hover:text-white">About Us</a>
-        <a href="{{ url('/product') }}" class="px-3 hover:text-white">Product</a>
-        <a href="{{ url('/compare') }}" class="px-3 hover:text-white">Compare</a>
+        <a href="{{ route('catalog') }}" class="px-3 hover:text-white">Product</a>
+        <a href="{{ route('contact') }}" class="px-3 hover:text-white">Contact Us</a>
       </nav>
       <!-- Right items: text links | language | theme -->
       <div class="flex items-center gap-4">
-        <nav class="flex items-center divide-x divide-neutral-700">
-          <a href="#" class="px-3 hover:text-white">Track Your Order</a>
-          <a href="#" class="px-3 hover:text-white">Contact Us</a>
-          <a href="#" class="px-3 hover:text-white">FAQs</a>
-        </nav>
         <!-- Removed Wishlist/Login from topbar per request -->
-        <div class="flex items-center gap-3 pl-3">
+        
           <x-language-switcher />
           <button x-on:click="toggleTheme" class="p-1.5 rounded hover:bg-white/10" aria-label="Toggle theme">
             <i x-show="isDark" class="fa-solid fa-moon text-neutral-300"></i>
             <i x-show="!isDark" class="fa-solid fa-sun text-yellow-400"></i>
           </button>
-        </div>
+        
       </div>
     </div>
   </div>
   <div class="container mx-auto px-4">
     <div class="flex h-16 items-center gap-3 justify-between">
       <!-- Logo -->
-      <a href="{{ url('/') }}" class="flex items-center gap-2" aria-label="Go to homepage">
+      <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="Go to homepage">
         <img src="{{ asset('favicon.ico') }}" alt="Toko Thailand" class="h-8 w-8 rounded"/>
         <span class="font-semibold text-neutral-800 dark:text-neutral-100">Toko Thailand</span>
       </a>
@@ -41,7 +34,7 @@
 
       <!-- Center Search -->
       <div class="hidden md:block w-full max-w-xl mx-2 md:mx-6 relative" x-data="{open:false}" x-on:click.outside="open=false">
-        <form action="{{ url('/search') }}" method="get" role="search" class="relative" x-on:submit="open=false" autocomplete="off">
+        <form action="{{ route('catalog') }}" method="get" role="search" class="relative" x-on:submit="open=false" autocomplete="off">
           <label for="q" class="sr-only">Search products</label>
           <input id="q" name="q" type="search" :placeholder="t('search_placeholder')" x-on:focus="open=true" x-on:keydown.escape.window="open=false" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 pl-11 pr-24 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-500 text-neutral-800 dark:text-neutral-100"/>
           <div class="absolute inset-y-0 left-3 flex items-center text-neutral-400">
@@ -53,13 +46,13 @@
         <!-- Suggestions dropdown: right-aligned, precise under input -->
         <div x-cloak x-show="open" role="listbox" aria-label="Search suggestions"
              x-transition.opacity x-transition.scale.origin.top-right
-             class="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-elevated p-2 z-[100]">
+             class="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-elevated p-2 z-[140]">
           <div class="text-xs text-neutral-500 px-2 py-1">Suggestions</div>
           <ul class="text-sm divide-y divide-neutral-100 dark:divide-neutral-800">
             @foreach(['RTX 4070 Ti','Gaming laptop','NVMe SSD 1TB','4K Monitor'] as $s)
               <li>
                 <a class="flex items-center justify-between px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded focus:outline-none focus:ring-2 focus:ring-accent-500"
-                   href="{{ url('/catalog?q='.urlencode($s)) }}">
+                   href="{{ route('catalog', ['q' => $s]) }}">
                   <span>{{ $s }}</span>
                   <i class="fa-solid fa-arrow-turn-down-left opacity-50"></i>
                 </a>
@@ -77,20 +70,14 @@
           <i x-show="!isDark" class="fa-solid fa-sun text-yellow-500"></i>
         </button>
 
-        <!-- Compare -->
-        <a href="{{ url('/compare') }}" class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Open compare">
-          <i class="fa-solid fa-code-compare text-neutral-700 dark:text-neutral-200"></i>
-          <span id="compare-count" class="absolute -top-1 -right-1 bg-accent-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
-        </a>
-
         <!-- Wishlist -->
-        <a href="{{ url('/wishlist') }}" data-open-wishlist class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Wishlist">
+        <a href="{{ route('wishlist') }}" data-open-wishlist class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Wishlist">
           <i class="fa-regular fa-heart text-neutral-700 dark:text-neutral-200"></i>
           <span id="wishlist-count" class="absolute -top-1 -right-1 bg-secondary-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
 
         <!-- Cart -->
-        <a href="{{ url('/cart') }}" data-open-cart class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Open cart">
+        <a href="{{ route('cart') }}" data-open-cart class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Open cart">
           <i class="fa-solid fa-cart-shopping text-neutral-700 dark:text-neutral-200"></i>
           <span id="cart-count" class="absolute -top-1 -right-1 bg-primary-600 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
@@ -111,10 +98,6 @@
           <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
-        <!-- Mobile categories button -->
-        <button class="md:hidden p-2 rounded-md border border-neutral-200 dark:border-neutral-700" x-on:click="lastFocus=$event.currentTarget; openMega=true" aria-label="Open categories">
-          <i class="fa-solid fa-grid-2"></i>
-        </button>
       </div>
 
       <!-- Right rail (md+): LINE ID + cart summary -->
@@ -131,7 +114,7 @@
         <!-- Cart summary with hover preview (desktop) -->
         <div class="relative" x-data="{open:false, items:[], subtotal:0, load(){ try{ this.items=JSON.parse(localStorage.getItem('cartItems')||'[]'); this.subtotal=this.items.reduce((s,i)=>s+Number(i.price||0),0);}catch(e){ this.items=[]; this.subtotal=0; } }}"
              x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
-          <a href="{{ url('/cart') }}" data-open-cart class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
+          <a href="{{ route('cart') }}" data-open-cart class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
             <i class="fa-solid fa-cart-shopping text-xl"></i>
             <div class="leading-tight">
               <div class="text-sm font-semibold text-red-500">$0.00</div>
@@ -140,14 +123,14 @@
           </a>
           <!-- Popover -->
           <div x-cloak x-show="open" x-transition.origin.top.right
-               class="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-elevated overflow-hidden z-[100]"
+               class="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-elevated overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
             <template x-if="items.length===0">
               <div class="p-3 text-sm text-neutral-600 dark:text-neutral-300">Your cart is empty.</div>
             </template>
             <template x-if="items.length>0">
               <div>
-                <ul class="max-h-60 overflow-auto divide-y divide-neutral-100 dark:divide-neutral-800">
+                <ul class="max-h-60 overflow-auto divide-y divide-neutral-100 dark:divide-neutral-800 p-2">
                   <template x-for="(p,idx) in items" :key="idx">
                     <li class="flex items-center gap-3 p-3">
                       <img :src="p.image" onerror="this.style.display='none'" class="w-12 h-12 object-cover rounded" alt=""/>
@@ -163,8 +146,8 @@
                   <div class="font-semibold text-neutral-900 dark:text-neutral-100" x-text="'$' + subtotal.toFixed(2)"></div>
                 </div>
                 <div class="p-3 pt-0 grid grid-cols-2 gap-2">
-                  <a href="{{ url('/cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">View Cart</a>
-                  <a href="{{ url('/checkout') }}" class="px-3 py-2 text-sm rounded-md bg-accent-500 hover:bg-accent-600 text-white text-center">Checkout</a>
+                  <a href="{{ route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">View Cart</a>
+                  <a href="{{ route('checkout') }}" class="px-3 py-2 text-sm rounded-md bg-accent-500 hover:bg-accent-600 text-white text-center">Checkout</a>
                 </div>
               </div>
             </template>
@@ -177,17 +160,8 @@
     <nav class="hidden md:flex items-center gap-6 h-12 text-sm" aria-label="Primary">
       <!-- Left: categories + main links -->
       <div class="flex items-center gap-6">
-        <!-- Categories trigger (lower row) -->
-        <button
-          x-on:click="lastFocus=$event.currentTarget; openMega=true"
-          :aria-expanded="openMega.toString()"
-          aria-haspopup="dialog"
-          aria-controls="megaMenuCategories"
-          class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">
-          <span x-text="t('categories')">Categories</span>
-          <i class="fa-solid fa-chevron-down text-xs"></i>
-        </button>
-        <a href="{{ url('/catalog') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-text="t('catalog')">Katalog</a>
+        @include('components.mega-menu', ['categories' => $navMegaCategories ?? []])
+        <a href="{{ route('faqs') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">FAQs</a>
       </div>
 
       <!-- Right: wishlist + login/register (back to bottom row) -->
@@ -212,17 +186,17 @@
               }
             }"
              x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
-          <a href="{{ url('/wishlist') }}" data-open-wishlist class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
+          <a href="{{ route('wishlist') }}" data-open-wishlist class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
             <i class="fa-regular fa-heart"></i>
             <span>Wishlist</span>
             <span x-show="items.length>0" x-text="items.length"
                   class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-secondary-500 px-1 text-xs font-semibold text-white"></span>
           </a>
           <div x-cloak x-show="open" x-transition.origin.top.right
-               class="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-elevated overflow-hidden z-[100]"
+               class="absolute right-0 top-full mt-2 w-72 soft-card p-0 overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
             <template x-if="items.length===0">
-              <div class="p-3 text-sm text-neutral-600 dark:text-neutral-300">Wishlist is empty.</div>
+              <div class="p-4 text-center text-sm text-neutral-500 dark:text-neutral-300">Belum ada produk di wishlist.</div>
             </template>
             <template x-if="items.length>0">
               <div>
@@ -238,7 +212,7 @@
                   </template>
                 </ul>
                 <div class="p-3 pt-0 grid grid-cols-1 gap-2">
-                  <a href="{{ url('/wishlist') }}" class="px-3 py-2 text-sm rounded-md bg-accent-500 hover:bg-accent-600 text-white text-center">View Wishlist</a>
+                  <a href="{{ route('wishlist') }}" class="btn-accent text-sm text-center">View Wishlist</a>
                 </div>
               </div>
             </template>
@@ -252,7 +226,7 @@
             <i class="fa-solid fa-chevron-down text-xs opacity-80"></i>
           </button>
           <div x-cloak x-show="open" x-transition.origin.top.right
-               class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-elevated overflow-hidden z-[100]"
+               class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-elevated overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
             <a href="{{ route('account') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">Dashboard</a>
             @role('admin')
@@ -276,84 +250,6 @@
     </nav>
   </div>
 
-  <!-- Fullscreen Mega Menu (overlay + panel) -->
-  <div x-cloak x-show="openMega" x-transition.opacity class="fixed inset-0 z-[80]" aria-hidden="true">
-    <!-- overlay -->
-      <div class="absolute inset-0 bg-black/40" x-on:click="openMega=false; lastFocus && lastFocus.focus()"></div>
-
-    <!-- panel just below header -->
-    <div id="megaMenuCategories" role="dialog" aria-modal="true" tabindex="-1"
-         x-trap.noscroll="openMega"
-         x-on:keydown.escape.window="openMega=false; lastFocus && lastFocus.focus()"
-         x-ref="panel"
-         :style="'top:'+headerH+'px'"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 -translate-y-3"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 -translate-y-2"
-         class="absolute left-0 right-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 shadow-2xl rounded-t-2xl max-h-[80vh] overflow-y-auto">
-      <div class="container mx-auto px-4 py-6">
-        <div class="flex items-start justify-between">
-          <h2 class="text-lg font-semibold">Browse Categories</h2>
-          <button class="rounded-xl px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  x-on:click="openMega=false; lastFocus && lastFocus.focus()" aria-label="Close menu">✕</button>
-        </div>
-
-        @php
-          $cats = [
-            ['name'=>'Computers','links'=>[['PCs','pc'],['Laptops','laptop'],['Components','components'],['Network','network']]],
-            ['name'=>'Peripherals','links'=>[['Keyboard','keyboard'],['Mouse','mouse'],['Headset','headset'],['Webcam','webcam']]],
-            ['name'=>'Storage','links'=>[['SSD','ssd'],['HDD','hdd'],['NVMe','nvme'],['External','external']]],
-            ['name'=>'Displays','links'=>[['Monitor','monitor'],['4K Monitor','4k-monitor'],['Ultrawide','ultrawide'],['Bracket','bracket']]],
-            ['name'=>'Power','links'=>[['PSU','psu'],['UPS','ups'],['Stabilizer','stabilizer']]],
-            ['name'=>'Cooling','links'=>[['Air Cooler','air-cooler'],['AIO','aio'],['Thermal Paste','paste']]],
-            ['name'=>'Gaming','links'=>[['GPU','gpu'],['Console','console'],['Accessory','gaming-acc']]],
-            ['name'=>'Software','links'=>[['OS','os'],['Office','office'],['Security','security']]],
-          ];
-        @endphp
-
-        <!-- Desktop grid -->
-        <div class="hidden md:grid mt-6 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          @foreach($cats as $cat)
-            <section class="rounded-2xl border border-neutral-200 dark:border-neutral-800 p-4 hover:shadow-soft transition">
-              <div class="mb-3 flex items-center gap-3">
-                <div class="h-10 w-10 rounded-xl bg-neutral-100 dark:bg-neutral-800"></div>
-                <h3 class="font-medium">{{ $cat['name'] }}</h3>
-              </div>
-              <ul class="space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
-                @foreach($cat['links'] as $link)
-                  @php($label = $link[0])
-                  @php($slug  = $link[1])
-                  <li><a href="{{ url('/catalog?cat='.$slug) }}" class="hover:underline focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">{{ $label }}</a></li>
-                @endforeach
-              </ul>
-            </section>
-          @endforeach
-        </div>
-
-        <!-- Mobile accordion -->
-        <div class="md:hidden mt-4 divide-y divide-neutral-200 dark:divide-neutral-800">
-          @foreach($cats as $idx => $cat)
-            <details class="py-2">
-              <summary class="cursor-pointer flex items-center justify-between">
-                <span class="font-medium">{{ $cat['name'] }}</span>
-                <i class="fa-solid fa-chevron-down text-xs"></i>
-              </summary>
-              <ul class="mt-2 space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
-                @foreach($cat['links'] as $link)
-                  @php($label = $link[0])
-                  @php($slug  = $link[1])
-                  <li><a href="{{ url('/catalog?cat='.$slug) }}" class="block px-2 py-1 rounded hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ $label }}</a></li>
-                @endforeach
-              </ul>
-            </details>
-          @endforeach
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- Mobile slide-over -->
   <div x-cloak x-show="open" x-transition.opacity class="fixed inset-0 z-50" aria-hidden="true">
@@ -368,13 +264,14 @@
           <summary class="cursor-pointer text-neutral-700 dark:text-neutral-200">Kategori</summary>
           <div class="mt-2 grid grid-cols-2 gap-2">
             @foreach (['Komponen','Periferal','Storage','Laptop','Monitor','Aksesoris','Jaringan','Software','Gaming'] as $cat)
-              <a href="{{ url('/catalog?category='.urlencode($cat)) }}" class="text-sm text-neutral-700 dark:text-neutral-300 hover:text-accent-600">{{ $cat }}</a>
+              <a href="{{ route('catalog', ['category' => $cat]) }}" class="text-sm text-neutral-700 dark:text-neutral-300 hover:text-accent-600">{{ $cat }}</a>
             @endforeach
           </div>
         </details>
         <div class="py-2 flex flex-col gap-2">
-          <a href="{{ url('/catalog') }}" class="text-neutral-700 dark:text-neutral-200">Katalog</a>
-          <a href="{{ url('/wishlist') }}" class="text-neutral-700 dark:text-neutral-200">Wishlist</a>
+          <a href="{{ route('contact') }}" class="text-neutral-700 dark:text-neutral-200">Contact Us</a>
+          <a href="{{ route('faqs') }}" class="text-neutral-700 dark:text-neutral-200">FAQs</a>
+          <a href="{{ route('wishlist') }}" class="text-neutral-700 dark:text-neutral-200">Wishlist</a>
           @auth
             @role('admin')
               <a href="{{ route('admin.dashboard') }}" class="text-neutral-700 dark:text-neutral-200">Admin Panel</a>
@@ -397,7 +294,7 @@
   <div x-cloak x-show="openSearch" x-transition.opacity class="fixed inset-0 z-50" aria-hidden="true">
     <div class="absolute inset-0 bg-black/40" x-on:click="openSearch=false"></div>
     <div class="absolute inset-x-4 top-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-elevated p-3">
-      <form action="{{ url('/search') }}" method="get" role="search" class="flex items-center gap-2" autocomplete="off">
+      <form action="{{ route('catalog') }}" method="get" role="search" class="flex items-center gap-2" autocomplete="off">
         <label for="mq" class="sr-only">Search products</label>
         <i class="fa-solid fa-magnifying-glass text-neutral-400"></i>
         <input id="mq" name="q" type="search" placeholder="Cari produk..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" class="flex-1 bg-transparent outline-none text-sm text-neutral-800 dark:text-neutral-100"/>
@@ -409,9 +306,9 @@
   <script>
     function navbar(){
       return {
-        open:false, openSearch:false, mega:false,
+        open:false, openSearch:false,
         isDark: document.documentElement.classList.contains('dark'),
-        lang: localStorage.getItem('lang') || 'en',
+        lang: '{{ app()->getLocale() }}',
         dict: {
           en: { search_placeholder: 'Search products…', categories: 'Categories', catalog:'Catalog' },
           th: { search_placeholder: 'ค้นหาสินค้า…', categories: 'หมวดหมู่', catalog:'แคตตาล็อก' },
@@ -425,19 +322,20 @@
         init(){
           const saved = localStorage.getItem('theme');
           if(saved){ this.isDark = saved === 'dark'; document.documentElement.classList.toggle('dark', this.isDark); }
-          const savedLang = localStorage.getItem('lang'); if(savedLang){ this.lang = savedLang; }
-          // compare badge hydrate (reads from layout script if present)
-          const KEY='compareItems';
-          const c=document.getElementById('compare-count');
-          try{ const n=(JSON.parse(localStorage.getItem(KEY)||'[]')||[]).length; if(c){ c.textContent=n; if(n===0) c.classList.add('hidden'); } }catch(e){}
+          localStorage.setItem('lang', this.lang);
+          document.documentElement.setAttribute('lang', this.lang);
           // hydrate wishlist/cart counters
           const w=document.getElementById('wishlist-count');
           const wc=(JSON.parse(localStorage.getItem('wishlistItems')||'[]')||[]).length; if(w){ w.textContent=wc; if(wc===0) w.classList.add('hidden'); }
           const cc=document.getElementById('cart-count'); const cn=parseInt(localStorage.getItem('cartCount')||'0',10); if(cc){ cc.textContent=cn; if(cn===0) cc.classList.add('hidden'); }
           const ci=document.getElementById('cart-items-count'); if(ci){ ci.textContent = (cn||0) + ' Items'; }
-          document.addEventListener('i18n:change', (e)=>{ this.lang = e.detail.lang; });
+          document.addEventListener('i18n:change', (e)=>{
+            this.lang = e.detail.lang;
+            document.documentElement.setAttribute('lang', this.lang);
+          });
         }
       }
     }
-  </script>
+  
+</script>
 </header>

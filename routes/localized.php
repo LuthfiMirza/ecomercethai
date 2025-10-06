@@ -1,0 +1,230 @@
+<?php
+
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\PromoController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\MegaMenuController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    $featuredProducts = \App\Models\Product::where('is_active', true)
+        ->orderByDesc('created_at')
+        ->take(3)
+        ->get();
+
+    $catalogProducts = \App\Models\Product::where('is_active', true)
+        ->orderByDesc('created_at')
+        ->get();
+
+    $banners = \App\Models\Banner::active()->get();
+
+    return view('home', [
+        'featuredProducts' => $featuredProducts,
+        'catalogProducts' => $catalogProducts,
+        'banners' => $banners,
+    ]);
+})->name('home');
+
+Route::get('/faqs', function () {
+    $faqs = [
+        [
+            'category' => __('Pesanan & Pengiriman'),
+            'items' => [
+                [
+                    'question' => __('Berapa lama proses pengiriman pesanan?'),
+                    'answer' => __('Pesanan diproses dalam 1-2 hari kerja. Pengiriman Jabodetabek memerlukan 2-4 hari, sedangkan luar kota 3-7 hari tergantung jasa ekspedisi yang dipilih.'),
+                ],
+                [
+                    'question' => __('Bagaimana cara melacak status pesanan?'),
+                    'answer' => __('Setelah pesanan dikirim, kami mengirimkan email berisi nomor resi. Anda dapat melacaknya melalui halaman akun atau situs resmi jasa ekspedisi.'),
+                ],
+                [
+                    'question' => __('Apakah bisa mengambil pesanan secara langsung?'),
+                    'answer' => __('Saat ini kami fokus pada pengiriman online. Namun, Anda dapat mengunjungi showroom kami di Jakarta untuk demo produk sebelum membeli.'),
+                ],
+            ],
+        ],
+        [
+            'category' => __('Pembayaran'),
+            'items' => [
+                [
+                    'question' => __('Metode pembayaran apa yang tersedia?'),
+                    'answer' => __('Kami menerima pembayaran melalui transfer bank, virtual account, e-wallet, kartu kredit, dan cicilan 0% untuk bank tertentu.'),
+                ],
+                [
+                    'question' => __('Apakah transaksi saya aman?'),
+                    'answer' => __('Tentu. Seluruh pembayaran diproses melalui mitra gateway bersertifikasi PCI-DSS dengan enkripsi penuh.'),
+                ],
+                [
+                    'question' => __('Bisakah mengubah metode pembayaran setelah checkout?'),
+                    'answer' => __('Untuk menjaga keamanan, perubahan metode pembayaran hanya bisa dilakukan dengan membuat pesanan baru. Silakan hubungi tim support jika membutuhkan bantuan.'),
+                ],
+            ],
+        ],
+        [
+            'category' => __('Produk & Garansi'),
+            'items' => [
+                [
+                    'question' => __('Apakah produk yang dijual bergaransi resmi?'),
+                    'answer' => __('Semua produk hardware kami bergaransi resmi distributor Indonesia minimal 1 tahun. Detail garansi tertera pada deskripsi produk.'),
+                ],
+                [
+                    'question' => __('Bagaimana prosedur klaim garansi?'),
+                    'answer' => __('Hubungi support kami dengan menyertakan bukti pembelian dan video/ foto kendala. Kami akan membantu proses klaim ke service center resmi.'),
+                ],
+                [
+                    'question' => __('Bisakah melakukan retur jika barang tidak sesuai?'),
+                    'answer' => __('Anda dapat mengajukan retur maksimal 7 hari setelah barang diterima selama segel belum dibuka dan kelengkapan lengkap. Kami siap membantu prosesnya.'),
+                ],
+            ],
+        ],
+    ];
+
+    return view('pages.faqs', compact('faqs'));
+})->name('faqs');
+
+Route::get('/mega-menu-preview', MegaMenuController::class)->name('mega-menu.preview');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
+
+    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+});
+
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('logout');
+
+Route::get('/account', AccountController::class)->name('account');
+
+// Catalog & Products
+Route::get('/catalog', [\App\Http\Controllers\CatalogController::class, 'index'])->name('catalog');
+Route::get('/product/{slug}', [\App\Http\Controllers\CatalogController::class, 'show'])->name('product.show');
+
+// Cart
+Route::middleware('auth')->group(function () {
+    Route::get('/cart', [\App\Http\Controllers\CartController::class, 'index'])->name('cart');
+    Route::post('/cart/add', [\App\Http\Controllers\CartController::class, 'add'])->name('cart.add');
+    Route::put('/cart/{id}', [\App\Http\Controllers\CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{id}', [\App\Http\Controllers\CartController::class, 'remove'])->name('cart.remove');
+    Route::delete('/cart', [\App\Http\Controllers\CartController::class, 'clear'])->name('cart.clear');
+});
+
+// Wishlist
+Route::middleware('auth')->group(function () {
+    Route::get('/wishlist', [\App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist');
+    Route::post('/wishlist/add', [\App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
+    Route::delete('/wishlist/{id}', [\App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
+    Route::delete('/wishlist', [\App\Http\Controllers\WishlistController::class, 'clear'])->name('wishlist.clear');
+});
+
+// Checkout
+Route::middleware('auth')->group(function () {
+    Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
+    Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+    Route::post('/checkout/apply-coupon', [\App\Http\Controllers\CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
+});
+
+// Payment
+Route::middleware('auth')->group(function () {
+    Route::get('/payment/bank-transfer/{order}', [\App\Http\Controllers\PaymentController::class, 'bankTransfer'])->name('payment.bank-transfer');
+    Route::post('/payment/bank-transfer/{order}/upload', [\App\Http\Controllers\PaymentController::class, 'uploadProof'])->name('payment.upload-proof');
+    Route::get('/payment/midtrans/{order}', [\App\Http\Controllers\PaymentController::class, 'midtrans'])->name('payment.midtrans');
+    Route::get('/payment/xendit/{order}', [\App\Http\Controllers\PaymentController::class, 'xendit'])->name('payment.xendit');
+    Route::get('/payment/stripe/{order}', [\App\Http\Controllers\PaymentController::class, 'stripe'])->name('payment.stripe');
+});
+Route::post('/payment/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])->name('payment.callback');
+
+// Orders
+Route::middleware('auth')->group(function () {
+    Route::get('/orders/{order}', function($id) {
+        $order = \App\Models\Order::with('orderItems.product')->findOrFail($id);
+        return view('pages.order-detail', compact('order'));
+    })->name('orders.show');
+});
+
+// Contact
+Route::get('/contact', [\App\Http\Controllers\ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'send'])->name('contact.send');
+
+Route::redirect('/dashboard', '/admin/dashboard')
+    ->middleware('auth')
+    ->name('dashboard');
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/login', [AdminController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AdminController::class, 'login'])->name('login.post');
+    Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
+
+    Route::middleware(['auth', 'role:admin'])->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard/metrics', [AdminController::class, 'metrics'])->name('dashboard.metrics');
+
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::get('/products-export/csv', [ProductController::class, 'exportCsv'])->name('products.export.csv');
+        Route::get('/products-export/excel', [ProductController::class, 'exportExcel'])->name('products.export.excel');
+        Route::get('/products-export/pdf', [ProductController::class, 'exportPdf'])->name('products.export.pdf');
+        Route::post('/products-import', [ProductController::class, 'import'])->name('products.import');
+
+        Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+        Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+        Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+        Route::get('/categories/{id}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+        Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{id}/edit', [OrderController::class, 'edit'])->name('orders.edit');
+        Route::put('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
+        Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.update_status');
+        Route::patch('/orders/{id}/payment-status', [OrderController::class, 'updatePaymentStatus'])->name('orders.update_payment');
+        Route::post('/orders/{id}/apply-coupon', [OrderController::class, 'applyCoupon'])->name('orders.apply_coupon');
+        Route::get('/orders-export/csv', [OrderController::class, 'exportCsv'])->name('orders.export.csv');
+        Route::get('/orders-export/excel', [OrderController::class, 'exportExcel'])->name('orders.export.excel');
+        Route::get('/orders-export/pdf', [OrderController::class, 'exportPdf'])->name('orders.export.pdf');
+        Route::post('/orders-import', [OrderController::class, 'import'])->name('orders.import');
+        Route::get('/orders/{id}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+        Route::get('/orders/{id}/invoice/pdf', [OrderController::class, 'invoicePdf'])->name('orders.invoice.pdf');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/{id}/ban', [UserController::class, 'ban'])->name('users.ban');
+        Route::post('/users/{id}/activate', [UserController::class, 'activate'])->name('users.activate');
+
+        Route::get('/promos', [PromoController::class, 'index'])->name('promos.index');
+        Route::get('/promos/create', [PromoController::class, 'create'])->name('promos.create');
+        Route::post('/promos', [PromoController::class, 'store'])->name('promos.store');
+        Route::get('/promos/{id}/edit', [PromoController::class, 'edit'])->name('promos.edit');
+        Route::put('/promos/{id}', [PromoController::class, 'update'])->name('promos.update');
+        Route::delete('/promos/{id}', [PromoController::class, 'destroy'])->name('promos.destroy');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+        Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('/reports/metrics', [ReportController::class, 'metrics'])->name('reports.metrics');
+    });
+});
