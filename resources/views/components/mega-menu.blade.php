@@ -34,7 +34,7 @@
           :aria-controls="$id('mega-menu')"
           @click.stop="toggle()">
     <i class="fa-solid fa-layer-group text-xs"></i>
-    <span>{{ __('Categories') }}</span>
+    <span>{{ __('common.categories') }}</span>
     <i class="fa-solid fa-chevron-down text-[10px] opacity-70 transition duration-200" :class="open ? 'rotate-180' : ''"></i>
   </button>
 
@@ -53,7 +53,7 @@
     <div class="mega-menu-header">
       <div>
         <h2 class="text-lg font-semibold tracking-tight">{{ __('Browse Categories') }}</h2>
-        <p class="text-sm text-white/60">{{ __('Pilih kategori untuk melihat produk unggulan.') }}</p>
+        <p class="text-sm text-white/60">{{ __('Select a category to see featured products.') }}</p>
       </div>
       <button type="button" class="mega-menu-close" @click="close()">
         <i class="fa-solid fa-xmark"></i>

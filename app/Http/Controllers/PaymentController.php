@@ -16,7 +16,8 @@ class PaymentController extends Controller
 
     public function bankTransfer($orderId)
     {
-        $order = Order::where('id', $orderId)
+        $order = Order::with('orderItems.product')
+            ->where('id', $orderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -29,7 +30,8 @@ class PaymentController extends Controller
             'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $order = Order::where('id', $orderId)
+        $order = Order::with('orderItems.product')
+            ->where('id', $orderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -57,7 +59,8 @@ class PaymentController extends Controller
     // Midtrans integration placeholder
     public function midtrans($orderId)
     {
-        $order = Order::where('id', $orderId)
+        $order = Order::with('orderItems.product')
+            ->where('id', $orderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -73,7 +76,8 @@ class PaymentController extends Controller
     // Xendit integration placeholder
     public function xendit($orderId)
     {
-        $order = Order::where('id', $orderId)
+        $order = Order::with('orderItems.product')
+            ->where('id', $orderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
@@ -87,7 +91,8 @@ class PaymentController extends Controller
     // Stripe integration placeholder
     public function stripe($orderId)
     {
-        $order = Order::where('id', $orderId)
+        $order = Order::with('orderItems.product')
+            ->where('id', $orderId)
             ->where('user_id', Auth::id())
             ->firstOrFail();
 

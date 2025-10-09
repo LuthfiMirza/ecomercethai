@@ -64,7 +64,7 @@ if (! function_exists('localized_url')) {
 }
 
 if (! function_exists('localized_route')) {
-    function localized_route(string $name, array $parameters = [], bool $absolute = true): string
+    function localized_route(string $name, array $parameters = [], bool $absolute = false): string
     {
         $parameters = array_merge(['locale' => app()->getLocale()], $parameters);
 

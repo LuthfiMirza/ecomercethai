@@ -1,13 +1,13 @@
 @extends('layouts.admin')
 @section('title', 'Banners')
 @section('content')
-<x-admin.header title="Banners" :breadcrumbs="[['label'=>'Admin','href'=>route('admin.dashboard')],['label'=>'Banners']]">
-  <form method="GET" action="{{ route('admin.banners.index') }}" class="flex items-center gap-2">
+<x-admin.header title="Banners" :breadcrumbs="[['label'=>'Admin','href'=>localized_route('admin.dashboard')],['label'=>'Banners']]">
+  <form method="GET" action="{{ localized_route('admin.banners.index') }}" class="flex items-center gap-2">
     <input type="text" name="q" value="{{ request('q') }}" placeholder="Search banners..." class="h-10 w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm" />
     @if(request('q'))
-      <a href="{{ route('admin.banners.index') }}" class="text-sm text-gray-600">Clear</a>
+      <a href="{{ localized_route('admin.banners.index') }}" class="text-sm text-gray-600">Clear</a>
     @endif
-    <a href="{{ route('admin.banners.create') }}" class="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">New Banner</a>
+    <a href="{{ localized_route('admin.banners.create') }}" class="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">New Banner</a>
   </form>
 </x-admin.header>
 <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
@@ -34,8 +34,9 @@
         <td class="px-4 py-2">{!! $banner->is_active ? '<span class="text-green-600">Yes</span>' : '<span class="text-gray-400">No</span>' !!}</td>
         <td class="px-4 py-2">{{ $banner->priority }}</td>
         <td class="px-4 py-2 text-right">
-          <a href="{{ route('admin.banners.edit', $banner) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
-          <form action="{{ route('admin.banners.destroy', $banner) }}" method="POST" class="inline" onsubmit="return confirm('Delete this banner?')">
+          <a href="{{ localized_route('admin.banners.show', ['id' => $banner->id]) }}" class="text-slate-600 hover:underline mr-3">View</a>
+          <a href="{{ localized_route('admin.banners.edit', ['id' => $banner->id]) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
+          <form action="{{ localized_route('admin.banners.destroy', ['id' => $banner->id]) }}" method="POST" class="inline" onsubmit="return confirm('Delete this banner?')">
             @csrf @method('DELETE')
             <button class="text-red-600 hover:underline">Delete</button>
           </form>

@@ -11,18 +11,18 @@
         </div>
         <div class="flex gap-2">
             @if($user->is_banned)
-                <form action="{{ route('admin.users.activate', $user) }}" method="POST">
+                <form action="{{ localized_route('admin.users.activate', ['id' => $user->id]) }}" method="POST">
                     @csrf
                     <button class="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700">Activate</button>
                 </form>
             @else
-                <form action="{{ route('admin.users.ban', $user) }}" method="POST">
+                <form action="{{ localized_route('admin.users.ban', ['id' => $user->id]) }}" method="POST">
                     @csrf
                     <button class="px-4 py-2 rounded bg-rose-600 text-white hover:bg-rose-700">Ban</button>
                 </form>
             @endif
-            <a href="{{ route('admin.users.edit', $user) }}" class="px-4 py-2 rounded bg-slate-700 text-white hover:bg-slate-600">Edit</a>
-            <a href="{{ route('admin.users.index') }}" class="px-4 py-2 rounded bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Back</a>
+            <a href="{{ localized_route('admin.users.edit', ['id' => $user->id]) }}" class="px-4 py-2 rounded bg-slate-700 text-white hover:bg-slate-600">Edit</a>
+            <a href="{{ localized_route('admin.users.index') }}" class="px-4 py-2 rounded bg-slate-200 text-slate-800 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Back</a>
         </div>
     </div>
 
@@ -88,7 +88,7 @@
             <div class="rounded-sm border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
                 <div class="flex items-center justify-between mb-4">
                     <h4 class="text-xl font-semibold text-black dark:text-white">Order History</h4>
-                    <a class="text-sm text-indigo-600 hover:text-indigo-700" href="{{ route('admin.orders.index', ['q' => $user->email]) }}">View all</a>
+                    <a class="text-sm text-indigo-600 hover:text-indigo-700" href="{{ localized_route('admin.orders.index', ['q' => $user->email]) }}">View all</a>
                 </div>
                 <div class="overflow-x-auto table-card">
                     <table class="table-modern">
@@ -119,7 +119,7 @@
                                 </td>
                                 <td class="px-4 py-2">{{ $order->created_at->format('d M Y') }}</td>
                                 <td class="px-4 py-2 text-right">
-                                    <a href="{{ route('admin.orders.show', $order) }}" class="px-3 py-1.5 bg-slate-700 text-white rounded-md hover:bg-slate-600 text-xs">View</a>
+                                    <a href="{{ localized_route('admin.orders.show', ['id' => $order->id]) }}" class="px-3 py-1.5 bg-slate-700 text-white rounded-md hover:bg-slate-600 text-xs">View</a>
                                 </td>
                             </tr>
                             @empty

@@ -38,7 +38,7 @@ class UserController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -54,7 +54,7 @@ class UserController extends Controller
             'is_admin' => (bool) $request->is_admin,
         ]);
         
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
+        return redirect()->route('admin.users.index', ['locale' => $locale])->with('success', 'User created successfully.');
     }
 
     /**
@@ -63,7 +63,7 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(string $locale, $id)
     {
         $user = User::findOrFail($id);
         return view('admin.users.edit', compact('user'));
@@ -76,7 +76,7 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -92,7 +92,7 @@ class UserController extends Controller
             $user->update(['password' => bcrypt($request->password)]);
         }
         
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index', ['locale' => $locale])->with('success', 'User updated successfully.');
     }
 
     /**
@@ -101,18 +101,18 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(string $locale, $id)
     {
         $user = User::findOrFail($id);
         $user->delete();
         
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('admin.users.index', ['locale' => $locale])->with('success', 'User deleted successfully.');
     }
 
     /**
      * Show a user's profile and order history.
      */
-    public function show($id)
+    public function show(string $locale, $id)
     {
         $user = User::findOrFail($id);
         $orders = Order::with('orderItems')
@@ -127,7 +127,7 @@ class UserController extends Controller
     }
 
     /** Ban user */
-    public function ban($id)
+    public function ban(string $locale, $id)
     {
         $user = User::findOrFail($id);
         $before = $user->is_banned;
@@ -143,7 +143,7 @@ class UserController extends Controller
     }
 
     /** Activate user */
-    public function activate($id)
+    public function activate(string $locale, $id)
     {
         $user = User::findOrFail($id);
         $before = $user->is_banned;

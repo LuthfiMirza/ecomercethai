@@ -11,6 +11,7 @@
   'stock' => 'In stock',
   'variation' => null,
   'currency' => '฿',
+  'productId' => null,
 ])
 
 @php
@@ -36,7 +37,7 @@
       <div class="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
         <button @click.prevent.stop="quick=true" aria-label="Quick view" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-eye"></i></button>
         <button data-wishlist data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to wishlist" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
-        <button data-cart-add data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to cart" class="p-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-solid fa-cart-plus"></i></button>
+        <button data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to cart" class="p-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-solid fa-cart-plus"></i></button>
       </div>
     </div>
     <div class="p-4">
@@ -63,7 +64,7 @@
     </div>
   </a>
   <div class="px-4 pb-4 flex items-center gap-2">
-    <x-button class="flex-1" aria-label="Tambah {{ $title }} ke keranjang" data-cart-add data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Tambah ke Keranjang</x-button>
+    <x-button class="flex-1" aria-label="Tambah {{ $title }} ke keranjang" data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Tambah ke Keranjang</x-button>
     <button aria-label="Wishlist" data-wishlist data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" class="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
       <i class="fa-regular fa-heart"></i>
     </button>
@@ -82,7 +83,7 @@
           </div>
           <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{{ $fmt($price) }} @if($hasDiscount)<span class="line-through text-neutral-400 ml-2">{{ $fmt($compareAt) }}</span>@endif</div>
           <div class="mt-4 flex gap-2">
-            <x-button data-cart-add data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Add to Cart</x-button>
+            <x-button data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Add to Cart</x-button>
             <x-button variant="outline">Select Options</x-button>
           </div>
         </div>

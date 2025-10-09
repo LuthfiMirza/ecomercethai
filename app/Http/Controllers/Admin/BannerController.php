@@ -33,7 +33,7 @@ class BannerController extends Controller
         return view('admin.banners.create', compact('placements'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $data = $request->validate([
             'title' => 'required|string|max:255',
@@ -50,15 +50,17 @@ class BannerController extends Controller
 
         Banner::create($data);
 
-        return redirect()->route('admin.banners.index')->with('status', 'Banner created');
+        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner created');
     }
 
-    public function show(string $id)
+    public function show(string $locale, string $id)
     {
-        return redirect()->route('admin.banners.edit', $id);
+        $banner = Banner::findOrFail($id);
+
+        return view('admin.banners.show', compact('banner'));
     }
 
-    public function edit(string $id)
+    public function edit(string $locale, string $id)
     {
         $banner = Banner::findOrFail($id);
         $placements = ['homepage_top','homepage_sidebar','homepage_bottom'];
@@ -66,7 +68,7 @@ class BannerController extends Controller
         return view('admin.banners.edit', compact('banner', 'placements'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $locale, string $id)
     {
         $banner = Banner::findOrFail($id);
 
@@ -85,14 +87,14 @@ class BannerController extends Controller
 
         $banner->update($data);
 
-        return redirect()->route('admin.banners.index')->with('status', 'Banner updated');
+        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner updated');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $locale, string $id)
     {
         $banner = Banner::findOrFail($id);
         $banner->delete();
 
-        return back()->with('status', 'Banner deleted');
+        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner deleted');
     }
 }

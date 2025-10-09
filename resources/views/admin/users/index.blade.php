@@ -6,7 +6,7 @@
 <div class="mb-8">
     <div class="flex justify-between items-center">
         <h2 class="text-2xl font-semibold text-slate-800 dark:text-slate-100">User Management</h2>
-        <a href="{{ route('admin.users.create') }}" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-600 dark:hover:bg-slate-500">
+        <a href="{{ localized_route('admin.users.create') }}" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-600 dark:hover:bg-slate-500">
             Add New User
         </a>
     </div>
@@ -56,7 +56,7 @@
                                         </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-medium text-slate-900 dark:text-slate-200">
-                                                <a href="{{ route('admin.users.show', $user) }}" class="hover:underline">{{ $user->name }}</a>
+                                                <a href="{{ localized_route('admin.users.show', ['id' => $user->id]) }}" class="hover:underline">{{ $user->name }}</a>
                                                 @if($user->is_banned)
                                                     <span class="ml-2 px-2 py-0.5 text-[10px] rounded-full bg-rose-100 text-rose-700">Banned</span>
                                                 @endif
@@ -70,9 +70,9 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{{ $user->created_at->format('d M Y') }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    <a href="{{ route('admin.users.show', $user) }}" class="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-xs">View</a>
-                                    <a href="{{ route('admin.users.edit', $user) }}" class="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs">Edit</a>
-                                    <x-confirm-delete action="{{ route('admin.users.destroy', $user) }}">Delete</x-confirm-delete>
+                                    <a href="{{ localized_route('admin.users.show', ['id' => $user->id]) }}" class="px-3 py-1.5 bg-slate-600 text-white rounded-md hover:bg-slate-700 text-xs">View</a>
+                                    <a href="{{ localized_route('admin.users.edit', ['id' => $user->id]) }}" class="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs">Edit</a>
+                                    <x-confirm-delete action="{{ localized_route('admin.users.destroy', ['id' => $user->id]) }}">Delete</x-confirm-delete>
                                 </td>
                             </tr>
                         @empty

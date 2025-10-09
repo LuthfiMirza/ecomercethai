@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,11 +17,26 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
 
-        $middleware->web(append: [
+        $middleware->appendToGroup('web', [
             \App\Http\Middleware\SetLocale::class,
         ]);
+
+        $middleware->redirectGuestsTo(function (Request $request) {
+            $locale = $request->route('locale');
+
+            if (! $locale || ! in_array($locale, supported_locales(), true)) {
+                $locale = session('locale');
+            }
+
+            if (! $locale || ! in_array($locale, supported_locales(), true)) {
+                $locale = config('app.locale', 'en');
+            }
+
+            return route('login', ['locale' => $locale]);
+        });
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

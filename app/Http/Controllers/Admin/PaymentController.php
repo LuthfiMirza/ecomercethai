@@ -62,7 +62,7 @@ class PaymentController extends Controller
         abort(404);
     }
 
-    public function show(string $id)
+    public function show(string $locale, string $id)
     {
         $payment = Payment::with('user')->findOrFail($id);
 
@@ -79,7 +79,7 @@ class PaymentController extends Controller
         abort(404);
     }
 
-    public function destroy(string $id)
+    public function destroy(string $locale, string $id)
     {
         $payment = Payment::findOrFail($id);
         $payment->delete();

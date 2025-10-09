@@ -9,14 +9,14 @@
                 <h3 class="text-2xl font-bold text-black dark:text-white">Edit Promo</h3>
                 <p class="text-sm font-medium">Modify the promotional campaign</p>
             </div>
-            <a href="{{ route('admin.promos.index') }}" class="btn-outline rounded-full">
+            <a href="{{ localized_route('admin.promos.index') }}" class="btn-outline rounded-full">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7 7-7m-7 7h18"/></svg>
                 Back to Promos
             </a>
         </div>
 
         <div class="mt-6 form-card">
-            <form action="{{ route('admin.promos.update', $coupon) }}" method="POST">
+            <form action="{{ localized_route('admin.promos.update', ['id' => $coupon->id]) }}" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="">
@@ -76,7 +76,7 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <a href="{{ route('admin.promos.index') }}" class="btn-outline">Cancel</a>
+                        <a href="{{ localized_route('admin.promos.index') }}" class="btn-outline">Cancel</a>
                         <button type="submit" class="btn-primary">Update Promo</button>
                     </div>
                 </div>

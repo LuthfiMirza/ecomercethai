@@ -29,6 +29,7 @@
         <td class="px-4 py-2">{{ $profile->account_name }} {{ $profile->account_number ? '(' . $profile->account_number . ')' : '' }}</td>
         <td class="px-4 py-2">{!! $profile->is_default ? '<span class="text-green-600">Yes</span>' : '<span class="text-gray-400">No</span>' !!}</td>
         <td class="px-4 py-2 text-right">
+          <a href="{{ route('admin.payment-profiles.show', $profile) }}" class="text-slate-600 hover:underline mr-3">View</a>
           <a href="{{ route('admin.payment-profiles.edit', $profile) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
           <form action="{{ route('admin.payment-profiles.destroy', $profile) }}" method="POST" class="inline" onsubmit="return confirm('Delete this profile?')">
             @csrf @method('DELETE')

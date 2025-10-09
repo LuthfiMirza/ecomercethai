@@ -67,7 +67,7 @@ class OrderController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(string $locale, $id)
     {
         $order = Order::with('user', 'orderItems.product')->findOrFail($id);
         $statusOptions = self::STATUS_OPTIONS;
@@ -79,7 +79,7 @@ class OrderController extends Controller
     /**
      * Show the form for editing an order.
      */
-    public function edit($id)
+    public function edit(string $locale, $id)
     {
         $order = Order::with('user', 'orderItems.product')->findOrFail($id);
         $statusOptions = self::STATUS_OPTIONS;
@@ -91,7 +91,7 @@ class OrderController extends Controller
     /**
      * Update the specified order.
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $order = Order::with('orderItems')->findOrFail($id);
 
@@ -135,13 +135,15 @@ class OrderController extends Controller
 
         $order->update($data);
 
-        return redirect()->route('admin.orders.show', $order)->with('success', 'Order updated successfully.');
+        return redirect()
+            ->route('admin.orders.show', ['locale' => $locale, 'id' => $order->id])
+            ->with('success', 'Order updated successfully.');
     }
 
     /**
      * Update only the order status.
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(Request $request, string $locale, $id)
     {
         $validated = $request->validate([
             'status' => ['required', Rule::in(self::STATUS_OPTIONS)],
@@ -156,7 +158,7 @@ class OrderController extends Controller
     /**
      * Update only the payment status for an order.
      */
-    public function updatePaymentStatus(Request $request, $id)
+    public function updatePaymentStatus(Request $request, string $locale, $id)
     {
         $validated = $request->validate([
             'payment_status' => ['required', Rule::in(self::PAYMENT_STATUS_OPTIONS)],
@@ -228,7 +230,7 @@ class OrderController extends Controller
     /**
      * Show printable invoice HTML for an order.
      */
-    public function invoice($id)
+    public function invoice(string $locale, $id)
     {
         $order = Order::with(['user', 'orderItems.product'])->findOrFail($id);
         return view('admin.orders.invoice', compact('order'));
@@ -237,7 +239,7 @@ class OrderController extends Controller
     /**
      * Download invoice as PDF for an order.
      */
-    public function invoicePdf($id)
+    public function invoicePdf(string $locale, $id)
     {
         $order = Order::with(['user', 'orderItems.product'])->findOrFail($id);
         $pdf = Pdf::loadView('admin.orders.pdf-invoice', compact('order'));
@@ -278,7 +280,7 @@ class OrderController extends Controller
     }
 
     /** Apply coupon to an order */
-    public function applyCoupon(Request $request, $id, CouponService $svc)
+    public function applyCoupon(Request $request, string $locale, $id, CouponService $svc)
     {
         $request->validate(['coupon_code' => 'required|string']);
         $order = Order::with('orderItems')->findOrFail($id);

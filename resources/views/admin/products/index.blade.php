@@ -6,16 +6,16 @@
 <x-table 
   title="Products List"
   :export-items="[
-    ['label' => 'CSV', 'href' => route('admin.products.export.csv')],
-    ['label' => 'Excel', 'href' => route('admin.products.export.excel')],
-    ['label' => 'PDF', 'href' => route('admin.products.export.pdf')],
+    ['label' => 'CSV', 'href' => localized_route('admin.products.export.csv')],
+    ['label' => 'Excel', 'href' => localized_route('admin.products.export.excel')],
+    ['label' => 'PDF', 'href' => localized_route('admin.products.export.pdf')],
   ]"
-  add-url="{{ route('admin.products.create') }}"
+  add-url="{{ localized_route('admin.products.create') }}"
   add-label="Add Product"
   :search="true"
   search-placeholder="Search by name..."
   :search-value="$q ?? request('q')"
-  action="{{ route('admin.products.index') }}"
+  action="{{ localized_route('admin.products.index') }}"
   :pagination="$products"
 >
   <x-slot:filters>
@@ -57,8 +57,9 @@
         <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
         <td>{{ $product->stock }}</td>
         <td class="cell-actions">
-          <a href="{{ route('admin.products.edit', $product) }}" class="btn-outline text-xs">Edit</a>
-          <x-confirm-delete action="{{ route('admin.products.destroy', $product) }}">Delete</x-confirm-delete>
+          <a href="{{ localized_route('admin.products.show', ['id' => $product->id]) }}" class="btn-ghost text-xs">View</a>
+          <a href="{{ localized_route('admin.products.edit', ['id' => $product->id]) }}" class="btn-outline text-xs">Edit</a>
+          <x-confirm-delete action="{{ localized_route('admin.products.destroy', ['id' => $product->id]) }}">Delete</x-confirm-delete>
         </td>
       </tr>
     @empty

@@ -1,15 +1,110 @@
 @extends('layouts.app')
 
+@php
+  $locale = app()->getLocale();
+  $currency = config('app.currency', 'THB');
+  $addressData = $shippingAddresses->map(function ($address) {
+      return [
+          'id' => $address->id,
+          'name' => $address->name,
+          'phone' => $address->phone,
+          'is_default' => (bool) $address->is_default,
+          'lines' => array_values(array_filter([
+              $address->address_line1,
+              $address->address_line2,
+              trim(implode(', ', array_filter([$address->city, $address->state, $address->postal_code]))),
+              $address->country,
+          ])),
+      ];
+  });
+  $defaultAddress = $addressData->firstWhere('is_default', true) ?? $addressData->first();
+  $defaultAddressId = $defaultAddress['id'] ?? null;
+  $itemsData = $cartItems->map(function ($item) {
+      $product = $item->product;
+      $image = null;
+      if ($product && $product->image) {
+          $image = \Illuminate\Support\Str::startsWith($product->image, ['http://', 'https://'])
+              ? $product->image
+              : asset('storage/' . ltrim($product->image, '/'));
+      }
+      $image = $image ?? 'https://source.unsplash.com/160x160/?product,' . urlencode($product->name ?? 'product');
+
+      return [
+          'id' => $item->id,
+          'name' => $product->name ?? __('Produk tidak tersedia'),
+          'brand' => $product->brand ?? null,
+          'quantity' => $item->quantity,
+          'price' => (float) $item->price,
+          'subtotal' => (float) $item->subtotal,
+          'image' => $image,
+      ];
+  });
+  $paymentMethods = [
+      [
+          'id' => 'bank_transfer',
+          'label' => __('Transfer Bank Manual'),
+          'desc' => __('Transfer ke rekening BCA atau Mandiri, unggah bukti pembayaran.'),
+      ],
+      [
+          'id' => 'credit_card',
+          'label' => __('Kartu Kredit / Debit'),
+          'desc' => __('Pembayaran instan menggunakan kartu yang tersimpan.'),
+      ],
+      [
+          'id' => 'midtrans',
+          'label' => 'Midtrans',
+          'desc' => __('Redirect ke Midtrans untuk virtual account, e-money, dan QRIS.'),
+      ],
+      [
+          'id' => 'xendit',
+          'label' => 'Xendit',
+          'desc' => __('Bayar via Xendit untuk pilihan VA & e-wallet populer.'),
+      ],
+      [
+          'id' => 'stripe',
+          'label' => 'Stripe',
+          'desc' => __('Kartu internasional aman dengan dukungan 3D Secure.'),
+      ],
+  ];
+@endphp
+
 @section('content')
-<main class="container py-12" x-data="checkoutFlow()" role="main">
+<main class="container max-w-6xl py-10" role="main"
+      x-data="checkoutApp({
+        csrf: '{{ csrf_token() }}',
+        locale: '{{ $locale }}',
+        currency: '{{ $currency }}',
+        subtotal: {{ (float) $subtotal }},
+        shipping: {{ (float) $shippingCost }},
+        addresses: @json($addressData),
+        items: @json($itemsData),
+        paymentMethods: @json($paymentMethods),
+        defaultAddress: {{ $defaultAddressId ? (int) $defaultAddressId : 'null' }},
+        couponUrl: '{{ route('checkout.apply-coupon') }}'
+      })">
   <section class="soft-card p-6 md:p-8 space-y-6">
     <header class="space-y-3">
-      <h1 class="text-3xl font-semibold text-neutral-800 dark:text-neutral-100">Checkout</h1>
-      <p class="text-sm text-neutral-500 dark:text-neutral-300">Lengkapi setiap langkah di bawah untuk menyelesaikan pesanan Anda.</p>
+      <a href="{{ route('cart') }}" class="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700">
+        <i class="fa-solid fa-chevron-left text-xs"></i>
+        <span>{{ __('checkout.back_to_cart') }}</span>
+      </a>
+      <div>
+        <h1 class="text-3xl font-semibold text-neutral-800 dark:text-neutral-100">{{ __('checkout.title') }}</h1>
+        <p class="text-sm text-neutral-500 dark:text-neutral-300">{{ __('checkout.subtitle') }}</p>
+      </div>
     </header>
 
-    <!-- Stepper -->
-    <ol class="grid gap-3 sm:grid-cols-4" role="list">
+    @if(session('error'))
+      <x-alert type="error">{{ session('error') }}</x-alert>
+    @endif
+    @if(session('success'))
+      <x-alert type="success">{{ session('success') }}</x-alert>
+    @endif
+    @if($errors->any())
+      <x-alert type="error">{{ $errors->first() }}</x-alert>
+    @endif
+
+    <ol class="grid gap-3 sm:grid-cols-3" role="list">
       <template x-for="(item, index) in steps" :key="item.id">
         <li class="flex flex-col gap-2" :aria-current="step === item.id ? 'step' : null">
           <div class="flex items-center gap-2">
@@ -21,136 +116,187 @@
       </template>
     </ol>
 
-    <!-- Step panels -->
-    <form x-on:submit.prevent="next" class="grid gap-6 md:grid-cols-[minmax(0,1fr)_360px]">
+    <form method="POST" action="{{ route('checkout.process') }}" x-ref="form" class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      @csrf
+      <input type="hidden" name="shipping_address_id" x-model="form.shipping_address_id">
+      <input type="hidden" name="payment_method" x-model="form.payment_method">
+      <input type="hidden" name="coupon_code" x-model="form.coupon_code">
+
       <div class="space-y-6">
-        <div x-cloak x-show="error" class="soft-card p-4 text-sm text-red-600 dark:text-red-300" x-text="error"></div>
-        <!-- Step 1: Address -->
         <section x-show="step === 1" x-transition class="soft-card p-6 space-y-4">
-          <header>
-            <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Alamat Pengiriman</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Pastikan informasi pengiriman sudah benar.</p>
+          <header class="space-y-1">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Alamat Pengiriman') }}</h2>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Pilih alamat yang akan digunakan untuk pengiriman pesanan.') }}</p>
           </header>
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="md:col-span-1">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Nama Lengkap</span>
-              <input id="shipping_name" type="text" x-model="form.name" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
-            <label class="md:col-span-1">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Nomor Telepon</span>
-              <input id="shipping_phone" type="text" x-model="form.phone" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
-            <label class="md:col-span-2">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Email</span>
-              <input id="shipping_email" type="email" x-model="form.email" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
-            <label class="md:col-span-2">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Alamat Lengkap</span>
-              <input id="shipping_address" type="text" x-model="form.address" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
-            <label class="md:col-span-1">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Kota</span>
-              <input id="shipping_city" type="text" x-model="form.city" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
-            <label class="md:col-span-1">
-              <span class="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Kode Pos</span>
-              <input id="shipping_zip" type="text" x-model="form.zip" required class="mt-1 w-full rounded-2xl border border-white/60 bg-white/80 px-4 py-3 text-sm text-neutral-700 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100" />
-            </label>
+
+          <template x-if="addresses.length === 0">
+            <div class="rounded-xl border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-300">
+              {{ __('Anda belum memiliki alamat pengiriman. Tambahkan melalui halaman akun Anda terlebih dahulu.') }}
+            </div>
+          </template>
+
+          <div class="grid gap-3" x-show="addresses.length">
+            <template x-for="address in addresses" :key="address.id">
+              <label class="flex gap-3 rounded-2xl border border-neutral-200 bg-white/80 p-4 shadow-inner transition hover:border-sky-300 dark:border-neutral-800 dark:bg-neutral-900/70" :class="form.shipping_address_id == address.id ? 'ring-2 ring-sky-200 border-sky-400' : ''">
+                <input type="radio" class="mt-1" :value="address.id" x-model="form.shipping_address_id" name="shipping_address_radio">
+                <div class="flex-1 space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+                  <div class="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+                    <span class="font-semibold" x-text="address.name"></span>
+                    <template x-if="address.is_default">
+                      <x-badge variant="success">{{ __('Utama') }}</x-badge>
+                    </template>
+                  </div>
+                  <div class="text-xs text-neutral-500" x-text="address.phone"></div>
+                  <ul class="text-xs text-neutral-500">
+                    <template x-for="line in address.lines" :key="line">
+                      <li x-text="line"></li>
+                    </template>
+                  </ul>
+                </div>
+              </label>
+            </template>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-neutral-500">
+            <span>{{ __('Perlu mengubah alamat?') }}</span>
+            <a href="{{ route('account') }}" class="font-medium text-sky-600 hover:text-sky-700">{{ __('Kelola di halaman Akun') }}</a>
           </div>
         </section>
 
-        <!-- Step 2: Shipping -->
         <section x-show="step === 2" x-transition class="soft-card p-6 space-y-4">
-          <header>
-            <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Jasa Pengiriman</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Pilih opsi pengiriman yang tersedia.</p>
+          <header class="space-y-1">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Metode Pembayaran') }}</h2>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Pilih cara pembayaran yang Anda inginkan.') }}</p>
           </header>
+
           <div class="space-y-3">
-            <template x-for="option in shippingOptions" :key="option.id">
-              <label class="flex items-center justify-between rounded-2xl border border-white/60 bg-white/80 px-4 py-3 shadow-inner transition hover:border-sky-300 dark:border-neutral-700 dark:bg-neutral-900/60" :class="form.shipping === option.id ? 'ring-4 ring-sky-200/70 border-sky-300' : ''">
-                <div>
-                  <p class="font-medium text-sm text-neutral-700 dark:text-neutral-100" x-text="option.label"></p>
-                  <p class="text-xs text-neutral-400" x-text="option.desc"></p>
-                </div>
-                <div class="text-right">
-                  <p class="text-sm font-semibold text-neutral-800 dark:text-neutral-100" x-text="option.priceLabel"></p>
-                  <input type="radio" name="shipping" class="sr-only" :value="option.id" x-model="form.shipping">
+            <template x-for="method in paymentMethods" :key="method.id">
+              <label class="block rounded-2xl border border-neutral-200 bg-white/80 p-4 shadow-inner transition hover:border-sky-300 dark:border-neutral-800 dark:bg-neutral-900/70" :class="form.payment_method === method.id ? 'ring-2 ring-sky-200 border-sky-400' : ''">
+                <div class="flex items-start gap-3">
+                  <input type="radio" :value="method.id" x-model="form.payment_method" name="payment_method_radio" class="mt-1"/>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-neutral-900 dark:text-neutral-100" x-text="method.label"></span>
+                    </div>
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400" x-text="method.desc"></p>
+                  </div>
                 </div>
               </label>
             </template>
           </div>
         </section>
 
-        <!-- Step 3: Payment -->
         <section x-show="step === 3" x-transition class="soft-card p-6 space-y-4">
-          <header>
-            <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Metode Pembayaran</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Pilih metode pembayaran yang diinginkan.</p>
+          <header class="space-y-1">
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Review Pesanan') }}</h2>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Pastikan semua informasi sudah benar sebelum menyelesaikan pesanan.') }}</p>
           </header>
-          <div class="space-y-3">
-            <template x-for="method in paymentOptions" :key="method.id">
-              <label class="flex items-center justify-between rounded-2xl border border-white/60 bg-white/80 px-4 py-3 shadow-inner transition hover:border-sky-300 dark:border-neutral-700 dark:bg-neutral-900/60" :class="form.payment === method.id ? 'ring-4 ring-sky-200/70 border-sky-300' : ''">
-                <div>
-                  <p class="text-sm font-semibold text-neutral-700 dark:text-neutral-100" x-text="method.label"></p>
-                  <p class="text-xs text-neutral-400" x-text="method.desc"></p>
+
+          <div class="space-y-4 text-sm text-neutral-600 dark:text-neutral-300">
+            <div class="rounded-2xl border border-neutral-200 bg-white/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">{{ __('Alamat Pengiriman') }}</h3>
+              <template x-if="selectedAddress">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2 text-neutral-900 dark:text-neutral-100">
+                    <span x-text="selectedAddress.name" class="font-medium"></span>
+                    <template x-if="selectedAddress.is_default">
+                      <x-badge variant="success">{{ __('Utama') }}</x-badge>
+                    </template>
+                  </div>
+                  <div class="text-xs" x-text="selectedAddress.phone"></div>
+                  <ul class="text-xs">
+                    <template x-for="line in selectedAddress.lines" :key="line">
+                      <li x-text="line"></li>
+                    </template>
+                  </ul>
                 </div>
-                <input type="radio" class="sr-only" name="payment" :value="method.id" x-model="form.payment">
-              </label>
-            </template>
-          </div>
-          <div x-show="form.payment === 'manual'" x-cloak class="mt-4 space-y-2">
-            <p class="text-sm font-medium text-neutral-600 dark:text-neutral-200">Upload bukti transfer (opsional)</p>
-            <x-payment-proof-upload />
+              </template>
+              <template x-if="!selectedAddress">
+                <p class="text-sm text-neutral-400">{{ __('Belum ada alamat dipilih.') }}</p>
+              </template>
+            </div>
+
+            <div class="rounded-2xl border border-neutral-200 bg-white/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">{{ __('Metode Pembayaran') }}</h3>
+              <p class="text-sm" x-text="selectedPaymentLabel"></p>
+            </div>
+
+            <div class="rounded-2xl border border-neutral-200 bg-white/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+              <h3 class="font-semibold text-neutral-900 dark:text-neutral-100 mb-2">{{ __('Catatan') }}</h3>
+              <p class="text-sm text-neutral-500">{{ __('Anda akan menerima email konfirmasi segera setelah pesanan berhasil dibuat.') }}</p>
+            </div>
           </div>
         </section>
 
-        <!-- Step 4: Review -->
-        <section x-show="step === 4" x-transition class="soft-card p-6 space-y-4">
-          <header class="space-y-2">
-            <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Tinjau Pesanan</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">Pastikan detail berikut sesuai sebelum membuat pesanan.</p>
-          </header>
-          <dl class="grid gap-4 text-sm text-neutral-600 dark:text-neutral-300 md:grid-cols-2">
-            <div><dt class="font-medium">Nama</dt><dd x-text="form.name"></dd></div>
-            <div><dt class="font-medium">Email</dt><dd x-text="form.email"></dd></div>
-            <div><dt class="font-medium">Alamat</dt><dd x-text="form.address"></dd></div>
-            <div><dt class="font-medium">Pengiriman</dt><dd x-text="selectedShipping"></dd></div>
-            <div><dt class="font-medium">Pembayaran</dt><dd x-text="selectedPayment"></dd></div>
-          </dl>
-          <x-alert type="info">Setelah menekan tombol "Buat Pesanan" Anda akan menerima email konfirmasi.</x-alert>
-        </section>
-
-        <div class="flex flex-wrap gap-3">
-          <x-button type="button" variant="outline" x-show="step > 1" x-on:click="prev">Kembali</x-button>
-          <x-button type="submit" x-show="step < steps[steps.length - 1].id" x-text="'Lanjut (' + (step + 1) + '/' + steps.length + ')'"/>
-          <x-button type="button" x-show="step === steps[steps.length - 1].id" x-on:click="complete" class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">Buat Pesanan</x-button>
+        <div class="flex flex-wrap gap-3" x-show="addresses.length">
+          <x-button type="button" variant="outline" @click="prev" x-show="step > 1">
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+            <span>{{ __('Sebelumnya') }}</span>
+          </x-button>
+          <x-button type="button" class="" @click="next" x-show="step < steps.length" :disabled="!canProceed">
+            <span>{{ __('Lanjutkan') }}</span>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </x-button>
+          <x-button type="submit" x-show="step === steps.length" :disabled="!canProceed" @click.prevent="submit">
+            {{ __('Buat Pesanan') }}
+          </x-button>
         </div>
+
+        <template x-if="!addresses.length">
+          <x-alert type="warning">{{ __('Tambahkan alamat terlebih dahulu sebelum melanjutkan checkout.') }}</x-alert>
+        </template>
       </div>
 
-      <!-- Summary -->
       <aside class="space-y-4">
-        <div class="soft-card p-6 space-y-3">
-          <h2 class="text-lg font-semibold text-neutral-800 dark:text-neutral-100">Ringkasan Pesanan</h2>
-          <ul class="space-y-3 text-sm text-neutral-600 dark:text-neutral-300">
-            <template x-for="item in summary" :key="item.name">
-              <li class="flex items-center gap-3">
-                <img :src="item.image" class="h-12 w-12 rounded-xl object-cover" alt=""/>
-                <div class="flex-1">
-                  <p class="font-medium text-neutral-700 dark:text-neutral-100" x-text="item.name"></p>
-                  <p class="text-xs" x-text="item.desc"></p>
+        <div class="soft-card p-6 space-y-4">
+          <header>
+            <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Ringkasan Pesanan') }}</h2>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Detail produk dalam keranjang Anda.') }}</p>
+          </header>
+          <ul class="space-y-4 divide-y divide-white/60 dark:divide-neutral-800">
+            <template x-for="item in items" :key="item.id">
+              <li class="flex gap-3 pt-2 first:pt-0">
+                <img :src="item.image" :alt="item.name" class="h-16 w-16 rounded-xl object-cover" loading="lazy"/>
+                <div class="flex-1 space-y-1 text-sm">
+                  <p class="font-medium text-neutral-900 dark:text-neutral-100" x-text="item.name"></p>
+                  <template x-if="item.brand">
+                    <p class="text-xs text-neutral-500" x-text="item.brand"></p>
+                  </template>
+                  <p class="text-xs text-neutral-500">{{ __('Qty:') }} <span x-text="item.quantity"></span></p>
+                  <p class="font-semibold text-neutral-900 dark:text-neutral-100" x-text="format(item.subtotal)"></p>
                 </div>
-                <p class="font-semibold text-neutral-800 dark:text-neutral-100" x-text="item.price"></p>
               </li>
             </template>
           </ul>
           <div class="space-y-2 border-t border-white/60 pt-3 text-sm text-neutral-600 dark:text-neutral-300">
-            <div class="flex justify-between"><span>Subtotal</span><span x-text="totals.subtotal"></span></div>
-            <div class="flex justify-between"><span>Pengiriman</span><span x-text="totals.shipping"></span></div>
-            <div class="flex justify-between font-semibold text-neutral-800 dark:text-neutral-100"><span>Total</span><span x-text="totals.total"></span></div>
+            <div class="flex justify-between"><span>{{ __('Subtotal') }}</span><span x-text="format(totals.subtotal)"></span></div>
+            <div class="flex justify-between"><span>{{ __('Pengiriman') }}</span><span x-text="format(totals.shipping)"></span></div>
+            <div class="flex justify-between" :class="totals.discount > 0 ? 'text-green-600 dark:text-green-400' : ''">
+              <span>{{ __('Diskon') }}</span>
+              <span x-text="totals.discount > 0 ? '-'+format(totals.discount) : format(0)"></span>
+            </div>
+            <div class="flex justify-between font-semibold text-neutral-900 dark:text-neutral-100 text-base"><span>{{ __('Total') }}</span><span x-text="format(grandTotal)"></span></div>
           </div>
         </div>
-        <x-alert type="info">Transaksi Anda aman dan terenkripsi.</x-alert>
-        <x-alert type="success" x-show="orderPlaced" x-transition>Pesanan berhasil dibuat! Kami telah mengirim email konfirmasi.</x-alert>
+
+        <div class="soft-card p-4 space-y-3">
+          <h3 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Kode Kupon') }}</h3>
+          <div class="flex gap-2">
+            <input type="text" x-model="form.coupon_code" placeholder="{{ __('Masukkan kode') }}" class="flex-1 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm shadow-inner focus:border-sky-300 focus:ring-2 focus:ring-sky-200 outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100" />
+            <x-button type="button" size="sm" @click="applyCoupon" :disabled="!form.coupon_code || isApplyingCoupon">
+              <span x-show="!isApplyingCoupon">{{ __('Terapkan') }}</span>
+              <span x-show="isApplyingCoupon">{{ __('Memproses...') }}</span>
+            </x-button>
+          </div>
+          <template x-if="couponStatus">
+            <p class="text-xs text-green-600" x-text="couponStatus"></p>
+          </template>
+          <template x-if="couponError">
+            <p class="text-xs text-red-600" x-text="couponError"></p>
+          </template>
+        </div>
+
+        <x-alert type="info">{{ __('Transaksi Anda aman dan terenkripsi.') }}</x-alert>
       </aside>
     </form>
   </section>
@@ -159,81 +305,102 @@
 
 @push('scripts')
 <script>
-  function checkoutFlow(){
+  function checkoutApp(config) {
+    const formatter = new Intl.NumberFormat(config.locale || 'en', { style: 'currency', currency: config.currency || 'THB' });
     return {
       step: 1,
       steps: [
-        { id: 1, label: 'Alamat' },
-        { id: 2, label: 'Pengiriman' },
-        { id: 3, label: 'Pembayaran' },
-        { id: 4, label: 'Review' },
+        { id: 1, label: '{{ __('Alamat') }}' },
+        { id: 2, label: '{{ __('Pembayaran') }}' },
+        { id: 3, label: '{{ __('Review') }}' },
       ],
-      form: {
-        name: '',
-        phone: '',
-        email: '',
-        address: '',
-        city: '',
-        zip: '',
-        shipping: 'reg',
-        payment: 'card',
-      },
-      error: '',
-      orderPlaced: false,
-      shippingOptions: [
-        { id: 'reg', label: 'Reguler (2-3 hari)', desc: 'Gratis ongkir untuk pesanan di atas Rp500.000', priceLabel: 'Gratis' },
-        { id: 'express', label: 'Express (1 hari)', desc: 'Pengiriman prioritas same-day untuk kota besar', priceLabel: 'Rp35.000' },
-      ],
-      paymentOptions: [
-        { id: 'card', label: 'Kartu Kredit / Virtual Account', desc: 'Pembayaran otomatis dengan konfirmasi instan' },
-        { id: 'manual', label: 'Transfer Bank Manual', desc: 'Transfer ke rekening BCA / Mandiri dan upload bukti' },
-      ],
-      summary: [
-        { name:'MSI MAG B650 Tomahawk WiFi', desc:'Mainboard AM5', price:'Rp4.299.000', image:'https://source.unsplash.com/200x200/?motherboard' },
-        { name:'AMD Ryzen 7 7800X3D', desc:'Gaming CPU', price:'Rp7.399.000', image:'https://source.unsplash.com/200x200/?cpu' },
-      ],
+      addresses: config.addresses || [],
+      items: config.items || [],
+      paymentMethods: config.paymentMethods || [],
       totals: {
-        subtotal: 'Rp11.698.000',
-        shipping: 'Rp0',
-        total: 'Rp11.698.000',
+        subtotal: Number(config.subtotal || 0),
+        shipping: Number(config.shipping || 0),
+        discount: 0,
       },
-      get selectedShipping(){
-        const opt = this.shippingOptions.find(o => o.id === this.form.shipping);
-        return opt ? `${opt.label} — ${opt.priceLabel}` : '-';
+      form: {
+        shipping_address_id: config.defaultAddress || (config.addresses[0]?.id ?? null),
+        payment_method: config.paymentMethods[0]?.id ?? 'bank_transfer',
+        coupon_code: '',
       },
-      get selectedPayment(){
-        const opt = this.paymentOptions.find(o => o.id === this.form.payment);
-        return opt ? opt.label : '-';
+      couponStatus: null,
+      couponError: null,
+      isApplyingCoupon: false,
+      format(amount) {
+        return formatter.format(Number(amount) || 0);
       },
-      validate(){
-        this.error = '';
-        if(this.step === 1){
-          if(!this.form.name || !this.form.phone || !this.form.email || !this.form.address || !this.form.city || !this.form.zip){
-            this.error = 'Lengkapi semua detail alamat sebelum melanjutkan.';
-            return false;
-          }
+      get grandTotal() {
+        const total = this.totals.subtotal - this.totals.discount + this.totals.shipping;
+        return total > 0 ? total : 0;
+      },
+      get selectedAddress() {
+        return this.addresses.find(addr => Number(addr.id) === Number(this.form.shipping_address_id)) || null;
+      },
+      get selectedPaymentLabel() {
+        return this.paymentMethods.find(method => method.id === this.form.payment_method)?.label || '{{ __('Belum dipilih') }}';
+      },
+      get canProceed() {
+        if (this.step === 1) {
+          return Boolean(this.form.shipping_address_id);
+        }
+        if (this.step === 2) {
+          return Boolean(this.form.payment_method);
         }
         return true;
       },
-      next(){
-        if(!this.validate()) return;
-        if(this.step < this.steps.length){
-          this.step += 1;
-          this.orderPlaced = false;
+      next() {
+        if (!this.canProceed || this.step >= this.steps.length) return;
+        this.step += 1;
+      },
+      prev() {
+        if (this.step <= 1) return;
+        this.step -= 1;
+      },
+      async applyCoupon() {
+        if (!this.form.coupon_code) {
+          this.couponError = '{{ __('Masukkan kode kupon terlebih dahulu.') }}';
+          this.couponStatus = null;
+          return;
+        }
+        this.isApplyingCoupon = true;
+        this.couponError = null;
+        this.couponStatus = null;
+        try {
+          const response = await fetch(config.couponUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': config.csrf,
+            },
+            body: new URLSearchParams({ coupon_code: this.form.coupon_code }).toString(),
+          });
+          const data = await response.json();
+          if (data.success) {
+            this.totals.discount = Number(data.discount_amount || 0);
+            this.couponStatus = data.message || '{{ __('Kupon berhasil diterapkan.') }}';
+            this.couponError = null;
+          } else {
+            this.totals.discount = 0;
+            this.couponError = data.message || '{{ __('Kupon tidak dapat digunakan.') }}';
+            this.couponStatus = null;
+          }
+        } catch (error) {
+          this.couponError = '{{ __('Terjadi kesalahan saat memproses kupon.') }}';
+          this.couponStatus = null;
+        } finally {
+          this.isApplyingCoupon = false;
         }
       },
-      prev(){
-        if(this.step > 1){
-          this.step -= 1;
-          this.error = '';
-        }
+      submit() {
+        if (!this.canProceed) return;
+        this.$refs.form.submit();
       },
-      complete(){
-        if(!this.validate()) return;
-        this.orderPlaced = true;
-        this.error = '';
-      }
-    }
+    };
   }
 </script>
 @endpush

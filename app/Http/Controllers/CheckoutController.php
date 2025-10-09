@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Storage;
 
 class CheckoutController extends Controller
 {
+    private function shippingCost(): float
+    {
+        return 50.0; // Flat rate in THB for now
+    }
+
     public function index()
     {
         $cartItems = Cart::with('product')
@@ -26,8 +31,14 @@ class CheckoutController extends Controller
 
         $shippingAddresses = ShippingAddress::where('user_id', Auth::id())->get();
         $subtotal = $cartItems->sum('subtotal');
-        
-        return view('pages.checkout', compact('cartItems', 'shippingAddresses', 'subtotal'));
+        $shippingCost = $this->shippingCost();
+
+        return view('pages.checkout', [
+            'cartItems' => $cartItems,
+            'shippingAddresses' => $shippingAddresses,
+            'subtotal' => $subtotal,
+            'shippingCost' => $shippingCost,
+        ]);
     }
 
     public function process(Request $request)
@@ -79,7 +90,7 @@ class CheckoutController extends Controller
         }
 
         // Calculate shipping (simple flat rate for now)
-        $shippingCost = 50; // THB
+        $shippingCost = $this->shippingCost();
         $totalAmount = $subtotal - $discountAmount + $shippingCost;
 
         try {

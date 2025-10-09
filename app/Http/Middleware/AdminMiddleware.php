@@ -15,8 +15,19 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // For now, we'll just allow all requests to pass through
-        // In a real application, you would check if the user is an admin
+        $user = $request->user();
+
+        if (! $user) {
+            return redirect()->guest(localized_route('admin.login'));
+        }
+
+        $isAdminFlag = (bool) ($user->is_admin ?? false);
+        $hasAdminRole = method_exists($user, 'hasRole') && $user->hasRole('admin');
+
+        if (! $isAdminFlag && ! $hasAdminRole) {
+            abort(404);
+        }
+
         return $next($request);
     }
 }

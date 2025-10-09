@@ -6,7 +6,7 @@
 <div class="bg-white dark:bg-slate-800 shadow-md rounded-lg p-6">
     <h2 class="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-6">Edit Product: {{ $product->name }}</h2>
 
-    <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ localized_route('admin.products.update', ['id' => $product->id]) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 

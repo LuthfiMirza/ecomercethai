@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -60,10 +61,18 @@ class CartController extends Controller
             }
         }
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'message' => __('cart.added'),
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(array_merge($payload, [
+                'count' => $this->getCartItems()->sum('quantity'),
+            ]));
+        }
+
+        return redirect()->back()->with('success', $payload['message']);
     }
 
     public function update(Request $request, $id)
@@ -75,17 +84,29 @@ class CartController extends Controller
         $cart = $this->findCartItem($id);
         
         if (!$cart) {
-            return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
+            }
+
+            return redirect()->route('cart')->with('error', __('cart.not_found'));
         }
 
         $cart->quantity = $request->quantity;
         $cart->save();
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'message' => __('cart.updated'),
             'subtotal' => $cart->subtotal,
-        ]);
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json(array_merge($payload, [
+                'count' => $this->getCartItems()->sum('quantity'),
+            ]));
+        }
+
+        return redirect()->route('cart')->with('success', $payload['message']);
     }
 
     public function remove($id)
@@ -93,15 +114,27 @@ class CartController extends Controller
         $cart = $this->findCartItem($id);
         
         if (!$cart) {
-            return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
+            if (request()->expectsJson()) {
+                return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
+            }
+
+            return redirect()->route('cart')->with('error', __('cart.not_found'));
         }
 
         $cart->delete();
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'message' => __('cart.removed'),
-        ]);
+        ];
+
+        if (request()->expectsJson()) {
+            return response()->json(array_merge($payload, [
+                'count' => $this->getCartItems()->sum('quantity'),
+            ]));
+        }
+
+        return redirect()->route('cart')->with('success', $payload['message']);
     }
 
     public function clear()
@@ -112,9 +145,57 @@ class CartController extends Controller
             Cart::where('session_id', session()->getId())->delete();
         }
 
-        return response()->json([
+        $payload = [
             'success' => true,
             'message' => __('cart.cleared'),
+        ];
+
+        if (request()->expectsJson()) {
+            return response()->json(array_merge($payload, [
+                'count' => 0,
+            ]));
+        }
+
+        return redirect()->route('cart')->with('success', $payload['message']);
+    }
+
+    public function summary()
+    {
+        $items = $this->getCartItems()->map(function (Cart $cart) {
+            $product = $cart->product;
+            $image = null;
+
+            if ($product && $product->image) {
+                $image = Str::startsWith($product->image, ['http://', 'https://'])
+                    ? $product->image
+                    : asset('storage/' . ltrim($product->image, '/'));
+            }
+
+            if (! $image) {
+                $seed = urlencode($product->name ?? 'product');
+                $image = "https://source.unsplash.com/160x160/?product,{$seed}";
+            }
+
+            return [
+                'id' => $cart->id,
+                'product_id' => $cart->product_id,
+                'name' => $product->name ?? __('Product'),
+                'quantity' => $cart->quantity,
+                'price' => (float) $cart->price,
+                'subtotal' => (float) $cart->subtotal,
+                'image' => $image,
+            ];
+        });
+
+        $count = $items->sum('quantity');
+        $subtotal = $items->sum('subtotal');
+
+        return response()->json([
+            'success' => true,
+            'items' => $items,
+            'count' => $count,
+            'subtotal' => $subtotal,
+            'currency' => config('app.currency', 'THB'),
         ]);
     }
 

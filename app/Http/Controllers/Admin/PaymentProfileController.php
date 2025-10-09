@@ -39,7 +39,7 @@ class PaymentProfileController extends Controller
         return view('admin.payment_profiles.create', compact('users'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -53,15 +53,18 @@ class PaymentProfileController extends Controller
 
         PaymentProfile::create($data);
 
-        return redirect()->route('admin.payment-profiles.index')->with('status', 'Payment profile created');
+        return redirect()->route('admin.payment-profiles.index', ['locale' => $locale])->with('status', 'Payment profile created');
     }
 
-    public function show(string $id)
+    public function show(string $locale, string $id)
     {
-        return redirect()->route('admin.payment-profiles.edit', $id);
+        $profile = PaymentProfile::with('user')->findOrFail($id);
+        $paymentsCount = $profile->user ? $profile->user->payments()->count() : 0;
+
+        return view('admin.payment_profiles.show', compact('profile', 'paymentsCount'));
     }
 
-    public function edit(string $id)
+    public function edit(string $locale, string $id)
     {
         $profile = PaymentProfile::findOrFail($id);
         $users = User::orderBy('name')->get();
@@ -69,7 +72,7 @@ class PaymentProfileController extends Controller
         return view('admin.payment_profiles.edit', compact('profile', 'users'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $locale, string $id)
     {
         $profile = PaymentProfile::findOrFail($id);
 
@@ -85,14 +88,14 @@ class PaymentProfileController extends Controller
 
         $profile->update($data);
 
-        return redirect()->route('admin.payment-profiles.index')->with('status', 'Payment profile updated');
+        return redirect()->route('admin.payment-profiles.index', ['locale' => $locale])->with('status', 'Payment profile updated');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $locale, string $id)
     {
         $profile = PaymentProfile::findOrFail($id);
         $profile->delete();
 
-        return back()->with('status', 'Payment profile deleted');
+        return redirect()->route('admin.payment-profiles.index', ['locale' => $locale])->with('status', 'Payment profile deleted');
     }
 }

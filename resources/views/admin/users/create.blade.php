@@ -6,7 +6,7 @@
 <div class="bg-white dark:bg-slate-800 shadow-md rounded-lg p-6">
     <h2 class="text-2xl font-semibold text-slate-800 dark:text-slate-100 mb-6">Create New User</h2>
 
-    <form action="{{ route('admin.users.store') }}" method="POST">
+    <form action="{{ localized_route('admin.users.store') }}" method="POST">
         @csrf
 
         <div class="mb-4">
@@ -47,7 +47,7 @@
         </div>
 
         <div class="flex items-center justify-end space-x-4">
-            <a href="{{ route('admin.users.index') }}" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Cancel</a>
+            <a href="{{ localized_route('admin.users.index') }}" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Cancel</a>
             <button type="submit" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-600 dark:hover:bg-slate-500">
                 Save User
             </button>

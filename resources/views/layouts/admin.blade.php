@@ -205,49 +205,49 @@
             </div>
             
             <nav class="mt-6 space-y-2">
-                <a href="{{ route('admin.dashboard') }}" class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.dashboard') }}" class="admin-nav-link {{ request()->routeIs('admin.dashboard') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     </span>
                     <span class="font-medium">Dashboard</span>
                 </a>
 
-                <a href="{{ route('admin.products.index') }}" class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.products.index') }}" class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                     </span>
                     <span class="font-medium">Products</span>
                 </a>
 
-                <a href="{{ route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                     </span>
                     <span class="font-medium">Categories</span>
                 </a>
 
-                <a href="{{ route('admin.orders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.orders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     </span>
                     <span class="font-medium">Orders</span>
                 </a>
 
-                <a href="{{ route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </span>
                     <span class="font-medium">Users</span>
                 </a>
 
-                <a href="{{ route('admin.promos.index') }}" class="admin-nav-link {{ request()->routeIs('admin.promos.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.promos.index') }}" class="admin-nav-link {{ request()->routeIs('admin.promos.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4m0-8V4m0 12v4m8-8h4M4 12H0"></path></svg>
                     </span>
                     <span class="font-medium">Promos</span>
                 </a>
 
-                <a href="{{ route('admin.reports.index') }}" class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'admin-nav-link-active text-white' : '' }}">
+                <a href="{{ localized_route('admin.reports.index') }}" class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18m-7-7h18"></path></svg>
                     </span>
@@ -286,26 +286,113 @@
                     </div>
                     
                     <div class="flex items-center gap-4">
+                        @php
+                            $inlineNotifications = collect([
+                                ['type' => 'success', 'title' => __('Success'), 'message' => session('success')],
+                                ['type' => 'info', 'title' => __('Info'), 'message' => session('status')],
+                                ['type' => 'error', 'title' => __('Error'), 'message' => session('error')],
+                            ])
+                            ->filter(fn ($item) => filled($item['message']))
+                            ->map(function ($item) {
+                                $message = $item['message'];
+                                if (is_iterable($message)) {
+                                    $message = collect($message)->flatten()->first();
+                                }
+                                $item['message'] = trim((string) $message);
+                                return $item;
+                            })
+                            ->filter(fn ($item) => $item['message'] !== '')
+                            ->values();
+                        @endphp
+
                         <!-- Notification bell -->
-                        <button class="relative icon-circle text-slate-500 hover:text-slate-900 dark:text-slate-200" aria-label="Notifications">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                            <span class="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white shadow-[0_8px_16px_-8px_rgba(225,29,72,0.8)]">3</span>
-                        </button>
+                        <div class="relative" x-data="{ open: false }" @keydown.escape.window="open = false">
+                            <button
+                                type="button"
+                                class="relative icon-circle text-slate-500 hover:text-slate-900 dark:text-slate-200"
+                                aria-label="Notifications"
+                                @click="open = !open"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                @if($inlineNotifications->isNotEmpty())
+                                    <span class="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white shadow-[0_8px_16px_-8px_rgba(225,29,72,0.8)]">{{ $inlineNotifications->count() }}</span>
+                                @endif
+                            </button>
+
+                            <div
+                                x-show="open"
+                                x-cloak
+                                x-transition.origin.top.right
+                                @click.outside="open = false"
+                                class="absolute right-0 top-full mt-4 w-80 soft-card rounded-2xl border border-white/60 bg-white shadow-xl backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95"
+                                style="z-index: 60;"
+                            >
+                                <div class="border-b border-white/60 px-5 py-4 dark:border-slate-700">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-200">{{ __('Notifications') }}</h3>
+                                        <button class="text-xs font-medium text-sky-500 hover:text-sky-600" @click="open = false">{{ __('Close') }}</button>
+                                    </div>
+                                </div>
+                                <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                    @forelse($inlineNotifications as $item)
+                                        <div class="flex items-start gap-3 px-5 py-4">
+                                            <span @class([
+                                                'inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-white',
+                                                'bg-emerald-500' => $item['type'] === 'success',
+                                                'bg-sky-500' => $item['type'] === 'info',
+                                                'bg-rose-500' => $item['type'] === 'error',
+                                                'bg-amber-500' => $item['type'] === 'warning',
+                                            ])>
+                                                <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                                                    @switch($item['type'])
+                                                        @case('success')
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l3 3 7-7" />
+                                                            @break
+                                                        @case('error')
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L14 6" />
+                                                            @break
+                                                        @case('warning')
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 9v3m0 4h.01M10 3a7 7 0 110 14 7 7 0 010-14z" />
+                                                            @break
+                                                        @default
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 11-0.001 20.001A10 10 0 0112 2z" />
+                                                    @endswitch
+                                                </svg>
+                                            </span>
+                                            <div class="flex-1 text-sm leading-5 text-slate-700 dark:text-slate-200">
+                                                <p class="font-medium text-slate-800 dark:text-slate-100">{{ $item['title'] }}</p>
+                                                <p class="mt-1 text-sm text-slate-600 dark:text-slate-200">{{ $item['message'] }}</p>
+                                                <p class="mt-2 text-xs uppercase tracking-wide text-slate-400 dark:text-slate-400">{{ now()->diffForHumans(null, null, false, 1) }}</p>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
+                                            {{ __('You are all caught up!') }}
+                                        </div>
+                                    @endforelse
+                                </div>
+                                @if($inlineNotifications->isNotEmpty())
+                                    <div class="border-t border-white/60 bg-slate-50/80 px-5 py-3 text-center text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+                                        {{ __('Keep up the great work!') }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                         @include('components.dark-mode-toggle', ['class' => 'icon-circle text-slate-500 hover:text-slate-900 dark:text-slate-200'])
                         
                         <!-- Profile Dropdown -->
                         <div class="relative" x-data="{ dropdownOpen: false }" @keydown.escape.window="dropdownOpen = false">
                             <button type="button" @click="dropdownOpen = !dropdownOpen" class="flex items-center gap-3 rounded-2xl bg-white/60 px-3 py-2 text-slate-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition hover:bg-white/80 dark:bg-slate-900/60 dark:text-slate-200">
-                                <img class="h-8 w-8 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=random" alt="{{ Auth::user()->name }}">
-                                <span class="ml-2 text-sm hidden md:block">{{ Auth::user()->name }}</span>
+                                <img class="h-8 w-8 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode(optional(Auth::user())->name ?? 'User') }}&background=random" alt="{{ optional(Auth::user())->name ?? 'User' }}">
+                                <span class="ml-2 text-sm hidden md:block">{{ optional(Auth::user())->name }}</span>
                                 <svg class="ml-1 w-4 h-4 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
                             
                             <div x-show="dropdownOpen" x-cloak @click.outside="dropdownOpen = false" class="absolute right-0 mt-3 w-52 soft-card rounded-2xl overflow-hidden z-20" x-transition.origin.top.right>
-                                <a href="{{ route('admin.profile.show') }}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Your Profile</a>
+                                <a href="{{ localized_route('admin.profile.show') }}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Your Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Settings</a>
                                 <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                                <form action="{{ route('admin.logout') }}" method="POST">
+                                <form action="{{ localized_route('admin.logout') }}" method="POST">
                                     @csrf
                                     <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
                                         Logout
@@ -321,11 +408,14 @@
             @if(session('success'))
                 @include('components.notification', ['open' => true, 'type' => 'success', 'message' => session('success')])
             @endif
+            @if(session('status'))
+                @include('components.notification', ['open' => true, 'type' => 'info', 'message' => session('status')])
+            @endif
             @if(session('error'))
                 @include('components.notification', ['open' => true, 'type' => 'error', 'message' => session('error')])
             @endif
-            @if($errors->any())
-                @include('components.notification', ['open' => true, 'type' => 'error', 'message' => 'Validation error.'])
+            @if(isset($errors) && $errors->any())
+                @include('components.notification', ['open' => true, 'type' => 'error', 'message' => $errors->all()])
             @endif
             
             <!-- Content -->

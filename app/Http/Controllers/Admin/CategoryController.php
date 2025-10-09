@@ -40,7 +40,7 @@ class CategoryController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -50,7 +50,23 @@ class CategoryController extends Controller
         $category = new Category($request->all());
         $category->save();
         
-        return redirect()->route('admin.categories.index')->with('success', 'Category created successfully.');
+        return redirect()->route('admin.categories.index', ['locale' => $locale])->with('success', 'Category created successfully.');
+    }
+
+    /**
+     * Display the specified category.
+     */
+    public function show(string $locale, $id)
+    {
+        $category = Category::withCount('products')
+            ->with(['products' => function ($query) {
+                $query->select('id', 'name', 'price', 'stock', 'category_id')
+                    ->latest()
+                    ->take(10);
+            }])
+            ->findOrFail($id);
+
+        return view('admin.categories.show', compact('category'));
     }
 
     /**
@@ -59,7 +75,7 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(string $locale, $id)
     {
         $category = Category::findOrFail($id);
         return view('admin.categories.edit', compact('category'));
@@ -72,7 +88,7 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -82,7 +98,7 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
         $category->update($request->all());
         
-        return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully.');
+        return redirect()->route('admin.categories.index', ['locale' => $locale])->with('success', 'Category updated successfully.');
     }
 
     /**
@@ -91,11 +107,11 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(string $locale, $id)
     {
         $category = Category::findOrFail($id);
         $category->delete();
         
-        return redirect()->route('admin.categories.index')->with('success', 'Category deleted successfully.');
+        return redirect()->route('admin.categories.index', ['locale' => $locale])->with('success', 'Category deleted successfully.');
     }
 }

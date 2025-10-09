@@ -11,6 +11,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
 use App\Imports\ProductsImport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -54,7 +56,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -63,12 +65,38 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
+            'image' => 'nullable|image|max:4096',
         ]);
         
-        $product = new Product($request->all());
-        $product->save();
+        $payload = $request->only([
+            'name',
+            'description',
+            'price',
+            'stock',
+            'category_id',
+            'status',
+        ]);
+
+        $payload['is_active'] = $request->status === 'active';
+
+        if ($request->hasFile('image')) {
+            $payload['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        Product::create($payload);
         
-        return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
+        return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product created successfully.');
+    }
+
+    /**
+     * Display the specified product.
+     */
+    public function show(string $locale, $id)
+    {
+        $product = Product::with(['category'])->findOrFail($id);
+        $totalSold = (int) $product->orderItems()->sum('quantity');
+
+        return view('admin.products.show', compact('product', 'totalSold'));
     }
 
     /**
@@ -77,7 +105,7 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(string $locale, $id)
     {
         $product = Product::findOrFail($id);
         $categories = Category::all();
@@ -91,7 +119,7 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -100,12 +128,33 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
+            'image' => 'nullable|image|max:4096',
         ]);
         
         $product = Product::findOrFail($id);
-        $product->update($request->all());
         
-        return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
+        $payload = $request->only([
+            'name',
+            'description',
+            'price',
+            'stock',
+            'category_id',
+            'status',
+        ]);
+
+        $payload['is_active'] = $request->status === 'active';
+
+        if ($request->hasFile('image')) {
+            if ($product->image && ! Str::startsWith($product->image, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            $payload['image'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product->update($payload);
+        
+        return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product updated successfully.');
     }
 
     /**
@@ -114,12 +163,15 @@ class ProductController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(string $locale, $id)
     {
         $product = Product::findOrFail($id);
+        if ($product->image && ! Str::startsWith($product->image, ['http://', 'https://'])) {
+            Storage::disk('public')->delete($product->image);
+        }
         $product->delete();
         
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
+        return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product deleted successfully.');
     }
 
     /**

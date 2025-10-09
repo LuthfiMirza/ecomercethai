@@ -28,7 +28,7 @@ class PromoController extends Controller
         return view('admin.promos.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, string $locale)
     {
         $data = $request->validate([
             'code' => 'required|string|max:50|unique:coupons,code',
@@ -40,16 +40,23 @@ class PromoController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
         Coupon::create($data);
-        return redirect()->route('admin.promos.index')->with('success', 'Coupon created successfully.');
+        return redirect()->route('admin.promos.index', ['locale' => $locale])->with('success', 'Coupon created successfully.');
     }
 
-    public function edit($id)
+    public function show(string $locale, $id)
+    {
+        $coupon = Coupon::findOrFail($id);
+
+        return view('admin.promos.show', compact('coupon'));
+    }
+
+    public function edit(string $locale, $id)
     {
         $coupon = Coupon::findOrFail($id);
         return view('admin.promos.edit', compact('coupon'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $coupon = Coupon::findOrFail($id);
         $data = $request->validate([
@@ -62,14 +69,13 @@ class PromoController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
         $coupon->update($data);
-        return redirect()->route('admin.promos.index')->with('success', 'Coupon updated successfully.');
+        return redirect()->route('admin.promos.index', ['locale' => $locale])->with('success', 'Coupon updated successfully.');
     }
 
-    public function destroy($id)
+    public function destroy(string $locale, $id)
     {
         $coupon = Coupon::findOrFail($id);
         $coupon->delete();
-        return redirect()->route('admin.promos.index')->with('success', 'Coupon deleted.');
+        return redirect()->route('admin.promos.index', ['locale' => $locale])->with('success', 'Coupon deleted.');
     }
 }
-

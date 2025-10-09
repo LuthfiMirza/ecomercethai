@@ -7,13 +7,13 @@
         <x-table
           title="Promo List"
           subtitle="Manage promotional campaigns and discounts"
-          add-url="{{ route('admin.promos.create') }}"
+          add-url="{{ localized_route('admin.promos.create') }}"
           add-label="Add New Promo"
           :pagination="$coupons"
           :search="true"
           search-placeholder="Search promos..."
           :search-value="$q ?? ''"
-          action="{{ route('admin.promos.index') }}"
+          action="{{ localized_route('admin.promos.index') }}"
         >
           <x-slot:filters>
             <div>
@@ -48,8 +48,9 @@
                 <td>{{ $c->used_count }}/{{ $c->usage_limit ?? '∞' }}</td>
                 <td><span class="badge {{ $c->status==='active' ? 'badge-success' : 'badge-neutral' }}">{{ ucfirst($c->status) }}</span></td>
                 <td class="cell-actions">
-                  <a href="{{ route('admin.promos.edit', $c) }}" class="btn-outline text-xs">Edit</a>
-                  <x-confirm-delete action="{{ route('admin.promos.destroy', $c) }}">Delete</x-confirm-delete>
+          <a href="{{ localized_route('admin.promos.show', ['id' => $c->id]) }}" class="btn-ghost text-xs">View</a>
+          <a href="{{ localized_route('admin.promos.edit', ['id' => $c->id]) }}" class="btn-outline text-xs">Edit</a>
+          <x-confirm-delete action="{{ localized_route('admin.promos.destroy', ['id' => $c->id]) }}">Delete</x-confirm-delete>
                 </td>
               </tr>
             @empty
@@ -59,4 +60,3 @@
         </x-table>
     </div>
 @endsection
-

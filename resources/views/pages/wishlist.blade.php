@@ -138,7 +138,7 @@
       const wrap = document.getElementById('wishlist-items');
       if (!wrap) return;
       if (!items.length) {
-        wrap.innerHTML = '<div class="p-4 text-center text-sm text-neutral-500 dark:text-neutral-300">Belum ada produk di wishlist.</div>';
+        wrap.innerHTML = `<div class="p-4 text-center text-sm text-neutral-500 dark:text-neutral-300">${@json(__('common.wishlist_empty'))}</div>`;
         return;
       }
       wrap.innerHTML = items.map((p, idx) => `
