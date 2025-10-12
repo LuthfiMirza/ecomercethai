@@ -7,6 +7,7 @@ import ApexCharts from 'apexcharts';
 import './admin/theme';
 import './frontend';
 import megaMenu from './components/mega-menu';
+import './components/livechat';
 
 window.Alpine = Alpine;
 Alpine.plugin(focus);

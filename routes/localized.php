@@ -4,6 +4,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PaymentProfileController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\MegaMenuController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\ChatMessageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -155,6 +157,11 @@ Route::middleware('auth')->group(function () {
     })->name('orders.show');
 });
 
+Route::middleware('auth')->group(function () {
+    Route::get('/chat/messages', [ChatMessageController::class, 'index'])->name('chat.messages.index');
+    Route::post('/chat/messages', [ChatMessageController::class, 'store'])->name('chat.messages.store');
+});
+
 // Contact
 Route::get('/contact', [\App\Http\Controllers\ContactController::class, 'index'])->name('contact');
 Route::post('/contact', [\App\Http\Controllers\ContactController::class, 'send'])->name('contact.send');
@@ -251,5 +258,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
         Route::get('/reports/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
         Route::get('/reports/metrics', [ReportController::class, 'metrics'])->name('reports.metrics');
+
+        Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+        Route::get('/chat/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
+        Route::get('/chat/conversations/{user}', [ChatController::class, 'messages'])->name('chat.conversations.show');
+        Route::post('/chat/messages', [ChatController::class, 'send'])->name('chat.send');
     });
 });

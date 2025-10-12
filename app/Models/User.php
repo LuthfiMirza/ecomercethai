@@ -60,4 +60,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(PaymentProfile::class);
     }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'user_id');
+    }
+
+    public function chatMessages()
+    {
+        return $this->hasMany(Message::class, 'conversation_id');
+    }
 }

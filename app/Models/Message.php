@@ -11,11 +11,22 @@ class Message extends Model
 
     protected $fillable = [
         'user_id',
+        'conversation_id',
         'content',
+        'is_from_admin',
+    ];
+
+    protected $casts = [
+        'is_from_admin' => 'boolean',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function conversation()
+    {
+        return $this->belongsTo(User::class, 'conversation_id');
     }
 }

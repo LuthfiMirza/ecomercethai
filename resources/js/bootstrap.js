@@ -26,6 +26,29 @@ if (typeof pusherKey === 'string' && pusherKey.trim() !== '') {
         forceTLS: (import.meta.env.VITE_PUSHER_SCHEME ?? 'https') === 'https',
         enabledTransports: ['ws', 'wss'],
     });
+
+    const attachSocketHeader = () => {
+        const socketId = window.Echo?.socketId();
+        if (socketId) {
+            window.axios.defaults.headers.common['X-Socket-Id'] = socketId;
+        }
+    };
+
+    window.axios.interceptors.request.use((config) => {
+        const socketId = window.Echo?.socketId();
+        if (socketId) {
+            config.headers = config.headers || {};
+            config.headers['X-Socket-Id'] = socketId;
+        }
+        return config;
+    });
+
+    const connection = window.Echo.connector?.pusher?.connection;
+    if (connection) {
+        connection.bind('connected', attachSocketHeader);
+    }
+
+    attachSocketHeader();
 } else {
     console.warn('[Echo] Pusher key missing; realtime features disabled. Set VITE_PUSHER_APP_KEY in your .env.');
 }

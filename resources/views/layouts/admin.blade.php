@@ -253,6 +253,16 @@
                     </span>
                     <span class="font-medium">Reports</span>
                 </a>
+
+                <a href="{{ localized_route('admin.chat.index') }}" class="admin-nav-link {{ request()->routeIs('admin.chat.*') ? 'admin-nav-link-active text-white' : '' }}">
+                    <span class="admin-nav-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8M8 15h5" />
+                        </svg>
+                    </span>
+                    <span class="font-medium">Live Chat</span>
+                </a>
             </nav>
         </aside>
         

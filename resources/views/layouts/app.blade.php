@@ -115,7 +115,7 @@
           <span>Chat via LINE</span>
         </a>
         <!-- Live Chat popup trigger -->
-        <button @click="chat=true; open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm">
+        <button type="button" data-livechat-open @click="chat=true; open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm">
           <i class="fa-solid fa-comments"></i>
           <span>Live Chat</span>
         </button>
@@ -129,23 +129,41 @@
       <!-- Live Chat Popup -->
       <div x-cloak x-show="chat" x-transition.opacity class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-black/30" @click="chat=false"></div>
-        <aside class="absolute right-4 bottom-20 w-[380px] max-w-[92vw] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
+        <aside class="absolute right-4 bottom-20 w-[380px] max-w-[92vw] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800" data-livechat-panel>
           <header class="px-4 py-3 bg-indigo-600 text-white flex items-center justify-between">
             <div class="font-semibold">Live Chat</div>
-            <button @click="chat=false" class="hover:text-white/90"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" data-livechat-close @click="chat=false" class="hover:text-white/90"><i class="fa-solid fa-xmark"></i></button>
           </header>
-          <div class="h-64 p-3 overflow-y-auto text-sm" id="livechat-messages">
-            <div class="text-neutral-500">Hi! How can we help you today?</div>
+          <div class="h-64 p-3 overflow-y-auto text-sm" id="livechat-messages" data-livechat-log>
+            <div class="text-neutral-500" data-livechat-empty>Hi! How can we help you today?</div>
           </div>
-          <form id="livechat-form" class="flex items-center gap-2 p-3 border-t border-neutral-200 dark:border-neutral-800" @submit.prevent="">
-            <input id="livechat-input" type="text" class="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm" placeholder="Type a message..." />
-            <button type="submit" class="px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm">Send</button>
+          <form id="livechat-form" data-livechat-form class="flex items-center gap-2 p-3 border-t border-neutral-200 dark:border-neutral-800" @submit.prevent="">
+            <input id="livechat-input" data-livechat-input type="text" class="flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-2 text-sm" placeholder="Type a message..." @guest disabled @endguest />
+            <button type="submit" data-livechat-send class="px-3 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-sm" @guest disabled @endguest>Send</button>
           </form>
+          @guest
+            <div class="px-3 pb-3 text-xs text-neutral-500">
+              Please <a href="{{ route('login', ['locale' => app()->getLocale()]) }}" class="text-indigo-600 hover:underline">sign in</a> to continue the live chat.
+            </div>
+          @endguest
         </aside>
       </div>
     </div>
 
     <x-footer />
+    <script>
+      window.App = Object.assign({}, window.App, {
+        locale: @json(app()->getLocale()),
+        isAuthenticated: @json(auth()->check()),
+        user: @json(auth()->user()?->only(['id','name'])),
+        chat: {
+          fetchUrl: @json(auth()->check() ? route('chat.messages.index', ['locale' => app()->getLocale()]) : null),
+          postUrl: @json(auth()->check() ? route('chat.messages.store', ['locale' => app()->getLocale()]) : null),
+          channel: @json(auth()->check() ? 'chat.user.' . auth()->id() : null),
+          loginUrl: @json(route('login', ['locale' => app()->getLocale()])),
+        }
+      });
+    </script>
     @stack('scripts')
 </body>
 </html>
