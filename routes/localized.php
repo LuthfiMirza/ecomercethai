@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AdminController;
@@ -133,14 +133,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/add', [\App\Http\Controllers\WishlistController::class, 'add'])->name('wishlist.add');
     Route::delete('/wishlist/{id}', [\App\Http\Controllers\WishlistController::class, 'remove'])->name('wishlist.remove');
     Route::delete('/wishlist', [\App\Http\Controllers\WishlistController::class, 'clear'])->name('wishlist.clear');
+    Route::get('/media/payment-proof/{orderId}', [\App\Http\Controllers\MediaController::class, 'paymentProof'])
+        ->whereNumber('orderId')
+        ->name('media.payment-proof');
 });
 
 // Checkout
 Route::middleware('auth')->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
-    Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+    Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
     Route::post('/checkout/address', [\App\Http\Controllers\CheckoutController::class, 'storeAddress'])->name('checkout.address.store');
     Route::post('/checkout/apply-coupon', [\App\Http\Controllers\CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
+    Route::get('/checkout/success/{order}', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
 });
 
 // Payment

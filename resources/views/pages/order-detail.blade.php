@@ -7,7 +7,7 @@
   $discountAmount = $order->discount_amount ?? 0;
   $shippingTotal = max($order->total_amount - $itemsTotal + $discountAmount, 0);
   $paymentRoutes = [
-    'bank_transfer' => route('payment.bank-transfer', $order->id),
+    'bank_transfer' => localized_route('payment.bank-transfer', ['order' => $order->id]),
   ];
   $paymentLabels = [
     'bank_transfer' => __('Transfer Bank Manual'),
@@ -105,10 +105,13 @@
                 <dd>{{ $order->payment_verified_at->format('d M Y, H:i') }}</dd>
               </div>
             @endif
-            @if($order->payment_proof_url)
+            @if($order->payment_proof_path)
+              @php
+                $proofUrl = asset('storage/' . ltrim(str_replace('\\', '/', $order->payment_proof_path), '/'));
+              @endphp
               <div>
                 <dt class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Bukti Pembayaran') }}</dt>
-                <dd><a href="{{ $order->payment_proof_url }}" target="_blank" class="text-sky-600 hover:text-sky-700">{{ __('Lihat Bukti') }}</a></dd>
+                <dd><a href="{{ $proofUrl }}" target="_blank" class="text-sky-600 hover:text-sky-700">{{ __('Lihat Bukti') }}</a></dd>
               </div>
             @endif
           </dl>

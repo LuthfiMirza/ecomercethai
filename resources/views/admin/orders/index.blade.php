@@ -160,10 +160,13 @@
                       <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l3 3 7-7"/></svg>
                     </button>
                   </form>
-                  @if($order->payment_proof_url)
+                  @if($order->payment_proof_path)
+                    @php
+                      $proofUrl = asset('storage/' . ltrim(str_replace('\\', '/', $order->payment_proof_path), '/'));
+                    @endphp
                     <button
                       type="button"
-                      @click="open = false; $dispatch('show-proof', { url: '{{ e($order->payment_proof_url) }}', label: 'Order #ORD{{ $order->id }}' })"
+                      @click="open = false; $dispatch('show-proof', { url: '{{ e($proofUrl) }}', label: 'Order #ORD{{ $order->id }}' })"
                       class="flex w-full items-center justify-between gap-2 rounded-lg px-4 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                     >
                       View Payment Proof

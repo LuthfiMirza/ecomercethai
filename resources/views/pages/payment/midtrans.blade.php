@@ -10,7 +10,7 @@
 
 @section('content')
 <main class="container max-w-4xl py-10 space-y-6" role="main">
-  <a href="{{ route('orders.show', $order->id) }}" class="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700">
+  <a href="{{ localized_route('orders.show', ['order' => $order->id]) }}" class="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-700">
     <i class="fa-solid fa-chevron-left text-xs"></i>
     <span>{{ __('Kembali ke detail pesanan') }}</span>
   </a>

@@ -151,6 +151,13 @@ function initWishlistCart(){
       const miniSubtotal = itemsCountEl.previousElementSibling;
       if (miniSubtotal) miniSubtotal.textContent = fmt(cartState.subtotal);
     }
+
+    const overlayCountEl = document.getElementById('cart-items-count-overlay');
+    if (overlayCountEl) {
+      const template = overlayCountEl.dataset.template || ':count';
+      const countText = String(cartState.count);
+      overlayCountEl.textContent = template.replace('__COUNT__', countText).replace(':count', countText);
+    }
   };
 
   const openOverlay = async (type) => {
@@ -212,15 +219,15 @@ function initWishlistCart(){
       return;
     }
 
-    wrap.innerHTML = cartState.items.map((item) => `
-      <div class="flex items-center gap-3 p-3" data-cart-row="${item.id}">
+    wrap.innerHTML = cartState.items.map((item, index) => `
+      <div class="flex items-center gap-3 p-3" data-cart-row="${item.id ?? `local-${index}`}">
         <img src="${item.image || ''}" onerror="this.style.display='none'" class="w-12 h-12 object-cover rounded" alt=""/>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">${item.name || 'Product'}</div>
           <div class="text-xs text-neutral-500">Qty: ${item.quantity}</div>
           <div class="text-xs text-neutral-500">${fmt(item.price)}</div>
         </div>
-        <button data-remove-cart="${item.id}" class="text-red-600 text-sm hover:underline">Remove</button>
+        <button data-remove-cart="${item.id ?? ''}" data-remove-cart-index="${index}" class="text-red-600 text-sm hover:underline">Remove</button>
       </div>`).join('');
 
     const subtotalTarget = qs('#cart-subtotal');
@@ -386,6 +393,16 @@ function initWishlistCart(){
       const cartItemId = removeCartBtn.getAttribute('data-remove-cart');
       if (cartItemId) {
         await removeCartItem(cartItemId);
+      } else {
+        const localIndexAttr = removeCartBtn.getAttribute('data-remove-cart-index');
+        if (localIndexAttr !== null) {
+          const idx = Number(localIndexAttr);
+          if (!Number.isNaN(idx)) {
+            const items = [...cartState.items];
+            items.splice(idx, 1);
+            updateCartState({ items });
+          }
+        }
       }
       return;
     }
@@ -407,13 +424,14 @@ function initWishlistCart(){
     if (link) {
       const href = link.getAttribute('href') || '';
       const newTab = event.metaKey || event.ctrlKey || link.target === '_blank';
-      if (!newTab && /\/wishlist$/.test(href)) {
+      const bypassOverlay = link.hasAttribute('data-overlay-bypass');
+      if (!newTab && !bypassOverlay && /\/wishlist$/.test(href)) {
         event.preventDefault();
         renderWishlist();
         openOverlay('wishlist');
         return;
       }
-      if (!newTab && /\/cart$/.test(href)) {
+      if (!newTab && !bypassOverlay && /\/cart$/.test(href)) {
         event.preventDefault();
         await openOverlay('cart');
         return;

@@ -28,6 +28,18 @@
   };
   $paymentLabel = ucfirst(str_replace('_', ' ', $paymentStatus));
   $paymentMethodLabel = $order->payment_method ? ucwords(str_replace(['_', '-'], ' ', $order->payment_method)) : 'N/A';
+  $shippingAddress = collect(json_decode($order->shipping_address ?? '[]', true));
+  if ($shippingAddress->isEmpty() && filled($order->shipping_address)) {
+    $shippingAddress = collect(['address_line1' => $order->shipping_address]);
+  }
+  $shippingRecipient = $shippingAddress->get('name');
+  $shippingPhone = $shippingAddress->get('phone');
+  $shippingLines = collect([
+    $shippingAddress->get('address_line1'),
+    $shippingAddress->get('address_line2'),
+    collect([$shippingAddress->get('city'), $shippingAddress->get('state'), $shippingAddress->get('postal_code')])->filter()->implode(', '),
+    $shippingAddress->get('country'),
+  ])->filter()->implode("\n");
 @endphp
 
 <div class="print-area">
@@ -55,9 +67,17 @@
       <p class="text-xs text-slate-500">To</p>
       <p class="mt-2 font-semibold">{{ $order->user->name ?? 'Customer' }}</p>
       <p class="text-sm text-slate-500 dark:text-slate-400">{{ $order->user->email ?? '-' }}</p>
-      @if($order->shipping_address)
-        <p class="text-sm text-slate-500 dark:text-slate-400">{!! nl2br(e($order->shipping_address)) !!}</p>
-      @endif
+      <div class="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+        @if($shippingRecipient)
+          <div class="font-medium text-slate-800 dark:text-slate-100">{{ $shippingRecipient }}</div>
+        @endif
+        @if($shippingPhone)
+          <div class="text-slate-500 dark:text-slate-400">{{ $shippingPhone }}</div>
+        @endif
+        @if(!empty($shippingLines))
+          <div class="whitespace-pre-line">{{ $shippingLines }}</div>
+        @endif
+      </div>
     </div>
     <div class="md:text-right">
       <p class="text-xs text-slate-500">Payment</p>
@@ -65,7 +85,7 @@
       <span class="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
         <span class="badge {{ $paymentBadge }}">{{ $paymentLabel }}</span>
       </span>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Verified: {{ $order->payment_verified_at?->format('d M Y H:i') ?? '—' }}</p>
+      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Verified: {{ $order->payment_verified_at?->format('d M Y H:i') ?? '-' }}</p>
     </div>
   </div>
 
@@ -134,3 +154,5 @@
 </div>
 </div>
 @endsection
+
+

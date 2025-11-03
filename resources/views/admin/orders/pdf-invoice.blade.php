@@ -34,11 +34,23 @@
         };
         $paymentLabel = ucfirst(str_replace('_', ' ', $paymentStatus));
         $paymentMethodLabel = $order->payment_method ? ucwords(str_replace(['_', '-'], ' ', $order->payment_method)) : 'N/A';
+        $shippingAddress = collect(json_decode($order->shipping_address ?? '[]', true));
+        if ($shippingAddress->isEmpty() && filled($order->shipping_address)) {
+            $shippingAddress = collect(['address_line1' => $order->shipping_address]);
+        }
+        $shippingRecipient = $shippingAddress->get('name');
+        $shippingPhone = $shippingAddress->get('phone');
+        $shippingLines = collect([
+            $shippingAddress->get('address_line1'),
+            $shippingAddress->get('address_line2'),
+            collect([$shippingAddress->get('city'), $shippingAddress->get('state'), $shippingAddress->get('postal_code')])->filter()->implode(', '),
+            $shippingAddress->get('country'),
+        ])->filter()->implode("\n");
     @endphp
 
     <div class="brand">
         <div>
-            <h2>Toko Thailand – Invoice</h2>
+            <h2>Toko Thailand - Invoice</h2>
             <div class="muted">Issued {{ $order->created_at?->format('d M Y') }}</div>
         </div>
         <div>
@@ -53,13 +65,21 @@
                 <strong>Bill To</strong><br>
                 {{ $order->user->name ?? 'Customer' }}<br>
                 {{ $order->user->email ?? '-' }}<br>
-                {!! nl2br(e($order->shipping_address ?? '-')) !!}
+                @if($shippingRecipient)
+                    {{ $shippingRecipient }}<br>
+                @endif
+                @if($shippingPhone)
+                    {{ $shippingPhone }}<br>
+                @endif
+                @if(!empty($shippingLines))
+                    {!! nl2br(e($shippingLines)) !!}<br>
+                @endif
             </td>
             <td style="width:30%; vertical-align:top;">
                 <strong>Payment Method</strong><br>
                 {{ $paymentMethodLabel }}<br>
                 <span class="badge {{ $paymentBadge }}">{{ $paymentLabel }}</span><br>
-                <span class="muted">Verified: {{ $order->payment_verified_at?->format('d M Y H:i') ?? '—' }}</span>
+                <span class="muted">Verified: {{ $order->payment_verified_at?->format('d M Y H:i') ?? '-' }}</span>
             </td>
             <td class="right" style="vertical-align:top;">
                 <strong>Created At:</strong><br>

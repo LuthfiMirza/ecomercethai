@@ -84,8 +84,26 @@ class OrderController extends Controller
         $order = Order::with('user', 'orderItems.product')->findOrFail($id);
         $statusOptions = self::STATUS_OPTIONS;
         $paymentStatusOptions = self::PAYMENT_STATUS_OPTIONS;
+        $decodedAddress = json_decode($order->shipping_address ?? '', true);
 
-        return view('admin.orders.edit', compact('order', 'statusOptions', 'paymentStatusOptions'));
+        if (! is_array($decodedAddress)) {
+            $decodedAddress = [
+                'address_line1' => trim((string) $order->shipping_address),
+            ];
+        }
+
+        $shippingAddress = array_merge([
+            'name' => $order->user->name ?? '',
+            'phone' => '',
+            'address_line1' => '',
+            'address_line2' => '',
+            'city' => '',
+            'state' => '',
+            'postal_code' => '',
+            'country' => '',
+        ], array_filter($decodedAddress, static fn ($value) => $value !== null));
+
+        return view('admin.orders.edit', compact('order', 'statusOptions', 'paymentStatusOptions', 'shippingAddress'));
     }
 
     /**
@@ -99,21 +117,44 @@ class OrderController extends Controller
             'status' => ['required', Rule::in(self::STATUS_OPTIONS)],
             'payment_status' => ['required', Rule::in(self::PAYMENT_STATUS_OPTIONS)],
             'payment_method' => ['required', 'string', 'max:100'],
-            'shipping_address' => ['required', 'string', 'max:2000'],
             'total_amount' => ['required', 'numeric', 'min:0'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_proof' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:4096'],
             'remove_payment_proof' => ['nullable', 'boolean'],
+            'shipping.name' => ['nullable', 'string', 'max:120'],
+            'shipping.phone' => ['nullable', 'string', 'max:50'],
+            'shipping.address_line1' => ['required', 'string', 'max:255'],
+            'shipping.address_line2' => ['nullable', 'string', 'max:255'],
+            'shipping.city' => ['required', 'string', 'max:120'],
+            'shipping.state' => ['nullable', 'string', 'max:120'],
+            'shipping.postal_code' => ['required', 'string', 'max:30'],
+            'shipping.country' => ['required', 'string', 'max:120'],
         ]);
 
         $data = [
             'status' => $validated['status'],
             'payment_status' => $validated['payment_status'],
             'payment_method' => $validated['payment_method'],
-            'shipping_address' => $validated['shipping_address'],
             'total_amount' => $validated['total_amount'],
             'discount_amount' => $validated['discount_amount'] ?? 0,
         ];
+
+        $shippingData = collect($validated['shipping'] ?? [])
+            ->map(static fn ($value) => is_string($value) ? trim($value) : $value)
+            ->toArray();
+
+        $shippingData = array_merge([
+            'name' => '',
+            'phone' => '',
+            'address_line1' => '',
+            'address_line2' => '',
+            'city' => '',
+            'state' => '',
+            'postal_code' => '',
+            'country' => '',
+        ], $shippingData);
+
+        $data['shipping_address'] = json_encode($shippingData, JSON_UNESCAPED_UNICODE);
 
         if ($data['payment_status'] === 'paid') {
             $data['payment_verified_at'] = $order->payment_verified_at ?? now();
@@ -288,4 +329,3 @@ class OrderController extends Controller
         return back()->with($ok ? 'success' : 'error', $msg);
     }
 }
-

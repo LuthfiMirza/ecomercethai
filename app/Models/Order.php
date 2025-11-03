@@ -62,6 +62,9 @@ class Order extends Model
             return null;
         }
 
-        return Storage::disk('public')->url($this->payment_proof_path);
+        $path = str_replace('\\', '/', (string) $this->payment_proof_path);
+        $path = ltrim($path, '/');
+
+        return asset('storage/' . $path);
     }
 }

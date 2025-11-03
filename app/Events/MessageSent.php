@@ -39,19 +39,26 @@ class MessageSent implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
+        $conversationId = $this->message->conversation_id ?: $this->message->user_id;
+        $conversationUser = $this->message->conversation;
+
+        if (! $conversationUser && $conversationId === $this->message->user_id && ! $this->message->is_from_admin) {
+            $conversationUser = $this->message->user;
+        }
+
         return [
             'id' => $this->message->id,
             'content' => $this->message->content,
             'is_from_admin' => $this->message->is_from_admin,
-            'conversation_id' => $this->message->conversation_id,
+            'conversation_id' => $conversationId,
             'created_at' => $this->message->created_at?->toIso8601String(),
             'user' => [
                 'id' => $this->message->user?->id,
                 'name' => $this->message->user?->name,
             ],
             'conversation_user' => [
-                'id' => $this->message->conversation?->id,
-                'name' => $this->message->conversation?->name,
+                'id' => $conversationUser?->id ?? $conversationId,
+                'name' => $conversationUser?->name ?? $this->message->user?->name,
             ],
         ];
     }

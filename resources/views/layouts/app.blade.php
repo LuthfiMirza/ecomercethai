@@ -65,19 +65,28 @@
           <button class="p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" data-close="wishlist" aria-label="{{ __('common.close') }}"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div id="wishlist-items" class="max-h-[50vh] overflow-y-auto divide-y divide-neutral-200 dark:divide-neutral-800"></div>
-        <footer class="relative px-4 py-3 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800">
-          <div class="flex items-center gap-3">
-            <div class="flex flex-col leading-tight">
-              <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('common.subtotal') }}</div>
-              <div id="wishlist-items-count" class="text-xs text-neutral-500 dark:text-neutral-400" data-template="{{ __('common.items_count', ['count' => '__COUNT__']) }}">{{ __('common.items_count', ['count' => 0]) }}</div>
+        <footer class="px-4 py-4 space-y-3 border-t border-neutral-200 dark:border-neutral-800">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="flex flex-col leading-tight">
+                <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('common.subtotal') }}</div>
+                <div id="wishlist-items-count" class="text-xs text-neutral-500 dark:text-neutral-400" data-template="{{ __('common.items_count', ['count' => '__COUNT__']) }}">{{ __('common.items_count', ['count' => 0]) }}</div>
+              </div>
+              <div id="wishlist-subtotal" class="font-semibold text-neutral-900 dark:text-neutral-100">{{ format_price(0) }}</div>
             </div>
-            <div id="wishlist-subtotal" class="font-semibold text-neutral-900 dark:text-neutral-100">{{ format_price(0) }}</div>
+            <button id="wishlist-clear" class="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
+              <i class="fa-solid fa-broom text-[10px]"></i>
+              <span>{{ __('common.clear_all') }}</span>
+            </button>
           </div>
-          <div class="flex items-center gap-2">
-            <a href="{{ route('wishlist') }}" class="px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.view_wishlist') }}</a>
-            <a href="{{ route('catalog') }}" class="px-3 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white text-sm">{{ __('common.shop_now') }}</a>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <a href="{{ localized_route('wishlist') }}" data-overlay-bypass class="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800">
+              {{ __('common.view_wishlist') }}
+            </a>
+            <a href="{{ localized_route('catalog') }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-accent-600">
+              {{ __('common.shop_now') }}
+            </a>
           </div>
-          <button id="wishlist-clear" class="absolute left-4 text-sm text-red-600 hover:underline">{{ __('common.clear_all') }}</button>
         </footer>
       </aside>
     </div>
@@ -91,16 +100,30 @@
           <button class="p-2 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" data-close="cart" aria-label="{{ __('common.close') }}"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div id="cart-items" class="max-h-[50vh] overflow-y-auto divide-y divide-neutral-200 dark:divide-neutral-800"></div>
-        <footer class="relative px-4 py-3 flex items-center justify-between border-t border-neutral-200 dark:border-neutral-800">
-          <div class="flex items-center gap-3">
-            <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('common.subtotal') }}</div>
-            <div id="cart-subtotal" class="font-semibold text-neutral-900 dark:text-neutral-100">$0.00</div>
+        <footer class="px-4 py-4 space-y-3 border-t border-neutral-200 dark:border-neutral-800">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="flex flex-col leading-tight">
+                <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('common.subtotal') }}</div>
+                <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                  <span id="cart-items-count-overlay" data-template="{{ __('common.items_count', ['count' => '__COUNT__']) }}">{{ __('common.items_count', ['count' => 0]) }}</span>
+                </div>
+              </div>
+              <div id="cart-subtotal" class="font-semibold text-neutral-900 dark:text-neutral-100">$0.00</div>
+            </div>
+            <button id="cart-clear" class="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
+              <i class="fa-solid fa-broom text-[10px]"></i>
+              <span>{{ __('common.clear_all') }}</span>
+            </button>
           </div>
-          <div class="flex items-center gap-2">
-            <a href="{{ route('cart') }}" class="px-3 py-2 rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.view_cart') }}</a>
-            <a href="{{ route('checkout') }}" class="px-3 py-2 rounded-md bg-accent-500 hover:bg-accent-600 text-white text-sm">{{ __('common.checkout') }}</a>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <a href="{{ localized_route('cart') }}" data-overlay-bypass class="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800">
+              {{ __('common.view_cart') }}
+            </a>
+            <a href="{{ localized_route('checkout') }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-accent-600">
+              {{ __('common.checkout') }}
+            </a>
           </div>
-          <button id="cart-clear" class="absolute left-4 text-sm text-red-600 hover:underline">{{ __('common.clear_all') }}</button>
         </footer>
       </aside>
     </div>

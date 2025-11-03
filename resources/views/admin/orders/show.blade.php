@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+ï»¿@extends('layouts.admin')
 
 @section('header', 'Order Details')
 
@@ -58,7 +58,7 @@
             </div>
             <div>
               <p class="text-xs uppercase tracking-wide text-slate-400">Payment Verified</p>
-              <p class="mt-1 text-slate-600 dark:text-slate-300">{{ $order->payment_verified_at?->format('d M Y H:i') ?? '—' }}</p>
+              <p class="mt-1 text-slate-600 dark:text-slate-300">{{ $order->payment_verified_at?->format('d M Y H:i') ?? 'ï¿½' }}</p>
             </div>
           </div>
 
@@ -97,11 +97,14 @@
             <div class="md:col-span-2 space-y-4">
               <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700/60">
                 <p class="text-xs uppercase tracking-wide text-slate-400">Payment Proof</p>
-                @if($order->payment_proof_url)
+                @if($order->payment_proof_path)
+                  @php
+                    $proofUrl = asset('storage/' . ltrim(str_replace('\\', '/', $order->payment_proof_path), '/'));
+                  @endphp
                   <div class="mt-3 space-y-3">
-                    <img src="{{ $order->payment_proof_url }}" alt="Payment proof" class="w-full max-h-64 rounded-lg object-contain bg-slate-100 dark:bg-slate-800" loading="lazy">
+                    <img src="{{ $proofUrl }}" alt="Payment proof" class="w-full max-h-64 rounded-lg object-contain bg-slate-100 dark:bg-slate-800" loading="lazy">
                     <div class="flex flex-wrap gap-2">
-                      <a href="{{ $order->payment_proof_url }}" target="_blank" class="btn-outline text-xs">Open Original</a>
+                      <a href="{{ $proofUrl }}" target="_blank" class="btn-outline text-xs">Open Original</a>
                       <a href="{{ route('admin.orders.edit', $order) }}" class="btn-outline text-xs">Manage Proof</a>
                     </div>
                   </div>
@@ -134,7 +137,33 @@
             <div><p class="text-slate-500">Name</p><p class="font-medium">{{ $order->user->name ?? '-' }}</p></div>
             <div><p class="text-slate-500">Email</p><p class="font-medium">{{ $order->user->email ?? '-' }}</p></div>
             <div><p class="text-slate-500">Phone</p><p class="font-medium">{{ $order->phone ?? '-' }}</p></div>
-            <div><p class="text-slate-500">Address</p><p class="font-medium">{!! nl2br(e($order->shipping_address ?? '-')) !!}</p></div>
+            @php
+              $shippingAddress = collect(json_decode($order->shipping_address ?? '[]', true));
+              $addressLines = collect([
+                $shippingAddress->get('address_line1'),
+                $shippingAddress->get('address_line2'),
+                collect([$shippingAddress->get('city'), $shippingAddress->get('state'), $shippingAddress->get('postal_code')])->filter()->implode(', '),
+                $shippingAddress->get('country'),
+              ])->filter()->implode("\n");
+            @endphp
+            <div>
+              <p class="text-slate-500">Address</p>
+              @if($shippingAddress->isNotEmpty())
+                <div class="font-medium space-y-1 text-sm leading-relaxed whitespace-pre-line">
+                  @if($shippingAddress->get('name'))
+                    <div class="text-base text-black dark:text-white">{{ $shippingAddress->get('name') }}</div>
+                  @endif
+                  @if($shippingAddress->get('phone'))
+                    <div class="text-slate-500 dark:text-slate-400">{{ $shippingAddress->get('phone') }}</div>
+                  @endif
+                  @if(!empty($addressLines))
+                    <div class="text-slate-600 dark:text-slate-300">{{ $addressLines }}</div>
+                  @endif
+                </div>
+              @else
+                <p class="font-medium">-</p>
+              @endif
+            </div>
           </div>
         </div>
 

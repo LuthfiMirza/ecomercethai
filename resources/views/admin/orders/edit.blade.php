@@ -19,6 +19,19 @@
     @csrf
     @method('PUT')
 
+    @php
+      $shipping = array_merge([
+        'name' => '',
+        'phone' => '',
+        'address_line1' => '',
+        'address_line2' => '',
+        'city' => '',
+        'state' => '',
+        'postal_code' => '',
+        'country' => '',
+      ], (array) old('shipping', $shippingAddress ?? []));
+    @endphp
+
     <div class="form-card form-modern space-y-6">
       <h4 class="text-lg font-semibold text-slate-800 dark:text-slate-200">Order Overview</h4>
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -67,31 +80,100 @@
         </div>
       </div>
 
-      <div>
-        <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Shipping Address</label>
-        <textarea name="shipping_address" rows="4">{{ old('shipping_address', $order->shipping_address) }}</textarea>
-        @error('shipping_address')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wide">Shipping Address</label>
+          <span class="text-xs text-slate-400">Displayed on customer invoice &amp; admin views.</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Recipient Name</label>
+            <input type="text" name="shipping[name]" value="{{ $shipping['name'] }}" placeholder="Customer name">
+            @error('shipping.name')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Phone Number</label>
+            <input type="text" name="shipping[phone]" value="{{ $shipping['phone'] }}" placeholder="+62 812...">
+            @error('shipping.phone')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5">
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Address Line 1</label>
+            <input type="text" name="shipping[address_line1]" value="{{ $shipping['address_line1'] }}" required placeholder="Street, house number">
+            @error('shipping.address_line1')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Address Line 2</label>
+            <input type="text" name="shipping[address_line2]" value="{{ $shipping['address_line2'] }}" placeholder="Apartment, unit, etc. (optional)">
+            @error('shipping.address_line2')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">City</label>
+            <input type="text" name="shipping[city]" value="{{ $shipping['city'] }}" required>
+            @error('shipping.city')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">State / Province</label>
+            <input type="text" name="shipping[state]" value="{{ $shipping['state'] }}">
+            @error('shipping.state')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+          <div>
+            <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Postal Code</label>
+            <input type="text" name="shipping[postal_code]" value="{{ $shipping['postal_code'] }}" required>
+            @error('shipping.postal_code')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-slate-500 dark:text-slate-300">Country</label>
+          <input type="text" name="shipping[country]" value="{{ $shipping['country'] }}" required>
+          @error('shipping.country')<p class="mt-1 text-xs text-rose-500">{{ $message }}</p>@enderror
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-slate-50/60 p-4 text-sm leading-relaxed dark:border-slate-700/60 dark:bg-slate-900/40">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Preview</p>
+          @php
+            $previewLines = collect([
+              $shipping['name'],
+              $shipping['phone'],
+              $shipping['address_line1'],
+              $shipping['address_line2'],
+              collect([$shipping['city'], $shipping['state'], $shipping['postal_code']])->filter()->implode(', '),
+              $shipping['country'],
+            ])->filter()->implode("\n");
+          @endphp
+          <p class="mt-2 whitespace-pre-line text-slate-700 dark:text-slate-200">{{ $previewLines ?: 'Customer shipping address will appear here.' }}</p>
+        </div>
       </div>
     </div>
 
     <div class="form-card space-y-4">
       <div class="flex items-center justify-between">
         <h4 class="text-lg font-semibold text-slate-800 dark:text-slate-200">Payment Proof</h4>
-        @if($order->payment_proof_url)
+        @if($order->payment_proof_path)
           <span class="text-xs text-slate-500 dark:text-slate-400">Current file shown below</span>
         @endif
       </div>
 
-      @if($order->payment_proof_url)
+      @if($order->payment_proof_path)
+        @php
+          $proofUrl = asset('storage/' . ltrim(str_replace('\\', '/', $order->payment_proof_path), '/'));
+        @endphp
         <div class="flex flex-col gap-4 rounded-xl border border-slate-200 p-3 dark:border-slate-700/60 md:flex-row">
-          <img src="{{ $order->payment_proof_url }}" alt="Payment proof preview" class="h-40 w-full rounded-lg object-contain bg-slate-100 dark:bg-slate-800 md:w-48" loading="lazy">
+          <img src="{{ $proofUrl }}" alt="Payment proof preview" class="h-40 w-full rounded-lg object-contain bg-slate-100 dark:bg-slate-800 md:w-48" loading="lazy">
           <div class="flex-1 space-y-3 text-sm">
             <p class="text-slate-600 dark:text-slate-300">Upload a new file to replace the current proof or remove it entirely.</p>
             <label class="inline-flex items-center gap-2 text-xs font-medium text-rose-600">
               <input type="checkbox" name="remove_payment_proof" value="1" class="check-modern">
               Remove current proof
             </label>
-            <a href="{{ $order->payment_proof_url }}" target="_blank" class="btn-outline text-xs">Open Original</a>
+            <a href="{{ $proofUrl }}" target="_blank" class="btn-outline text-xs">Open Original</a>
           </div>
         </div>
       @endif

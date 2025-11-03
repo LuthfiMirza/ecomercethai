@@ -52,7 +52,7 @@ class PaymentController extends Controller
             'payment_status' => 'verifying',
         ]);
 
-        return redirect()->route('orders.show', $order->id)
+        return redirect()->to(localized_route('orders.show', ['order' => $order]))
             ->with('success', __('payment.proof_uploaded'));
     }
 

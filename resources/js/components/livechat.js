@@ -4,6 +4,7 @@ function initLiveChat() {
   const input = document.querySelector('[data-livechat-input]');
   const sendButton = document.querySelector('[data-livechat-send]');
   const openers = document.querySelectorAll('[data-livechat-open]');
+  const panel = document.querySelector('[data-livechat-panel]');
 
   if (!log || !form || !input) {
     return;
@@ -14,8 +15,10 @@ function initLiveChat() {
   const isAuthenticated = Boolean(window.App?.isAuthenticated);
   const emptyTemplate = log.querySelector('[data-livechat-empty]')?.cloneNode(true) || null;
 
+  const realtimeEnabled = Boolean(isAuthenticated && config.channel && window.Echo);
   let hasLoaded = false;
   let loading = false;
+  let pollTimer = null;
 
   const escapeHtml = (value = '') => String(value)
     .replace(/&/g, '&amp;')
@@ -117,6 +120,25 @@ function initLiveChat() {
     }
   };
 
+  const isPanelVisible = () => {
+    if (!panel) return false;
+    if (panel.hidden) return false;
+    const style = window.getComputedStyle(panel);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+    return panel.offsetHeight > 0 && panel.offsetWidth > 0;
+  };
+
+  const startPolling = () => {
+    if (realtimeEnabled || pollTimer || !config.fetchUrl) return;
+    pollTimer = window.setInterval(() => {
+      if (!isAuthenticated) return;
+      if (!isPanelVisible()) return;
+      loadMessages();
+    }, 10000);
+  };
+
   if (isAuthenticated && config.channel && window.Echo) {
     window.Echo.private(config.channel)
       .listen('.message.sent', (payload) => {
@@ -174,6 +196,7 @@ function initLiveChat() {
     if (!hasLoaded) {
       loadMessages();
     }
+    startPolling();
   };
 
   openers.forEach((button) => {
@@ -183,6 +206,7 @@ function initLiveChat() {
   // Auto-load if chat is already visible on page load
   if (document.querySelector('[data-livechat-panel][x-show]')) {
     loadMessages();
+    startPolling();
   }
 }
 

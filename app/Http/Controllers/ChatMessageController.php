@@ -12,11 +12,18 @@ class ChatMessageController extends Controller
     public function index(Request $request): JsonResponse
     {
         $messages = Message::with('user:id,name')
-            ->where('conversation_id', $request->user()->id)
+            ->where(function ($query) use ($request) {
+                $query->where('conversation_id', $request->user()->id)
+                    ->orWhere(function ($inner) use ($request) {
+                        $inner->whereNull('conversation_id')
+                            ->where('user_id', $request->user()->id);
+                    });
+            })
             ->orderBy('created_at')
             ->take(200)
             ->get()
-            ->map(fn (Message $message) => $this->transformMessage($message));
+            ->map(fn (Message $message) => $this->transformMessage($message))
+            ->values();
 
         return response()->json([
             'ok' => true,
@@ -56,7 +63,7 @@ class ChatMessageController extends Controller
             'id' => $message->id,
             'content' => $message->content,
             'is_from_admin' => $message->is_from_admin,
-            'conversation_id' => $message->conversation_id,
+            'conversation_id' => $message->conversation_id ?: $message->user_id,
             'created_at' => $message->created_at?->toIso8601String(),
             'sender' => [
                 'id' => $message->user?->id,

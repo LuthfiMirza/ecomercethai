@@ -140,19 +140,40 @@ class CheckoutController extends Controller
 
             DB::commit();
 
-            // Redirect based on payment method
-            if ($paymentProofPath) {
-                return redirect()->route('orders.show', $order->id)
-                    ->with('success', __('payment.proof_uploaded'));
+            $redirectUrl = route('checkout.success', [
+                'locale' => app()->getLocale(),
+                'order' => $order,
+            ]);
+            $successMessage = $paymentProofPath
+                ? __('payment.proof_uploaded')
+                : __('Pesanan berhasil dibuat.');
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'order_id' => $order->id,
+                    'redirect' => $redirectUrl,
+                    'order_number' => sprintf('#%s', $order->id),
+                    'message' => $successMessage,
+                ]);
             }
 
-            return redirect()->route('payment.bank-transfer', $order->id);
+            return redirect()->to($redirectUrl)
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             DB::rollBack();
             if ($paymentProofPath) {
                 Storage::disk('public')->delete($paymentProofPath);
             }
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('checkout.error') . ': ' . $e->getMessage(),
+                ], 500);
+            }
+
             return back()->with('error', __('checkout.error') . ': ' . $e->getMessage());
         }
     }
@@ -172,8 +193,9 @@ class CheckoutController extends Controller
         ]);
 
         $userId = Auth::id();
+        $address = null;
 
-        DB::transaction(function () use ($data, $userId) {
+        DB::transaction(function () use ($data, $userId, &$address) {
             $data['user_id'] = $userId;
             $data['is_default'] = isset($data['is_default']) ? (bool) $data['is_default'] : false;
 
@@ -186,9 +208,58 @@ class CheckoutController extends Controller
             }
         });
 
+        if ($request->expectsJson()) {
+            $lines = array_values(array_filter([
+                $address->address_line1,
+                $address->address_line2,
+                trim(implode(', ', array_filter([$address->city, $address->state, $address->postal_code]))),
+                $address->country,
+            ]));
+
+            return response()->json([
+                'success' => true,
+                'message' => __('checkout.address_added'),
+                'address' => [
+                    'id' => (string) $address->id,
+                    'name' => $address->name,
+                    'phone' => $address->phone,
+                    'is_default' => (bool) $address->is_default,
+                    'lines' => $lines,
+                ],
+            ], 201);
+        }
+
         return redirect()
             ->route('checkout')
             ->with('success', __('checkout.address_added'));
+    }
+
+    public function success(Order|string $order)
+    {
+        if (! $order instanceof Order) {
+            $order = Order::with('orderItems.product')->findOrFail($order);
+        } else {
+            $order->loadMissing('orderItems.product');
+        }
+
+        if ($order->user_id !== Auth::id()) {
+            abort(404);
+        }
+
+        $shipping = collect(json_decode($order->shipping_address ?? '[]', true));
+        $items = $order->orderItems ?? collect();
+        $itemsTotal = $items->sum(fn ($item) => ($item->price ?? 0) * ($item->quantity ?? 0));
+        $discountAmount = $order->discount_amount ?? 0;
+        $shippingTotal = max($order->total_amount - $itemsTotal + $discountAmount, 0);
+
+        return view('pages.checkout-success', [
+            'order' => $order,
+            'shipping' => $shipping,
+            'items' => $items,
+            'itemsTotal' => $itemsTotal,
+            'discountAmount' => $discountAmount,
+            'shippingTotal' => $shippingTotal,
+        ]);
     }
 
     public function applyCoupon(Request $request)
@@ -237,3 +308,13 @@ class CheckoutController extends Controller
         ]);
     }
 }
+
+
+
+
+
+
+
+
+
+

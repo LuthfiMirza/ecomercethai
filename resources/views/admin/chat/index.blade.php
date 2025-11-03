@@ -97,6 +97,9 @@
     loadingMessages: false,
   };
 
+  let pollTimer = null;
+  let pollInFlight = false;
+
   const onlineAdmins = new Map();
 
   let audioCtx = null;
@@ -159,6 +162,57 @@
     if (!allow) {
       els.chatInput.value = '';
     }
+  }
+
+  function detectNewMessages(previous) {
+    const updated = [];
+    let shouldNotify = false;
+
+    state.conversations.forEach((entry, key) => {
+      const last = entry.lastMessage;
+      if (!last) return;
+      const conversationId = Number(key);
+      const prevId = previous?.get(conversationId) ?? null;
+      if (prevId === last.id) {
+        return;
+      }
+      updated.push(conversationId);
+      if (!last.is_from_admin) {
+        const isActive = Number(state.activeConversationId) === conversationId;
+        if (!isActive || !document.hasFocus()) {
+          shouldNotify = true;
+        }
+      }
+    });
+
+    if (shouldNotify) {
+      playNotification();
+    }
+
+    return updated;
+  }
+
+  function startPolling() {
+    if (pollTimer || !config.conversationsUrl) {
+      return;
+    }
+    pollTimer = window.setInterval(async () => {
+      if (pollInFlight) return;
+      pollInFlight = true;
+      try {
+        await fetchConversations({ silent: true, trackChanges: true });
+      } catch (error) {
+        console.error('Chat polling failed', error);
+      } finally {
+        pollInFlight = false;
+      }
+    }, 10000);
+  }
+
+  function stopPolling() {
+    if (!pollTimer) return;
+    window.clearInterval(pollTimer);
+    pollTimer = null;
   }
 
   function upsertConversation(payload) {
@@ -318,7 +372,17 @@
   }
 
   async function fetchConversations(options = {}) {
-    if (!config.conversationsUrl) return;
+    if (!config.conversationsUrl) return [];
+    const silent = Boolean(options?.silent);
+    const trackChanges = Boolean(options?.trackChanges);
+
+    const previous = trackChanges ? new Map() : null;
+    if (trackChanges) {
+      state.conversations.forEach((entry, key) => {
+        previous.set(Number(key), entry.lastMessage?.id ?? null);
+      });
+    }
+
     try {
       const { data } = await window.axios.get(config.conversationsUrl);
       if (!data?.ok) throw new Error('Unable to load conversations');
@@ -330,6 +394,11 @@
 
       renderConversationList();
 
+      let updated = [];
+      if (trackChanges) {
+        updated = detectNewMessages(previous);
+      }
+
       if (!state.activeConversationId && data.conversations?.length) {
         const first = data.conversations[0];
         state.activeConversationId = first?.user?.id ?? null;
@@ -338,15 +407,30 @@
         }
       }
 
+      if (trackChanges) {
+        const activeId = Number(state.activeConversationId);
+        if (
+          activeId &&
+          previous?.has(activeId) &&
+          updated.includes(activeId) &&
+          !state.loadingMessages
+        ) {
+          await fetchMessages(activeId);
+        }
+      }
+
       if (!state.activeConversationId) {
         updateFormState(false);
         els.chatTitle.textContent = '{{ __('Select a conversation') }}';
         els.chatSubtitle.textContent = '{{ __('Choose a conversation from the list to begin.') }}';
       }
+
+      return updated;
     } catch (error) {
-      if (!options.silent) {
+      if (!silent) {
         console.error('Failed to load conversations', error);
       }
+      return [];
     }
   }
 
@@ -491,11 +575,30 @@
   }
 
   if (window.Echo) {
+    const connection = window.Echo.connector?.pusher?.connection;
+    if (connection) {
+      if (connection.state !== 'connected') {
+        startPolling();
+      }
+      connection.bind('connected', () => {
+        stopPolling();
+      });
+      ['unavailable', 'failed', 'disconnected'].forEach((event) => {
+        connection.bind(event, () => {
+          startPolling();
+        });
+      });
+    } else {
+      startPolling();
+    }
+
     window.Echo.join('chat.admin')
       .here(syncOnline)
       .joining(addOnline)
       .leaving(removeOnline)
       .listen('.message.sent', handleBroadcast);
+  } else {
+    startPolling();
   }
 
   if (els.conversationItems) {
@@ -574,3 +677,4 @@
 @endpush
 
 @endsection
+

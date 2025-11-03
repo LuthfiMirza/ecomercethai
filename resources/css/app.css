@@ -128,7 +128,7 @@
 
 @layer utilities {
   .bg-admin-gradient { @apply bg-gradient-to-br from-slate-100 via-white to-sky-100; }
-  .dark .bg-admin-gradient { @apply bg-slate-950; }
+  .dark .bg-admin-gradient { @apply bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950; }
   .soft-glass { @apply bg-white/75 backdrop-blur-xl border border-white/60; box-shadow: 0 25px 60px -30px rgba(15, 23, 42, 0.35); }
   .dark .soft-glass { @apply bg-slate-900/70 border-slate-800/80; box-shadow: 0 25px 60px -30px rgba(15, 23, 42, 0.65); }
   .soft-card { @apply rounded-3xl bg-white/80 border border-white/60 backdrop-blur-xl shadow-xl; box-shadow: 0 20px 60px -25px rgba(15, 23, 42, 0.35); }
@@ -205,6 +205,50 @@
 
   .mega-menu-preview-link {
     @apply mt-auto inline-flex items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400;
+  }
+}
+
+@layer components {
+  [data-checkout-react] .rounded-3xl.border,
+  [data-checkout-react] .rounded-2xl.border {
+    @apply bg-white border-neutral-200 dark:bg-neutral-900 dark:border-neutral-700;
+  }
+
+  [data-checkout-react] input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='range']),
+  [data-checkout-react] select,
+  [data-checkout-react] textarea {
+    @apply bg-white text-neutral-800 border-neutral-200 shadow-sm placeholder-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60 dark:bg-neutral-900 dark:text-neutral-100 dark:border-neutral-700 dark:placeholder-neutral-500 dark:focus:border-orange-400;
+  }
+
+  [data-checkout-react] input[type='checkbox'],
+  [data-checkout-react] input[type='radio'] {
+    @apply text-orange-500 border-neutral-300 dark:border-neutral-600 dark:text-orange-400 focus:ring-orange-400/50;
+  }
+
+  [data-checkout-react] label {
+    @apply text-neutral-600 dark:text-neutral-300;
+  }
+
+  [data-checkout-react] .text-slate-500 {
+    @apply text-neutral-500 dark:text-neutral-300;
+  }
+
+  [data-checkout-react] .text-slate-400 {
+    @apply text-neutral-400 dark:text-neutral-500;
+  }
+
+  [data-checkout-react] .text-slate-800 {
+    @apply text-neutral-900 dark:text-neutral-100;
+  }
+
+  [data-checkout-react] .bg-slate-50\/70 {
+    @apply bg-neutral-100/80 dark:bg-neutral-800/60;
+  }
+
+  [data-checkout-react] .bg-white\/70,
+  [data-checkout-react] .bg-white\/80,
+  [data-checkout-react] .bg-white\/90 {
+    @apply bg-white dark:bg-neutral-900/80;
   }
 }
 
