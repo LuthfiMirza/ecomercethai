@@ -4,15 +4,24 @@ namespace Tests\Feature;
 
 use App\Models\Cart;
 use App\Models\Coupon;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ShippingAddress;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CheckoutTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        app()->setLocale('en');
+    }
 
     public function test_user_can_apply_valid_coupon(): void
     {
@@ -36,7 +45,7 @@ class CheckoutTest extends TestCase
             'valid_until' => now()->addDay(),
         ]);
 
-        $response = $this->actingAs($user)->postJson('/checkout/apply-coupon', [
+        $response = $this->actingAs($user)->postJson(route('checkout.apply-coupon', ['locale' => 'en']), [
             'coupon_code' => 'TEST10',
         ]);
 
@@ -59,7 +68,7 @@ class CheckoutTest extends TestCase
             'price' => $product->price,
         ]);
 
-        $response = $this->actingAs($user)->postJson('/checkout/apply-coupon', [
+        $response = $this->actingAs($user)->postJson(route('checkout.apply-coupon', ['locale' => 'en']), [
             'coupon_code' => 'INVALID',
         ]);
 
@@ -71,6 +80,8 @@ class CheckoutTest extends TestCase
     {
         $user = User::factory()->create();
         $product = Product::factory()->create(['price' => 1000, 'is_active' => true]);
+
+        Storage::fake('public');
         
         Cart::create([
             'user_id' => $user->id,
@@ -90,16 +101,26 @@ class CheckoutTest extends TestCase
             'country' => 'Thailand',
         ]);
 
-        $response = $this->actingAs($user)->post('/checkout', [
+        $proof = UploadedFile::fake()->image('proof.jpg');
+
+        $response = $this->actingAs($user)->post(route('checkout.process', ['locale' => 'en']), [
             'shipping_address_id' => $address->id,
             'payment_method' => 'bank_transfer',
+            'payment_proof' => $proof,
         ]);
 
-        $response->assertRedirect();
-        
+        $order = Order::first();
+        $this->assertNotNull($order);
+
+        $response->assertRedirect(route('orders.show', ['locale' => app()->getLocale(), 'order' => $order]));
+
         $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
             'user_id' => $user->id,
             'payment_method' => 'bank_transfer',
+            'payment_status' => 'verifying',
         ]);
+
+        Storage::disk('public')->assertExists('payment-proofs/'.$proof->hashName());
     }
 }

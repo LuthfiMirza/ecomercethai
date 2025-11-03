@@ -8,16 +8,9 @@
   $shippingTotal = max($order->total_amount - $itemsTotal + $discountAmount, 0);
   $paymentRoutes = [
     'bank_transfer' => route('payment.bank-transfer', $order->id),
-    'midtrans' => route('payment.midtrans', $order->id),
-    'xendit' => route('payment.xendit', $order->id),
-    'stripe' => route('payment.stripe', $order->id),
   ];
   $paymentLabels = [
     'bank_transfer' => __('Transfer Bank Manual'),
-    'credit_card' => __('Kartu Kredit / Debit'),
-    'midtrans' => 'Midtrans',
-    'xendit' => 'Xendit',
-    'stripe' => 'Stripe',
   ];
   $paymentLabel = $paymentLabels[$order->payment_method] ?? ucfirst(str_replace('_', ' ', $order->payment_method));
 @endphp
@@ -56,8 +49,6 @@
         {{ __('Lanjutkan Pembayaran') }}
       </x-button>
     </x-alert>
-  @elseif($order->payment_status === 'pending' && $order->payment_method === 'credit_card')
-    <x-alert type="info">{{ __('Pesanan ini menunggu konfirmasi pembayaran kartu. Hubungi tim kami jika Anda membutuhkan bantuan.') }}</x-alert>
   @endif
 
   <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">

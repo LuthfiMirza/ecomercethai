@@ -18,6 +18,47 @@
   // Format harga sederhana (locale bisa di-handle oleh helper/intl di layer lain)
   $fmt = function($n) use ($currency){ return $currency.number_format($n, 2); };
   $hasDiscount = $compareAt && $compareAt > $price;
+  $resolvedImage = $image;
+  if (! $resolvedImage) {
+    $presets = [
+      'cpu' => 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1200&q=80',
+      'gpu' => 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92eee?auto=format&fit=crop&w=1200&q=80',
+      'motherboard' => 'https://images.unsplash.com/photo-1510877073473-6d90e0013e0b?auto=format&fit=crop&w=1200&q=80',
+      'ram' => 'https://images.unsplash.com/photo-1517430816045-df4b7de49276?auto=format&fit=crop&w=1200&q=80',
+      'storage' => 'https://images.unsplash.com/photo-1580894906472-2f564511e23b?auto=format&fit=crop&w=1200&q=80',
+      'monitor' => 'https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?auto=format&fit=crop&w=1200&q=80',
+      'peripheral' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80',
+      'case' => 'https://images.unsplash.com/photo-1516922081966-6b3c1ecb4a28?auto=format&fit=crop&w=1200&q=80',
+      'laptop' => 'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80',
+      'default' => 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+    ];
+    $keywords = [
+      'cpu' => ['cpu', 'processor', 'ryzen', 'intel', 'core'],
+      'gpu' => ['gpu', 'graphics', 'rtx', 'radeon', 'vga', 'video card'],
+      'motherboard' => ['motherboard', 'mainboard', 'mobo'],
+      'ram' => ['ram', 'memory', 'ddr', 'so-dimm'],
+      'storage' => ['ssd', 'hdd', 'storage', 'nvme', 'seagate', 'sata', 'm.2'],
+      'monitor' => ['monitor', 'display', 'screen'],
+      'peripheral' => ['keyboard', 'mouse', 'headset', 'peripheral', 'accessory'],
+      'case' => ['casing', 'case', 'tower', 'chassis'],
+      'laptop' => ['laptop', 'notebook', 'ultrabook'],
+    ];
+    $haystack = strtolower(trim(($title ?? '').' '.($brand ?? '').' '.($variation ?? '')));
+    foreach ($keywords as $key => $needles) {
+      foreach ($needles as $needle) {
+        if ($needle !== '' && strpos($haystack, $needle) !== false) {
+          $resolvedImage = $presets[$key] ?? $presets['default'];
+          break 2;
+        }
+      }
+    }
+    if (! $resolvedImage) {
+      $pool = array_values($presets);
+      $count = count($pool);
+      $resolvedImage = $count ? $pool[crc32($haystack ?: 'default') % $count] : null;
+    }
+  }
+  $image = $resolvedImage ?? $image;
 @endphp
 
 <article x-data="{ loaded:false, quick:false }" class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden focus-within:ring-2 focus-within:ring-accent-500" aria-label="{{ $title }}">

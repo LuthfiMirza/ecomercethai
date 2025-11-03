@@ -5,50 +5,89 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class CatalogController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category')->where('is_active', true);
+        $query = Product::with('category')
+            ->where('is_active', true);
 
-        // Filter by category
-        if ($request->filled('category')) {
-            $categoryParam = $request->category;
-            if (is_numeric($categoryParam)) {
-                $query->where('category_id', $categoryParam);
+        $categoryValues = collect(Arr::wrap($request->input('category')))
+            ->filter(fn ($value) => filled($value))
+            ->unique()
+            ->values();
+
+        if ($categoryValues->isNotEmpty()) {
+            $slugValues = $categoryValues
+                ->filter(fn ($value) => ! is_numeric($value))
+                ->values();
+            $idValues = $categoryValues
+                ->filter(fn ($value) => is_numeric($value))
+                ->map(fn ($value) => (int) $value)
+                ->values();
+
+            $matchedCategoryIds = Category::query()
+                ->where(function ($builder) use ($slugValues, $idValues) {
+                    if ($slugValues->isNotEmpty()) {
+                        $builder->whereIn('slug', $slugValues);
+                    }
+
+                    if ($idValues->isNotEmpty()) {
+                        $slugValues->isNotEmpty()
+                            ? $builder->orWhereIn('id', $idValues)
+                            : $builder->whereIn('id', $idValues);
+                    }
+                })
+                ->pluck('id')
+                ->unique()
+                ->filter()
+                ->values();
+
+            if ($matchedCategoryIds->isNotEmpty()) {
+                $query->whereIn('category_id', $matchedCategoryIds);
             } else {
-                $categoryId = Category::where('slug', $categoryParam)->value('id');
-                if ($categoryId) {
-                    $query->where('category_id', $categoryId);
-                }
+                $query->whereRaw('0 = 1');
             }
         }
 
-        // Filter by brand
-        if ($request->has('brand') && $request->brand) {
-            $query->where('brand', $request->brand);
+        $brandValues = collect(Arr::wrap($request->input('brand')))
+            ->filter(fn ($value) => filled($value))
+            ->unique()
+            ->values();
+
+        if ($brandValues->isNotEmpty()) {
+            $query->whereIn('brand', $brandValues->all());
         }
 
-        // Filter by price range
-        if ($request->has('min_price') && $request->min_price) {
-            $query->where('price', '>=', $request->min_price);
-        }
-        if ($request->has('max_price') && $request->max_price) {
-            $query->where('price', '<=', $request->max_price);
+        $minPrice = $request->input('min_price', $request->input('min'));
+        if (is_numeric($minPrice)) {
+            $query->where('price', '>=', (float) $minPrice);
         }
 
-        // Search
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('brand', 'like', "%{$search}%");
-            });
+        $maxPrice = $request->input('max_price', $request->input('max'));
+        if (is_numeric($maxPrice)) {
+            $query->where('price', '<=', (float) $maxPrice);
         }
 
-        // Sort
+        if ($request->boolean('in_stock')) {
+            $query->where('stock', '>', 0);
+        }
+
+        $searchTerm = $request->input('search', $request->input('q'));
+
+        if (filled($searchTerm)) {
+            $search = trim((string) $searchTerm);
+            if ($search !== '') {
+                $query->where(function ($builder) use ($search) {
+                    $builder->where('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
+                });
+            }
+        }
+
         $sortBy = $request->get('sort', 'newest');
         switch ($sortBy) {
             case 'price_asc':
@@ -63,18 +102,25 @@ class CatalogController extends Controller
             case 'name_desc':
                 $query->orderBy('name', 'desc');
                 break;
+            case 'popularity':
             case 'newest':
             default:
                 $query->orderByDesc('created_at');
                 break;
         }
 
-        $products = $query->paginate(12)->withQueryString();
-        $categories = Category::all();
-        $brands = Product::where('is_active', true)
+        $products = $query
+            ->paginate(12)
+            ->withQueryString();
+
+        $categories = Category::orderBy('name')->get();
+        $brands = Product::query()
+            ->where('is_active', true)
+            ->whereNotNull('brand')
+            ->where('brand', '!=', '')
             ->distinct()
-            ->pluck('brand')
-            ->filter();
+            ->orderBy('brand')
+            ->pluck('brand');
 
         return view('pages.catalog', compact('products', 'categories', 'brands'));
     }

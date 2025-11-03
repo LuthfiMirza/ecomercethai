@@ -43,10 +43,11 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'shipping_address_id' => 'required|exists:shipping_addresses,id',
-            'payment_method' => 'required|in:bank_transfer,credit_card,midtrans,xendit,stripe',
+            'payment_method' => 'required|in:bank_transfer',
             'coupon_code' => 'nullable|string',
+            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         // Verify shipping address belongs to user
@@ -93,15 +94,21 @@ class CheckoutController extends Controller
         $shippingCost = $this->shippingCost();
         $totalAmount = $subtotal - $discountAmount + $shippingCost;
 
+        $paymentProofPath = null;
+
         try {
             DB::beginTransaction();
+
+            if ($request->payment_method === 'bank_transfer' && $request->hasFile('payment_proof')) {
+                $paymentProofPath = $request->file('payment_proof')->store('payment-proofs', 'public');
+            }
 
             // Create order
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
-                'payment_status' => 'pending',
+                'payment_status' => $paymentProofPath ? 'verifying' : 'pending',
                 'payment_method' => $request->payment_method,
                 'shipping_address' => json_encode([
                     'name' => $shippingAddress->name,
@@ -115,6 +122,7 @@ class CheckoutController extends Controller
                 ]),
                 'coupon_code' => $couponCode,
                 'discount_amount' => $discountAmount,
+                'payment_proof_path' => $paymentProofPath,
             ]);
 
             // Create order items
@@ -133,23 +141,54 @@ class CheckoutController extends Controller
             DB::commit();
 
             // Redirect based on payment method
-            if ($request->payment_method === 'bank_transfer') {
-                return redirect()->route('payment.bank-transfer', $order->id);
-            } elseif ($request->payment_method === 'midtrans') {
-                return redirect()->route('payment.midtrans', $order->id);
-            } elseif ($request->payment_method === 'xendit') {
-                return redirect()->route('payment.xendit', $order->id);
-            } elseif ($request->payment_method === 'stripe') {
-                return redirect()->route('payment.stripe', $order->id);
+            if ($paymentProofPath) {
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', __('payment.proof_uploaded'));
             }
 
-            return redirect()->route('orders.show', $order->id)
-                ->with('success', __('checkout.success'));
+            return redirect()->route('payment.bank-transfer', $order->id);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($paymentProofPath) {
+                Storage::disk('public')->delete($paymentProofPath);
+            }
             return back()->with('error', __('checkout.error') . ': ' . $e->getMessage());
         }
+    }
+
+    public function storeAddress(Request $request)
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'phone' => ['required', 'string', 'max:40'],
+            'address_line1' => ['required', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:120'],
+            'state' => ['nullable', 'string', 'max:120'],
+            'postal_code' => ['required', 'string', 'max:30'],
+            'country' => ['required', 'string', 'max:120'],
+            'is_default' => ['sometimes', 'boolean'],
+        ]);
+
+        $userId = Auth::id();
+
+        DB::transaction(function () use ($data, $userId) {
+            $data['user_id'] = $userId;
+            $data['is_default'] = isset($data['is_default']) ? (bool) $data['is_default'] : false;
+
+            $address = ShippingAddress::create($data);
+
+            if ($address->is_default) {
+                ShippingAddress::where('user_id', $userId)
+                    ->where('id', '!=', $address->id)
+                    ->update(['is_default' => false]);
+            }
+        });
+
+        return redirect()
+            ->route('checkout')
+            ->with('success', __('checkout.address_added'));
     }
 
     public function applyCoupon(Request $request)

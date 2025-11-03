@@ -13,11 +13,16 @@ class RoleSeeder extends Seeder
         $userRole = Role::firstOrCreate(['name' => 'user']);
         $adminRole = Role::firstOrCreate(['name' => 'admin']);
 
-        if ($admin = User::first()) {
-            $admin->assignRole($userRole);
-            if (! $admin->hasRole('admin')) {
-                $admin->assignRole($adminRole);
+        User::chunk(100, function ($users) use ($userRole, $adminRole) {
+            foreach ($users as $user) {
+                if (! $user->hasRole($userRole->name)) {
+                    $user->assignRole($userRole);
+                }
+
+                if ($user->is_admin && ! $user->hasRole($adminRole->name)) {
+                    $user->assignRole($adminRole);
+                }
             }
-        }
+        });
     }
 }

@@ -20,13 +20,16 @@ use App\Http\Controllers\ChatMessageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    $featuredProducts = \App\Models\Product::where('is_active', true)
+    $featuredProducts = \App\Models\Product::with('category')
+        ->where('is_active', true)
         ->orderByDesc('created_at')
         ->take(3)
         ->get();
 
-    $catalogProducts = \App\Models\Product::where('is_active', true)
+    $catalogProducts = \App\Models\Product::with('category')
+        ->where('is_active', true)
         ->orderByDesc('created_at')
+        ->take(12)
         ->get();
 
     $banners = \App\Models\Banner::active()->get();
@@ -136,6 +139,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
+    Route::post('/checkout/address', [\App\Http\Controllers\CheckoutController::class, 'storeAddress'])->name('checkout.address.store');
     Route::post('/checkout/apply-coupon', [\App\Http\Controllers\CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
 });
 
@@ -143,11 +147,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/payment/bank-transfer/{order}', [\App\Http\Controllers\PaymentController::class, 'bankTransfer'])->name('payment.bank-transfer');
     Route::post('/payment/bank-transfer/{order}/upload', [\App\Http\Controllers\PaymentController::class, 'uploadProof'])->name('payment.upload-proof');
-    Route::get('/payment/midtrans/{order}', [\App\Http\Controllers\PaymentController::class, 'midtrans'])->name('payment.midtrans');
-    Route::get('/payment/xendit/{order}', [\App\Http\Controllers\PaymentController::class, 'xendit'])->name('payment.xendit');
-    Route::get('/payment/stripe/{order}', [\App\Http\Controllers\PaymentController::class, 'stripe'])->name('payment.stripe');
 });
-Route::post('/payment/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])->name('payment.callback');
 
 // Orders
 Route::middleware('auth')->group(function () {

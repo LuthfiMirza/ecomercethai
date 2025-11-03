@@ -106,28 +106,28 @@
     </div>
 
     <!-- Floating Quick Actions (bottom-right) -->
-    <div x-data="{ open:false, chat:false }" class="fixed right-4 bottom-4 z-60" id="quick-actions">
+    <div x-data="{ open:false, chat:false }" class="fixed right-4 bottom-4 z-60 pointer-events-none" id="quick-actions">
       <!-- Stack of actions -->
-      <div x-cloak x-show="open" x-transition.origin.bottom.right class="flex flex-col items-end gap-2 mb-2">
+      <div x-cloak x-show="open" x-transition.origin.bottom.right class="flex flex-col items-end gap-2 mb-2 pointer-events-auto">
         <!-- Chat via LINE -->
-        <a id="qa-line" :href="'https://line.me/ti/p/~'+encodeURIComponent(document.documentElement.getAttribute('data-line-id')||'tokothailand')" target="_blank" rel="noopener" @click="open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white text-sm">
+        <a id="qa-line" :href="'https://line.me/ti/p/~'+encodeURIComponent(document.documentElement.getAttribute('data-line-id')||'tokothailand')" target="_blank" rel="noopener" @click="open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-green-500 hover:bg-green-600 text-white text-sm pointer-events-auto">
           <i class="fa-brands fa-line"></i>
           <span>Chat via LINE</span>
         </a>
         <!-- Live Chat popup trigger -->
-        <button type="button" data-livechat-open @click="chat=true; open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm">
+        <button type="button" data-livechat-open @click="chat=true; open=false" class="inline-flex items-center gap-2 px-3 py-2 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm pointer-events-auto">
           <i class="fa-solid fa-comments"></i>
           <span>Live Chat</span>
         </button>
       </div>
       <!-- Main FAB -->
-      <button @click="open=!open" class="w-12 h-12 rounded-full shadow-lg bg-accent-500 hover:bg-accent-600 text-white flex items-center justify-center">
+      <button @click="open=!open" class="w-12 h-12 rounded-full shadow-lg bg-accent-500 hover:bg-accent-600 text-white flex items-center justify-center pointer-events-auto">
         <i x-show="!open" class="fa-solid fa-plus"></i>
         <i x-show="open" class="fa-solid fa-xmark"></i>
       </button>
       
       <!-- Live Chat Popup -->
-      <div x-cloak x-show="chat" x-transition.opacity class="fixed inset-0 z-50">
+      <div x-cloak x-show="chat" x-transition.opacity class="fixed inset-0 z-50 pointer-events-auto">
         <div class="absolute inset-0 bg-black/30" @click="chat=false"></div>
         <aside class="absolute right-4 bottom-20 w-[380px] max-w-[92vw] bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800" data-livechat-panel>
           <header class="px-4 py-3 bg-indigo-600 text-white flex items-center justify-between">

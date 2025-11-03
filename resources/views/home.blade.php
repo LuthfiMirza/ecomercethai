@@ -23,32 +23,93 @@
             'title' => __('Upgrade Your Battle Station'),
             'subtitle' => __('Custom gaming rigs, assembled and stress-tested'),
             'description' => __('Pilih build yang sesuai gaya bermainmu atau konsultasi dengan tim kami untuk spesifikasi terbaik.'),
-            'image' => asset('image/heropc.jpeg'),
+            'image' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'Custom gaming PC setup',
         ],
         [
             'title' => __('Next-Gen CPU Power'),
             'subtitle' => __('AMD Ryzen & Intel Core line-up ready to ship'),
             'description' => __('Temukan prosesor favoritmu dengan stok terjamin dan garansi resmi pabrikan.'),
-            'image' => asset('image/herocpu.jpeg'),
+            'image' => 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'Close-up of a high-end CPU',
         ],
         [
             'title' => __('Graphics Ready for Ray Tracing'),
             'subtitle' => __('RTX & Radeon terbaru untuk visual maksimal'),
             'description' => __('Rasakan performa GPU kelas atas untuk gaming 4K, VR, dan kebutuhan kreatif profesional.'),
-            'image' => asset('image/herovga.jpeg'),
+            'image' => 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92eee?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'High-end graphics card on a desk',
         ],
     ];
+    $defaultBannerImages = [
+        'homepage_top' => 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80',
+        'homepage_sidebar' => 'https://images.unsplash.com/photo-1517430816045-df4b7de49276?auto=format&fit=crop&w=900&q=80',
+        'homepage_bottom' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1600&q=80',
+    ];
+    $productImagePresets = [
+        'cpu' => 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1200&q=80',
+        'gpu' => 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92eee?auto=format&fit=crop&w=1200&q=80',
+        'motherboard' => 'https://images.unsplash.com/photo-1510877073473-6d90e0013e0b?auto=format&fit=crop&w=1200&q=80',
+        'ram' => 'https://images.unsplash.com/photo-1517430816045-df4b7de49276?auto=format&fit=crop&w=1200&q=80',
+        'storage' => 'https://images.unsplash.com/photo-1580894906472-2f564511e23b?auto=format&fit=crop&w=1200&q=80',
+        'monitor' => 'https://images.unsplash.com/photo-1527443154391-507e9dc6c5cc?auto=format&fit=crop&w=1200&q=80',
+        'peripheral' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80',
+        'case' => 'https://images.unsplash.com/photo-1516922081966-6b3c1ecb4a28?auto=format&fit=crop&w=1200&q=80',
+        'laptop' => 'https://images.unsplash.com/photo-1545239351-1141bd82e8a6?auto=format&fit=crop&w=1200&q=80',
+        'default' => 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80',
+    ];
+    $productImageKeywords = [
+        'cpu' => ['cpu', 'processor', 'ryzen', 'intel', 'core'],
+        'gpu' => ['gpu', 'graphics', 'rtx', 'radeon', 'vga', 'video card'],
+        'motherboard' => ['motherboard', 'mainboard', 'mobo'],
+        'ram' => ['ram', 'memory', 'ddr', 'so-dimm'],
+        'storage' => ['ssd', 'hdd', 'storage', 'nvme', 'seagate', 'sata', 'm.2'],
+        'monitor' => ['monitor', 'display', 'screen'],
+        'peripheral' => ['keyboard', 'mouse', 'headset', 'peripheral', 'accessory'],
+        'case' => ['casing', 'case', 'tower', 'chassis'],
+        'laptop' => ['laptop', 'notebook', 'ultrabook'],
+    ];
+    $productImageResolver = static function ($product) use ($productImagePresets, $productImageKeywords) {
+        $direct = $product->image_url ?? null;
+        if ($direct) {
+            return $direct;
+        }
+
+        $haystackParts = [
+            optional($product->category)->slug,
+            optional($product->category)->name,
+            $product->slug ?? null,
+            $product->name ?? null,
+            $product->brand ?? null,
+        ];
+        $haystack = strtolower(implode(' ', array_filter($haystackParts)));
+
+        foreach ($productImageKeywords as $key => $keywords) {
+            foreach ($keywords as $needle) {
+                if ($needle !== '' && strpos($haystack, $needle) !== false) {
+                    return $productImagePresets[$key] ?? $productImagePresets['default'];
+                }
+            }
+        }
+
+        $pool = array_values($productImagePresets);
+        $poolCount = count($pool);
+
+        if ($poolCount === 0) {
+            return null;
+        }
+
+        $index = crc32($haystack ?: 'default');
+        return $pool[$index % $poolCount] ?? $productImagePresets['default'];
+    };
 @endphp
 
 <!-- Hero Section / Slider -->
 <section class="relative">
   <div class="hero-slider relative overflow-hidden rounded-b-[42px] bg-neutral-900 text-white shadow-lg md:rounded-b-[56px]" data-slider data-slider-autoplay="7000" data-slider-wrap="true">
-    <div class="flex h-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px] transition-transform duration-700 ease-out" data-slider-track>
+    <div class="flex h-full min-h-[440px] sm:min-h-[500px] md:min-h-[560px] lg:min-h-[600px] transition-transform duration-700 ease-out" data-slider-track>
       @foreach($heroSlides as $index => $slide)
-        <article class="relative flex h-full w-full flex-shrink-0 basis-full items-center justify-center" data-slider-item>
+        <article class="relative flex h-full w-full flex-shrink-0 basis-full items-center justify-center px-4 sm:px-6 md:px-0" data-slider-item>
           <img
             src="{{ $slide['image'] }}"
             alt="{{ $slide['alt'] }}"
@@ -61,9 +122,9 @@
           >
           <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/15"></div>
           <div class="relative z-10 w-full">
-            <div class="container mx-auto flex h-full flex-col justify-center px-4 py-12 md:py-20">
+            <div class="container mx-auto flex h-full flex-col justify-center px-4 py-12 md:py-20 lg:py-24">
               <div class="max-w-2xl">
-                <div class="space-y-4 rounded-3xl border border-white/10 bg-white/10 p-6 text-white shadow-[0_20px_45px_rgba(15,15,15,0.45)] backdrop-blur-md sm:space-y-6 sm:p-8 md:bg-white/12">
+                <div class="space-y-4 rounded-3xl border border-white/10 bg-white/10 p-6 text-white shadow-[0_20px_45px_rgba(15,15,15,0.45)] backdrop-blur-md sm:space-y-6 sm:p-8 md:bg-white/12 transform translate-y-4 sm:translate-y-6 md:translate-y-8 lg:translate-y-10">
                   <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70 sm:text-sm">{{ __('Toko Thailand Exclusive') }}</p>
                   <h1 class="text-3xl font-black leading-tight sm:text-4xl md:text-5xl">{{ $slide['title'] }}</h1>
                   <p class="text-lg font-semibold text-white/95 md:text-xl">{{ $slide['subtitle'] }}</p>
@@ -141,10 +202,16 @@
 
 <!-- Top Advertisement Banner -->
 <div class="container mx-auto px-6 my-8">
-    <div class="bg-white p-4 rounded-md text-center">
-        <img src="{{ asset('image/iklan.jpg') }}" 
-             alt="Top Advertisement" 
-             class="mx-auto max-w-full h-auto">
+    <div class="bg-white dark:bg-neutral-900 p-4 rounded-md text-center border border-neutral-200 dark:border-neutral-800">
+        @if($topBanner && ($src = $bannerUrl($topBanner)))
+            <img src="{{ $src }}"
+                 alt="{{ optional($topBanner)->title ?? 'Featured promotion' }}"
+                 class="mx-auto max-w-full h-auto rounded-lg object-cover">
+        @else
+            <img src="{{ $defaultBannerImages['homepage_top'] }}"
+                 alt="High-end gaming desktop promotion"
+                 class="mx-auto max-w-full h-auto rounded-lg object-cover">
+        @endif
     </div>
 </div>
 
@@ -155,53 +222,59 @@
         @forelse(($featuredProducts ?? collect()) as $product)
         @php
             $formattedPrice = number_format($product->price, 2);
-            $image = 'https://source.unsplash.com/600x400/?' . urlencode($product->name);
+            $image = $productImageResolver($product);
         @endphp
-        <div class="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 border border-orange-100 overflow-hidden relative">
+        <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-lg hover:shadow-xl dark:shadow-[0_18px_35px_rgba(0,0,0,0.55)] transition-shadow duration-300 border border-orange-100 dark:border-neutral-800 overflow-hidden relative">
             <div class="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">New</div>
             <div class="relative h-48 overflow-hidden">
                 <img src="{{ $image }}" alt="{{ $product->name }}" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
             </div>
-            <div class="p-4 border-t border-orange-100">
-                <h3 class="font-bold text-lg text-gray-800 mb-2">{{ $product->name }}</h3>
+            <div class="p-4 border-t border-orange-100 dark:border-neutral-800">
+                <h3 class="font-bold text-lg text-gray-800 dark:text-neutral-100 mb-2">{{ $product->name }}</h3>
                 <div class="flex justify-between items-center mb-4">
-                    <span class="text-orange-500 font-bold text-xl">${{ $formattedPrice }}</span>
+                    <span class="text-orange-500 dark:text-orange-400 font-bold text-xl">${{ $formattedPrice }}</span>
                     <div class="flex items-center">
                         <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                        <span class="text-gray-600 text-sm ml-1">4.5</span>
+                        <span class="text-gray-600 dark:text-neutral-400 text-sm ml-1">4.5</span>
                     </div>
                 </div>
-                <button data-cart-add data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
+                <button data-cart-add data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 dark:bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 dark:hover:bg-orange-400 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Buy Now
                 </button>
-                <button data-wishlist data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                <button data-wishlist data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 dark:border-orange-400/70 text-orange-600 dark:text-orange-300 py-2 rounded-lg font-medium hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
                     <i class="fa-regular fa-heart mr-2"></i> Wishlist
                 </button>
             </div>
         </div>
         @empty
-        <div class="bg-white rounded-lg shadow-lg border border-orange-100 p-6 col-span-full">{{ __('No recommended products yet. Please add products through the admin panel.') }}</div>
+        <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-orange-100 dark:border-neutral-800 p-8 col-span-full text-center text-neutral-800 dark:text-neutral-200">
+            <img src="https://images.unsplash.com/photo-1516700675895-4204b3f074bf?auto=format&fit=crop&w=600&q=80"
+                 alt="Empty product showcase illustration"
+                 class="mx-auto mb-5 h-28 w-28 rounded-full object-cover shadow-inner">
+            <h3 class="text-lg font-semibold mb-2">{{ __('No recommended products yet') }}</h3>
+            <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Please add products through the admin panel to populate this section.') }}</p>
+        </div>
         @endforelse
     </div>
 </div>
 
 <!-- Middle Advertisement Banner -->
 <div class="container mx-auto px-6 my-12">
-    <div class="bg-white border-2 border-orange-500 p-4 rounded-md text-center">
-        <img src="{{ asset('images/ad-example.png') }}" 
-             alt="Middle Advertisement" 
-             class="mx-auto max-w-full h-auto"
-             onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9XCIuM2VtXCI+QWR2ZXJ0aXNlbWVudDwvdGV4dD48L3N2Zz4='">
+    @php $midBannerSrc = $midBanner ? $bannerUrl($midBanner) : null; @endphp
+    <div class="bg-white dark:bg-neutral-900 border-2 border-orange-500/80 dark:border-orange-400/70 p-4 rounded-md text-center">
+        <img src="{{ $midBannerSrc ?? $defaultBannerImages['homepage_sidebar'] }}"
+             alt="{{ optional($midBanner)->title ?? 'Gaming accessories promotion' }}"
+             class="mx-auto max-w-full h-auto rounded-lg object-cover">
     </div>
 </div>
 
 <!-- Horizontal Banner Between Sections -->
 <div class="container mx-auto px-6 py-8">
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+    <div class="bg-white dark:bg-neutral-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-neutral-200 dark:border-neutral-800">
         @if($bottomBanner && ($src = $bannerUrl($bottomBanner)))
             <img src="{{ $src }}" alt="{{ $bottomBanner->title }}" class="w-full h-40 object-cover">
         @else
-            <img src="{{ asset('image/iklan.jpg') }}" alt="Wide Banner" class="w-full h-40 object-cover">
+            <img src="{{ $defaultBannerImages['homepage_bottom'] }}" alt="Premium workspace promotion" class="w-full h-40 object-cover">
         @endif
     </div>
 </div>
@@ -232,7 +305,10 @@
                 <div class="w-full flex-shrink-0 basis-full px-2 py-2" data-slider-item>
                   <div class="grid grid-cols-2 gap-3">
                     @foreach($slide as $product)
-                      @include('components.catalog-product-card', ['product' => $product])
+                      @php
+                        $productImage = $productImageResolver($product);
+                      @endphp
+                      @include('components.catalog-product-card', ['product' => $product, 'image' => $productImage])
                     @endforeach
                   </div>
                 </div>
@@ -278,7 +354,10 @@
                 <div class="w-full flex-shrink-0 basis-full px-1 sm:px-2" data-slider-item>
                   <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     @foreach($slide as $product)
-                      @include('components.catalog-product-card', ['product' => $product])
+                      @php
+                        $productImage = $productImageResolver($product);
+                      @endphp
+                      @include('components.catalog-product-card', ['product' => $product, 'image' => $productImage])
                     @endforeach
                   </div>
                 </div>
@@ -315,6 +394,7 @@
       </div>
     @endif
   </div>
+  
 </section>
 
 <!-- Value Props (clean) -->
@@ -352,10 +432,17 @@
 <!-- Blog Teasers (clean) -->
 <section class="container mx-auto px-6 pb-16">
   <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">{{ __('From Our Blog') }}</h2>
+  @php
+    $blogImages = [
+      'https://source.unsplash.com/800x480/?electronics,1',
+      'https://source.unsplash.com/800x480/?electronics,2',
+      'https://source.unsplash.com/800x480/?electronics,3',
+    ];
+  @endphp
   <div class="grid md:grid-cols-3 gap-6">
     @for($i=0;$i<3;$i++)
       <article class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-soft transition">
-        <img loading="lazy" src="https://source.unsplash.com/800x480/?electronics,{{ $i }}" alt="Blog {{ $i+1 }}" class="w-full h-40 object-cover"/>
+        <img loading="lazy" src="{{ $blogImages[$i] ?? $blogImages[0] }}" alt="Blog {{ $i+1 }}" class="w-full h-40 object-cover"/>
         <div class="p-4">
           <h3 class="font-semibold text-neutral-900 dark:text-white">{{ __('Tech Article') }} {{ $i+1 }}</h3>
           <p class="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{{ __('Tips for choosing components for optimal performance.') }}</p>
