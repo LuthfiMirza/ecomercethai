@@ -26,6 +26,7 @@ class Order extends Model
         'payment_status',
         'payment_proof_path',
         'payment_verified_at',
+        'track_token',
     ];
 
     /**
@@ -66,5 +67,21 @@ class Order extends Model
         $path = ltrim($path, '/');
 
         return asset('storage/' . $path);
+    }
+
+    /**
+     * Public tracking URL accessor.
+     */
+    public function getTrackUrlAttribute(): ?string
+    {
+        if (! $this->track_token) {
+            return null;
+        }
+
+        try {
+            return localized_route('orders.track', ['token' => $this->track_token]);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

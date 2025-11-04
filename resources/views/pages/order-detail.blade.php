@@ -7,10 +7,10 @@
   $discountAmount = $order->discount_amount ?? 0;
   $shippingTotal = max($order->total_amount - $itemsTotal + $discountAmount, 0);
   $paymentRoutes = [
-    'bank_transfer' => localized_route('payment.bank-transfer', ['order' => $order->id]),
+    'bank_transfer' => localized_route('payment.bank-transfer', ['order' => $order->id])
   ];
   $paymentLabels = [
-    'bank_transfer' => __('Transfer Bank Manual'),
+    'bank_transfer' => __('Transfer Bank Manual')
   ];
   $paymentLabel = $paymentLabels[$order->payment_method] ?? ucfirst(str_replace('_', ' ', $order->payment_method));
 @endphp
@@ -20,7 +20,7 @@
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
       <h1 class="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Detail Pesanan') }}</h1>
-      <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Dibuat pada :date', ['date' => $order->created_at?->format('d M Y, H:i')]) }}</p>
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Dibuat pada :date', ['date' => $order->created_at?->format('d M Y H:i')]) }}</p>
     </div>
     <div class="flex flex-col items-end gap-2">
       <div class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Nomor Pesanan') }}</div>
@@ -102,7 +102,7 @@
             @if($order->payment_verified_at)
               <div>
                 <dt class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Diverifikasi pada') }}</dt>
-                <dd>{{ $order->payment_verified_at->format('d M Y, H:i') }}</dd>
+                <dd>{{ $order->payment_verified_at->format('d M Y H:i') }}</dd>
               </div>
             @endif
             @if($order->payment_proof_path)

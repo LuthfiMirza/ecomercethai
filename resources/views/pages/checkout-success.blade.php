@@ -35,6 +35,9 @@
       @isset($paymentRoutes[$order->payment_method])
         <a href="{{ $paymentRoutes[$order->payment_method] }}" class="btn-outline">{{ __('Instruksi Pembayaran :method', ['method' => $paymentLabel]) }}</a>
       @endisset
+      @if($order->track_url)
+        <a href="{{ $order->track_url }}" class="btn-outline">{{ __('Lacak Pesanan (Publik)') }}</a>
+      @endif
       <a href="{{ localized_route('home') }}" class="btn-ghost">{{ __('Belanja Lagi') }}</a>
     </div>
   </section>

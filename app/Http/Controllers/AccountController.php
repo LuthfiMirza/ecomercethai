@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class AccountController extends Controller
@@ -12,6 +14,17 @@ class AccountController extends Controller
      */
     public function __invoke(Request $request): View
     {
-        return view('pages.account');
+        $orders = collect();
+
+        if (Auth::check()) {
+            $orders = Order::where('user_id', Auth::id())
+                ->with('orderItems.product')
+                ->orderByDesc('created_at')
+                ->get();
+        }
+
+        return view('pages.account', [
+            'orders' => $orders
+        ]);
     }
 }

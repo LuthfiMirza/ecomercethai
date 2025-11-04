@@ -44,6 +44,14 @@
             <p><strong>Total:</strong> {{ format_price($order->total_amount) }}</p>
         </div>
         
+        @if($order->track_url)
+        <p style="margin-top: 20px;">
+            You can track your order anytime using this link:
+            <br/>
+            <a href="{{ $order->track_url }}" style="color: #ff7043;">{{ $order->track_url }}</a>
+        </p>
+        @endif
+        
         <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
         
         <p>You can track your order status by visiting your account page.</p>

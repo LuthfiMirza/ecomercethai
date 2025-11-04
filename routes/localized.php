@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\OrderController as FrontOrderController;
 use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Admin\PaymentProfileController;
 use App\Http\Controllers\Admin\ProductController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Admin\PromoController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\MegaMenuController;
+use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ChatMessageController;
@@ -101,6 +103,9 @@ Route::get('/faqs', function () {
 
 Route::get('/mega-menu-preview', MegaMenuController::class)->name('mega-menu.preview');
 
+// Public order tracking by secret token (no auth)
+Route::get('/t/{token}', [OrderTrackingController::class, 'show'])->name('orders.track');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:5,1');
@@ -155,10 +160,7 @@ Route::middleware('auth')->group(function () {
 
 // Orders
 Route::middleware('auth')->group(function () {
-    Route::get('/orders/{order}', function($id) {
-        $order = \App\Models\Order::with('orderItems.product')->findOrFail($id);
-        return view('pages.order-detail', compact('order'));
-    })->name('orders.show');
+    Route::get('/orders/{order}', [FrontOrderController::class, 'show'])->name('orders.show');
 });
 
 Route::middleware('auth')->group(function () {

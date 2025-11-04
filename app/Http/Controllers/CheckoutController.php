@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
@@ -37,7 +39,7 @@ class CheckoutController extends Controller
             'cartItems' => $cartItems,
             'shippingAddresses' => $shippingAddresses,
             'subtotal' => $subtotal,
-            'shippingCost' => $shippingCost,
+            'shippingCost' => $shippingCost
         ]);
     }
 
@@ -47,7 +49,7 @@ class CheckoutController extends Controller
             'shipping_address_id' => 'required|exists:shipping_addresses,id',
             'payment_method' => 'required|in:bank_transfer',
             'coupon_code' => 'nullable|string',
-            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         // Verify shipping address belongs to user
@@ -103,8 +105,8 @@ class CheckoutController extends Controller
                 $paymentProofPath = $request->file('payment_proof')->store('payment-proofs', 'public');
             }
 
-            // Create order
-            $order = Order::create([
+            // Create order (conditionally include optional columns)
+            $orderData = [
                 'user_id' => Auth::id(),
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
@@ -118,12 +120,18 @@ class CheckoutController extends Controller
                     'city' => $shippingAddress->city,
                     'state' => $shippingAddress->state,
                     'postal_code' => $shippingAddress->postal_code,
-                    'country' => $shippingAddress->country,
+                    'country' => $shippingAddress->country
                 ]),
                 'coupon_code' => $couponCode,
                 'discount_amount' => $discountAmount,
-                'payment_proof_path' => $paymentProofPath,
-            ]);
+                'payment_proof_path' => $paymentProofPath
+            ];
+
+            if (Schema::hasColumn('orders', 'track_token')) {
+                $orderData['track_token'] = Str::random(40);
+            }
+
+            $order = Order::create($orderData);
 
             // Create order items
             foreach ($cartItems as $cartItem) {
@@ -131,7 +139,7 @@ class CheckoutController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $cartItem->product_id,
                     'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price,
+                    'price' => $cartItem->price
                 ]);
             }
 
@@ -140,10 +148,17 @@ class CheckoutController extends Controller
 
             DB::commit();
 
-            $redirectUrl = route('checkout.success', [
-                'locale' => app()->getLocale(),
-                'order' => $order,
-            ]);
+            // Redirect: if payment proof submitted go straight to order detail
+            // Otherwise show the checkout success page with next steps
+            $redirectUrl = $paymentProofPath
+                ? route('orders.show', [
+                    'locale' => app()->getLocale(),
+                    'order' => $order->id
+                ])
+                : route('checkout.success', [
+                    'locale' => app()->getLocale(),
+                    'order' => $order->id
+                ]);
             $successMessage = $paymentProofPath
                 ? __('payment.proof_uploaded')
                 : __('Pesanan berhasil dibuat.');
@@ -154,7 +169,7 @@ class CheckoutController extends Controller
                     'order_id' => $order->id,
                     'redirect' => $redirectUrl,
                     'order_number' => sprintf('#%s', $order->id),
-                    'message' => $successMessage,
+                    'message' => $successMessage
                 ]);
             }
 
@@ -170,7 +185,7 @@ class CheckoutController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => __('checkout.error') . ': ' . $e->getMessage(),
+                    'message' => __('checkout.error') . ': ' . $e->getMessage()
                 ], 500);
             }
 
@@ -189,7 +204,7 @@ class CheckoutController extends Controller
             'state' => ['nullable', 'string', 'max:120'],
             'postal_code' => ['required', 'string', 'max:30'],
             'country' => ['required', 'string', 'max:120'],
-            'is_default' => ['sometimes', 'boolean'],
+            'is_default' => ['sometimes', 'boolean']
         ]);
 
         $userId = Auth::id();
@@ -212,8 +227,8 @@ class CheckoutController extends Controller
             $lines = array_values(array_filter([
                 $address->address_line1,
                 $address->address_line2,
-                trim(implode(', ', array_filter([$address->city, $address->state, $address->postal_code]))),
-                $address->country,
+                trim(implode(' ', array_filter([$address->city, $address->state, $address->postal_code]))),
+                $address->country
             ]));
 
             return response()->json([
@@ -224,8 +239,8 @@ class CheckoutController extends Controller
                     'name' => $address->name,
                     'phone' => $address->phone,
                     'is_default' => (bool) $address->is_default,
-                    'lines' => $lines,
-                ],
+                    'lines' => $lines
+                ]
             ], 201);
         }
 
@@ -258,14 +273,14 @@ class CheckoutController extends Controller
             'items' => $items,
             'itemsTotal' => $itemsTotal,
             'discountAmount' => $discountAmount,
-            'shippingTotal' => $shippingTotal,
+            'shippingTotal' => $shippingTotal
         ]);
     }
 
     public function applyCoupon(Request $request)
     {
         $request->validate([
-            'coupon_code' => 'required|string',
+            'coupon_code' => 'required|string'
         ]);
 
         $coupon = Coupon::where('code', $request->coupon_code)
@@ -277,7 +292,7 @@ class CheckoutController extends Controller
         if (!$coupon) {
             return response()->json([
                 'success' => false,
-                'message' => __('checkout.invalid_coupon'),
+                'message' => __('checkout.invalid_coupon')
             ]);
         }
 
@@ -287,7 +302,7 @@ class CheckoutController extends Controller
         if ($subtotal < $coupon->min_purchase) {
             return response()->json([
                 'success' => false,
-                'message' => __('checkout.min_purchase_not_met', ['amount' => $coupon->min_purchase]),
+                'message' => __('checkout.min_purchase_not_met', ['amount' => $coupon->min_purchase])
             ]);
         }
 
@@ -304,17 +319,7 @@ class CheckoutController extends Controller
         return response()->json([
             'success' => true,
             'discount_amount' => $discountAmount,
-            'message' => __('checkout.coupon_applied'),
+            'message' => __('checkout.coupon_applied')
         ]);
     }
 }
-
-
-
-
-
-
-
-
-
-
