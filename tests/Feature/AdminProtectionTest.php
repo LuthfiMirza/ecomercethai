@@ -13,18 +13,18 @@ class AdminProtectionTest extends TestCase
 
     public function test_guest_cannot_access_admin_dashboard(): void
     {
-        $response = $this->get('/admin/dashboard');
+        $response = $this->get(route('admin.dashboard', ['locale' => 'en']));
 
-        $response->assertRedirect('/login');
+        $response->assertRedirect(route('login', ['locale' => 'en']));
     }
 
     public function test_regular_user_cannot_access_admin_dashboard(): void
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/admin/dashboard');
+        $response = $this->actingAs($user)->get(route('admin.dashboard', ['locale' => 'en']));
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 
     public function test_admin_can_access_admin_dashboard(): void
@@ -33,7 +33,7 @@ class AdminProtectionTest extends TestCase
         $adminRole = Role::create(['name' => 'admin']);
         $admin->assignRole($adminRole);
 
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response = $this->actingAs($admin)->get(route('admin.dashboard', ['locale' => 'en']));
 
         $response->assertStatus(200);
     }
@@ -44,7 +44,7 @@ class AdminProtectionTest extends TestCase
         $adminRole = Role::create(['name' => 'admin']);
         $admin->assignRole($adminRole);
 
-        $response = $this->actingAs($admin)->get('/admin/products');
+        $response = $this->actingAs($admin)->get(route('admin.products.index', ['locale' => 'en']));
 
         $response->assertStatus(200);
     }
@@ -53,8 +53,8 @@ class AdminProtectionTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/admin/products');
+        $response = $this->actingAs($user)->get(route('admin.products.index', ['locale' => 'en']));
 
-        $response->assertStatus(403);
+        $response->assertStatus(404);
     }
 }

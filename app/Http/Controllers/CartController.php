@@ -75,7 +75,7 @@ class CartController extends Controller
         return redirect()->back()->with('success', $payload['message']);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, string $locale, $id)
     {
         $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -109,7 +109,7 @@ class CartController extends Controller
         return redirect()->route('cart')->with('success', $payload['message']);
     }
 
-    public function remove($id)
+    public function remove(string $locale, $id)
     {
         $cart = $this->findCartItem($id);
         

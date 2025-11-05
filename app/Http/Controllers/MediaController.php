@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class MediaController extends Controller
 {
-    public function paymentProof(Request $request, $orderId)
+    public function paymentProof(Request $request, string $locale, $orderId)
     {
         $order = Order::findOrFail($orderId);
 

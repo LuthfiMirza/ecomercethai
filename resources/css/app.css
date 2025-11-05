@@ -4,13 +4,13 @@
 
 @layer components {
   /* Buttons */
-  .btn { @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-medium transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-electric-blue/40 focus-visible:ring-offset-2 shadow-lg; box-shadow: 0 16px 40px -24px rgba(15, 23, 42, 0.45); }
-  .btn-primary { @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-medium bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-electric-blue/40 focus-visible:ring-offset-2; }
+  .btn { @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-medium transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200/70 focus-visible:ring-offset-2 shadow-lg; box-shadow: 0 16px 40px -24px rgba(15, 23, 42, 0.45); }
+  .btn-primary { @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-medium bg-gradient-to-r from-orange-400 via-orange-500 to-amber-600 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200/70 focus-visible:ring-offset-2; }
   .btn-outline { @apply inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 font-medium bg-white/70 text-slate-600 border border-white/60 backdrop-blur shadow-lg hover:bg-white/90 transition-all dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-700; box-shadow: 0 16px 40px -24px rgba(15, 23, 42, 0.2); }
   .btn-ghost { @apply inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-slate-500 hover:bg-white/70 hover:text-slate-900 transition-all dark:text-slate-300 dark:hover:bg-slate-800/60; }
 
   .admin-nav-link { @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-slate-500 transition-all duration-200 bg-white/0 hover:bg-white/70 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800/60; }
-  .admin-nav-link-active { @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-white shadow-xl; background-image: linear-gradient(135deg, #38bdf8, #6366f1, #8b5cf6); box-shadow: 0 28px 50px -30px rgba(56, 132, 255, 0.65); }
+  .admin-nav-link-active { @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-white shadow-xl; background-image: linear-gradient(135deg, #ffb347, #ff7b45, #ff5a1f); box-shadow: 0 28px 50px -30px rgba(255, 120, 70, 0.65); }
   .admin-nav-icon { @apply flex h-10 w-10 items-center justify-center rounded-xl bg-white/60 text-slate-500 shadow-inner transition-all duration-200 dark:bg-slate-800/60 dark:text-slate-200; }
   .admin-nav-link-active .admin-nav-icon { @apply text-white; background-color: rgba(255,255,255,0.25); }
 

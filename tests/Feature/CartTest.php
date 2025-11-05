@@ -17,7 +17,7 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         $product = Product::factory()->create(['price' => 100, 'is_active' => true]);
 
-        $response = $this->actingAs($user)->postJson('/cart/add', [
+        $response = $this->actingAs($user)->postJson(route('cart.add', ['locale' => 'en']), [
             'product_id' => $product->id,
             'quantity' => 2,
         ]);
@@ -43,7 +43,7 @@ class CartTest extends TestCase
             'price' => $product->price,
         ]);
 
-        $response = $this->actingAs($user)->putJson("/cart/{$cart->id}", [
+        $response = $this->actingAs($user)->putJson(route('cart.update', ['locale' => 'en', 'id' => $cart->id]), [
             'quantity' => 5,
         ]);
 
@@ -67,7 +67,7 @@ class CartTest extends TestCase
             'price' => $product->price,
         ]);
 
-        $response = $this->actingAs($user)->deleteJson("/cart/{$cart->id}");
+        $response = $this->actingAs($user)->deleteJson(route('cart.remove', ['locale' => 'en', 'id' => $cart->id]));
 
         $response->assertStatus(200)
             ->assertJson(['success' => true]);

@@ -50,7 +50,7 @@ class WishlistController extends Controller
         ]);
     }
 
-    public function remove($id)
+    public function remove(string $locale, $id)
     {
         $wishlist = Wishlist::where('id', $id)
             ->where('user_id', Auth::id())

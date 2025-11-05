@@ -10,7 +10,7 @@ class OrderController extends Controller
     /**
      * Show a single order that belongs to the authenticated user.
      */
-    public function show($orderId)
+    public function show(string $locale, $order)
     {
         $user = Auth::user();
 
@@ -18,7 +18,7 @@ class OrderController extends Controller
             abort(404);
         }
 
-        $query = Order::with('orderItems.product')->whereKey($orderId);
+        $query = Order::with('orderItems.product')->where('id', $order);
 
         $isAdmin = (bool) ($user->is_admin ?? false);
         if (! $isAdmin && method_exists($user, 'hasRole')) {
@@ -29,10 +29,10 @@ class OrderController extends Controller
             $query->where('user_id', $user->getKey());
         }
 
-        $order = $query->firstOrFail();
+        $orderData = $query->firstOrFail();
 
         return view('pages.order-detail', [
-            'order' => $order,
+            'order' => $orderData,
         ]);
     }
 }

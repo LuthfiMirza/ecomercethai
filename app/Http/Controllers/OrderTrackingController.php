@@ -6,7 +6,7 @@ use App\Models\Order;
 
 class OrderTrackingController extends Controller
 {
-    public function show(string $token)
+    public function show(string $locale, string $token)
     {
         $order = Order::with('orderItems.product')
             ->where('track_token', $token)

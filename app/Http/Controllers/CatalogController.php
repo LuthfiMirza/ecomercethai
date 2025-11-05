@@ -125,7 +125,7 @@ class CatalogController extends Controller
         return view('pages.catalog', compact('products', 'categories', 'brands'));
     }
 
-    public function show($slug)
+    public function show(string $locale, $slug)
     {
         $product = Product::with('category')
             ->where('slug', $slug)

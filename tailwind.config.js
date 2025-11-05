@@ -60,7 +60,7 @@ export default {
                 },
                 'neon-green': '#00ff99',
                 'electric-blue': '#3b82f6',
-                'neon-purple': '#a855f7',
+                'neon-purple': '#ff7b45',
             },
             borderRadius: {
                 lg: 'var(--radius)',

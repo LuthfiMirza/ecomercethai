@@ -188,7 +188,7 @@
         >
             <div class="flex items-center justify-between px-2 pb-6">
                 <div class="flex items-center gap-3">
-                    <div class="icon-circle bg-gradient-to-tr from-sky-500 to-indigo-500 text-white font-semibold shadow-[0_18px_35px_-18px_rgba(56,132,255,0.85)]">TT</div>
+                    <div class="icon-circle bg-gradient-to-tr from-orange-400 to-amber-500 text-white font-semibold shadow-[0_18px_35px_-18px_rgba(255,120,70,0.75)]">TT</div>
                     <div>
                         <p class="text-base font-semibold text-slate-700 dark:text-white">Toko Thailand</p>
                         <p class="text-xs text-slate-400 dark:text-slate-400/80">Admin Workspace</p>

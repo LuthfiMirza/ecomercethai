@@ -56,6 +56,8 @@ const CheckoutApp = ({ initialData = {} }) => {
   const formatCurrency = (value) => formatter.format(Number(value) || 0);
 
   const formRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const formRef = useRef(null);
 
   const [step, setStep] = useState(initialData.initialStep || 1);
   const [addresses, setAddresses] = useState(initialAddresses);
@@ -251,7 +253,10 @@ const CheckoutApp = ({ initialData = {} }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!processUrl || submitting) return;
+    
+    if (!processUrl || submitting) {
+      return;
+    }
 
     if (!selectedAddressId) {
       const message = t('addressMissing', 'Please choose a shipping address.');
@@ -273,11 +278,17 @@ const CheckoutApp = ({ initialData = {} }) => {
     setGlobalMessage(null);
     setValidationErrors({});
 
-    const form = formRef.current;
-    const formData = new FormData(form);
-    formData.set('shipping_address_id', selectedAddressId);
-    formData.set('payment_method', paymentMethod);
-    formData.set('coupon_code', couponCode.trim());
+    // Create FormData with explicit fields
+    const formData = new FormData();
+    formData.append('_token', csrf);
+    formData.append('shipping_address_id', selectedAddressId);
+    formData.append('payment_method', paymentMethod);
+    formData.append('coupon_code', couponCode.trim());
+    
+    // Add payment proof file if selected
+    if (fileInputRef.current?.files?.[0]) {
+      formData.append('payment_proof', fileInputRef.current.files[0]);
+    }
 
     try {
       const response = await fetch(processUrl, {
@@ -296,6 +307,7 @@ const CheckoutApp = ({ initialData = {} }) => {
         if (payload.errors?.shipping_address_id) setStep(1);
         else if (payload.errors?.payment_method) setStep(2);
         else setStep(3);
+        setGlobalMessage({ type: 'error', text: payload.message || JSON.stringify(payload.errors) || 'Validation error' });
         return;
       }
 
@@ -305,6 +317,7 @@ const CheckoutApp = ({ initialData = {} }) => {
       }
 
       const payload = await response.json().catch(() => null);
+      
       if (payload?.redirect) {
         window.location.assign(payload.redirect);
         return;
@@ -703,6 +716,7 @@ const CheckoutApp = ({ initialData = {} }) => {
                 {t('paymentProofTitle', 'Upload payment proof (Optional)')}
               </label>
               <input
+                ref={fileInputRef}
                 type="file"
                 name="payment_proof"
                 accept="image/*"
@@ -846,7 +860,7 @@ const CheckoutApp = ({ initialData = {} }) => {
                     <p className="text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-400">{item.brand}</p>
                   )}
                   <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                    {item.quantity} × {formatCurrency(item.price)}
+                    {item.quantity} Ã— {formatCurrency(item.price)}
                   </p>
                 </div>
                 <div className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -892,6 +906,3 @@ const CheckoutApp = ({ initialData = {} }) => {
 };
 
 export default CheckoutApp;
-
-
-

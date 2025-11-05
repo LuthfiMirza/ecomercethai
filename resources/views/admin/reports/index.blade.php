@@ -252,7 +252,7 @@
 
         // Orders Chart
         var ordersCtx = document.getElementById('ordersChart').getContext('2d');
-        ordersChart = new Chart(ordersCtx, { type: 'line', data: { labels: @json($months ?? []), datasets: [{ label: 'Orders', data: @json($orders ?? []), borderColor: '#a855f7', backgroundColor: 'rgba(168,85,247,0.1)', borderWidth: 2, fill: true, tension: 0.35 }] }, options: { responsive: true, maintainAspectRatio: false, resizeDelay: 200 }});
+        ordersChart = new Chart(ordersCtx, { type: 'line', data: { labels: @json($months ?? []), datasets: [{ label: 'Orders', data: @json($orders ?? []), borderColor: '#ff7b45', backgroundColor: 'rgba(255,123,69,0.12)', borderWidth: 2, fill: true, tension: 0.35 }] }, options: { responsive: true, maintainAspectRatio: false, resizeDelay: 200 }});
 
         // Location Chart
         var locEl = document.getElementById('locationChart');

@@ -14,7 +14,7 @@ class PaymentController extends Controller
         $this->middleware('auth');
     }
 
-    public function bankTransfer($orderId)
+    public function bankTransfer(string $locale, $orderId)
     {
         $order = Order::with('orderItems.product')
             ->where('id', $orderId)
@@ -24,7 +24,7 @@ class PaymentController extends Controller
         return view('pages.payment.bank-transfer', compact('order'));
     }
 
-    public function uploadProof(Request $request, $orderId)
+    public function uploadProof(Request $request, string $locale, $orderId)
     {
         $request->validate([
             'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',

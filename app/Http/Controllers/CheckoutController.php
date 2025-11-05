@@ -45,12 +45,20 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
+        \Log::info('Checkout process called', [
+            'user_id' => Auth::id(),
+            'request_data' => $request->all(),
+            'request_headers' => $request->headers->all(),
+        ]);
+
         $validated = $request->validate([
             'shipping_address_id' => 'required|exists:shipping_addresses,id',
             'payment_method' => 'required|in:bank_transfer',
             'coupon_code' => 'nullable|string',
             'payment_proof' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
+
+        \Log::info('Checkout validation passed', ['validated' => $validated]);
 
         // Verify shipping address belongs to user
         $shippingAddress = ShippingAddress::where('id', $request->shipping_address_id)

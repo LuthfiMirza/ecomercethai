@@ -123,4 +123,43 @@ class CheckoutTest extends TestCase
 
         Storage::disk('public')->assertExists('payment-proofs/'.$proof->hashName());
     }
+
+    public function test_order_detail_route_returns_success_for_owner(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create(['price' => 1500, 'is_active' => true]);
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'total_amount' => 1550,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'shipping_address' => json_encode([
+                'name' => 'Tester',
+                'phone' => '0800000000',
+                'address_line1' => '123 Test Street',
+                'address_line2' => null,
+                'city' => 'Bangkok',
+                'state' => 'Bangkok',
+                'postal_code' => '10110',
+                'country' => 'Thailand',
+            ]),
+            'payment_method' => 'bank_transfer',
+        ]);
+
+        $order->orderItems()->create([
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'price' => $product->price,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('orders.show', [
+            'locale' => 'en',
+            'order' => $order->id,
+        ]));
+
+        $response->assertStatus(200)
+            ->assertSee((string) $order->id)
+            ->assertSee($product->name);
+    }
 }
