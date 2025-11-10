@@ -3,52 +3,44 @@
 
     $styles = [
         'success' => [
-            'panel' => 'bg-gradient-to-br from-white via-emerald-50/70 to-white dark:from-slate-900 dark:via-emerald-900/20 dark:to-slate-900',
-            'ring' => 'ring-emerald-200/60 dark:ring-emerald-500/30',
-            'shadow' => 'shadow-[0_28px_60px_-30px_rgba(16,185,129,0.88)]',
-            'icon' => 'bg-emerald-500 text-white',
-            'title_class' => 'text-emerald-600 dark:text-emerald-200',
+            'container' => 'border-emerald-200/70 bg-white/95 text-emerald-800 dark:border-emerald-500/40 dark:bg-slate-900/95 dark:text-emerald-100',
+            'shadow' => 'shadow-[0_22px_55px_-30px_rgba(16,185,129,0.75)]',
+            'icon' => 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-200',
+            'title' => 'text-emerald-700 dark:text-emerald-200',
+            'bar' => 'from-emerald-400 via-emerald-500 to-emerald-400',
+            'button' => 'text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20',
             'headline' => __('Success'),
-            'message' => 'text-slate-600 dark:text-slate-200',
-            'accent' => 'from-emerald-400/90 via-sky-400/80 to-emerald-500/80',
-            'close' => 'text-emerald-500 hover:bg-emerald-100/70 dark:text-emerald-200 dark:hover:bg-emerald-500/20',
-            'button' => 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-400',
+            'cta' => 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-400',
         ],
         'error' => [
-            'panel' => 'bg-gradient-to-br from-white via-rose-50/70 to-white dark:from-slate-900 dark:via-rose-900/20 dark:to-slate-900',
-            'ring' => 'ring-rose-200/60 dark:ring-rose-500/30',
-            'shadow' => 'shadow-[0_30px_60px_-28px_rgba(244,63,94,0.88)]',
-            'icon' => 'bg-rose-500 text-white',
-            'title_class' => 'text-rose-600 dark:text-rose-200',
+            'container' => 'border-rose-200/70 bg-white/95 text-rose-800 dark:border-rose-500/45 dark:bg-slate-900/95 dark:text-rose-200',
+            'shadow' => 'shadow-[0_24px_55px_-28px_rgba(244,63,94,0.78)]',
+            'icon' => 'bg-rose-500/15 text-rose-600 dark:text-rose-200',
+            'title' => 'text-rose-600 dark:text-rose-200',
+            'bar' => 'from-rose-400 via-rose-500 to-rose-400',
+            'button' => 'text-rose-600 hover:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/25',
             'headline' => __('Error'),
-            'message' => 'text-slate-600 dark:text-slate-200',
-            'accent' => 'from-rose-400/90 via-pink-500/80 to-rose-500/80',
-            'close' => 'text-rose-500 hover:bg-rose-100/70 dark:text-rose-200 dark:hover:bg-rose-500/20',
-            'button' => 'bg-rose-500 hover:bg-rose-600 focus-visible:ring-rose-400',
+            'cta' => 'bg-rose-500 hover:bg-rose-600 focus-visible:ring-rose-400',
         ],
         'warning' => [
-            'panel' => 'bg-gradient-to-br from-white via-amber-50/70 to-white dark:from-slate-900 dark:via-amber-900/20 dark:to-slate-900',
-            'ring' => 'ring-amber-200/60 dark:ring-amber-500/30',
-            'shadow' => 'shadow-[0_30px_60px_-28px_rgba(245,158,11,0.8)]',
-            'icon' => 'bg-amber-500 text-slate-900',
-            'title_class' => 'text-amber-600 dark:text-amber-200',
+            'container' => 'border-amber-200/80 bg-white/95 text-amber-800 dark:border-amber-400/35 dark:bg-slate-900/95 dark:text-amber-200',
+            'shadow' => 'shadow-[0_22px_55px_-28px_rgba(245,158,11,0.68)]',
+            'icon' => 'bg-amber-400/20 text-amber-600 dark:text-amber-200',
+            'title' => 'text-amber-600 dark:text-amber-200',
+            'bar' => 'from-amber-400 via-orange-400 to-amber-400',
+            'button' => 'text-amber-600 hover:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20',
             'headline' => __('Warning'),
-            'message' => 'text-slate-600 dark:text-slate-200',
-            'accent' => 'from-amber-400/90 via-orange-400/80 to-amber-500/80',
-            'close' => 'text-amber-500 hover:bg-amber-100/70 dark:text-amber-200 dark:hover:bg-amber-500/20',
-            'button' => 'bg-amber-500 hover:bg-amber-600 focus-visible:ring-amber-400',
+            'cta' => 'bg-amber-500 hover:bg-amber-600 focus-visible:ring-amber-400',
         ],
         'info' => [
-            'panel' => 'bg-gradient-to-br from-white via-sky-50/70 to-white dark:from-slate-900 dark:via-blue-900/20 dark:to-slate-900',
-            'ring' => 'ring-sky-200/70 dark:ring-blue-500/35',
-            'shadow' => 'shadow-[0_32px_70px_-36px_rgba(59,130,246,0.95)]',
-            'icon' => 'bg-blue-500 text-white',
-            'title_class' => 'text-blue-600 dark:text-blue-200',
+            'container' => 'border-blue-200/70 bg-white/95 text-blue-800 dark:border-blue-500/40 dark:bg-slate-900/95 dark:text-blue-200',
+            'shadow' => 'shadow-[0_24px_55px_-28px_rgba(59,130,246,0.7)]',
+            'icon' => 'bg-blue-500/15 text-blue-600 dark:text-blue-200',
+            'title' => 'text-blue-600 dark:text-blue-200',
+            'bar' => 'from-sky-400 via-blue-500 to-sky-400',
+            'button' => 'text-blue-600 hover:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/25',
             'headline' => __('Information'),
-            'message' => 'text-slate-600 dark:text-slate-200',
-            'accent' => 'from-sky-400/90 via-blue-500/80 to-sky-500/70',
-            'close' => 'text-blue-500 hover:bg-blue-100/70 dark:text-blue-200 dark:hover:bg-blue-500/20',
-            'button' => 'bg-blue-500 hover:bg-blue-600 focus-visible:ring-blue-400',
+            'cta' => 'bg-blue-500 hover:bg-blue-600 focus-visible:ring-blue-400',
         ],
     ];
 
@@ -61,17 +53,19 @@
 
     $style = $styles[$type] ?? $styles['info'];
 
-    $displayMessage = is_iterable($message ?? null)
-        ? collect($message)->flatten()->filter(fn ($val) => filled($val))->implode(' ')
-        : ($message ?? '');
-    $displayMessage = trim($displayMessage);
+    $rawMessages = $message ?? null;
+    $messages = collect(is_iterable($rawMessages) ? $rawMessages : [$rawMessages])
+        ->flatten()
+        ->map(fn ($val) => trim((string) $val))
+        ->filter(fn ($val) => $val !== '')
+        ->values();
 
     $headline = $title ?? $style['headline'];
     $actionLabel = $actionLabel ?? null;
     $actionUrl = $actionUrl ?? null;
 @endphp
 
-@if($displayMessage !== '')
+@if($messages->isNotEmpty())
     <div
         x-data="{
             open: {{ ($open ?? false) ? 'true' : 'false' }},
@@ -88,19 +82,23 @@
             }
         }"
         x-show="open"
-        x-transition.origin.top.right.duration.200ms
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="translate-y-3 opacity-0"
+        x-transition:enter-end="translate-y-0 opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="translate-y-0 opacity-100"
+        x-transition:leave-end="translate-y-2 opacity-0"
         x-cloak
-        class="fixed top-8 right-8 z-50 w-full max-w-sm"
+        class="pointer-events-none fixed top-6 right-6 z-50 w-full max-w-sm sm:top-8 sm:right-8"
         role="status"
         aria-live="polite"
     >
-        <div class="relative overflow-hidden rounded-[22px] border border-white/60 px-7 py-6 backdrop-blur-2xl ring-1 {{ $style['panel'] }} {{ $style['ring'] }} {{ $style['shadow'] }} dark:border-white/10">
-            <span class="pointer-events-none absolute inset-x-8 top-[10px] h-[2px] rounded-full bg-gradient-to-r {{ $style['accent'] }}"></span>
-            <span class="pointer-events-none absolute -top-24 right-0 h-44 w-44 rounded-full bg-gradient-to-br {{ $style['accent'] }} opacity-25 blur-3xl"></span>
+        <div class="pointer-events-auto relative overflow-hidden rounded-2xl border px-5 py-4 backdrop-blur-xl {{ $style['container'] }} {{ $style['shadow'] }}">
+            <span class="pointer-events-none absolute inset-x-4 top-0 h-1 rounded-full bg-gradient-to-r opacity-80 {{ $style['bar'] }}"></span>
 
             <button
                 type="button"
-                class="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs transition {{ $style['close'] }}"
+                class="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-xs transition {{ $style['button'] }}"
                 @click="open = false"
                 aria-label="{{ __('Close notification') }}"
             >
@@ -109,26 +107,37 @@
                 </svg>
             </button>
 
-            <div class="flex items-start gap-4">
-                <span class="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-3xl text-base font-semibold shadow-[inset_0_6px_12px_rgba(255,255,255,0.22)] {{ $style['icon'] }}">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <div class="flex items-start gap-3 pe-6 sm:pe-8">
+                <span class="mt-0.5 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-base font-semibold {{ $style['icon'] }}">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="{{ $icons[$type] ?? $icons['info'] }}" />
                     </svg>
                 </span>
 
                 <div class="flex-1">
-                    <p class="text-sm font-semibold tracking-wide {{ $style['title_class'] }}">
+                    <p class="text-sm font-semibold {{ $style['title'] }}">
                         {{ $headline }}
                     </p>
-                    <p class="mt-1 text-sm leading-relaxed {{ $style['message'] }}">
-                        {{ $displayMessage }}
-                    </p>
+                    @if($messages->count() > 1)
+                        <ul class="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+                            @foreach($messages as $item)
+                                <li class="flex items-start gap-2">
+                                    <span class="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-current opacity-60"></span>
+                                    <span class="leading-relaxed">{{ $item }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                            {{ $messages->first() }}
+                        </p>
+                    @endif
 
                     @if($actionLabel && $actionUrl)
                         <div class="mt-5">
                             <a
                                 href="{{ $actionUrl }}"
-                                class="inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 {{ $style['button'] }} dark:focus-visible:ring-offset-slate-900"
+                                class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 {{ $style['cta'] }} dark:focus-visible:ring-offset-slate-900"
                             >
                                 {{ $actionLabel }}
                             </a>

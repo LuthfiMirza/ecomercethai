@@ -17,7 +17,7 @@
 </head>
 <body>
     <div class="brand">
-        <h2>Toko Thailand — Products</h2>
+        <h2>{{ config('app.name', 'Lungpaeit') }} — Products</h2>
         <span style="font-size: 12px; color:#64748b;">Generated: {{ now()->format('d M Y H:i') }}</span>
     </div>
     <table>
@@ -52,4 +52,3 @@
     </table>
 </body>
 </html>
-

@@ -71,7 +71,11 @@
           <div class="border-t border-white/60 pt-3 dark:border-neutral-800">
             <button type="button" class="w-full rounded-md bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-accent-600" x-on:click="moveAllToCart()">Pindahkan Semua ke Keranjang</button>
           </div>
+          @if(auth()->check())
           <a href="{{ route('checkout') }}" class="block w-full rounded-md border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">Lanjut ke Checkout</a>
+          @else
+          <a href="{{ localized_route('login') }}" class="block w-full rounded-md border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 hover:bg-neutral-50">{{ __('Masuk untuk checkout') }}</a>
+          @endif
         </div>
         <div class="soft-card space-y-3 p-5 text-sm text-neutral-500 dark:text-neutral-300">
           <h3 class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Tips</h3>

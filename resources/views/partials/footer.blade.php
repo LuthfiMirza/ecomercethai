@@ -3,6 +3,10 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- About Section -->
             <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <img src="{{ asset('image/logo.jpg') }}" alt="{{ config('app.name', 'Lungpaeit') }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy">
+                    <span class="text-2xl font-semibold text-gray-900">{{ config('app.name', 'Lungpaeit') }}</span>
+                </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-4">About Us</h3>
                 <p class="text-gray-700">Your trusted partner for all computer and hardware needs in Thailand.</p>
             </div>
@@ -31,7 +35,7 @@
         
         <!-- Copyright -->
         <div class="border-t border-gray-200 mt-8 pt-8 text-center">
-            <p class="text-gray-600">&copy; 2024 Toko Thailand. All rights reserved.</p>
+            <p class="text-gray-600">&copy; {{ date('Y') }} {{ config('app.name', 'Lungpaeit') }}. All rights reserved.</p>
         </div>
     </div>
 </footer>

@@ -2,6 +2,10 @@
   <div class="container py-10">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
       <div>
+        <div class="flex items-center gap-3 mb-3">
+          <img src="{{ asset('image/logo.jpg') }}" alt="{{ config('app.name', 'Lungpaeit') }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy">
+          <span class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ config('app.name', 'Lungpaeit') }}</span>
+        </div>
         <h2 class="text-sm font-semibold tracking-wide text-neutral-500">About</h2>
         <p class="mt-3 text-sm text-neutral-600 dark:text-neutral-300">Your trusted partner for all computer and hardware needs in Thailand.</p>
       </div>
@@ -31,7 +35,7 @@
       </div>
     </div>
     <div class="mt-8 flex items-center justify-between text-xs text-neutral-500">
-      <p>&copy; {{ date('Y') }} Toko Thailand</p>
+      <p>&copy; {{ date('Y') }} {{ config('app.name', 'Lungpaeit') }}</p>
       <div class="flex items-center gap-3">
         <a href="#" aria-label="Facebook" class="hover:text-accent-600"><i class="fa-brands fa-facebook"></i></a>
         <a href="#" aria-label="Instagram" class="hover:text-accent-600"><i class="fa-brands fa-instagram"></i></a>

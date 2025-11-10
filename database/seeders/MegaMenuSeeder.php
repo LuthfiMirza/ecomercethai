@@ -50,7 +50,7 @@ class MegaMenuSeeder extends Seeder
                             'description' => $description,
                             'price' => $price,
                             'stock' => 25,
-                            'brand' => 'Toko Thailand Labs',
+                            'brand' => 'Lungpaeit Labs',
                             'image' => 'https://source.unsplash.com/600x600/?' . urlencode($name),
                             'is_active' => true,
                         ]

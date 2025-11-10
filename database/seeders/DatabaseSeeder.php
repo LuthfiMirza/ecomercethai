@@ -34,11 +34,16 @@ class DatabaseSeeder extends Seeder
             CouponSeeder::class,
             BannerSeeder::class,
             MegaMenuSeeder::class,
-            ShippingAddressSeeder::class,
             CartSeeder::class,
-            WishlistSeeder::class,
             OrderSeeder::class,
         ]);
+
+        if (env('SEED_DEMO_DATA', false)) {
+            $this->call([
+                ShippingAddressSeeder::class,
+                WishlistSeeder::class,
+            ]);
+        }
 
         if (method_exists($user, 'assignRole')) {
             $user->assignRole('admin');

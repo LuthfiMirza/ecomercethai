@@ -61,7 +61,9 @@
   $image = $resolvedImage ?? $image;
 @endphp
 
-<article x-data="{ loaded:false, quick:false }" class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden focus-within:ring-2 focus-within:ring-accent-500" aria-label="{{ $title }}">
+@php($loginUrl = localized_route('login'))
+
+<article x-data="{ loaded:false }" class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden focus-within:ring-2 focus-within:ring-accent-500" aria-label="{{ $title }}">
   <a href="{{ $href }}" class="block focus:outline-none">
     <!-- Image with 1:1 ratio and skeleton -->
     <div class="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
@@ -76,8 +78,14 @@
       @endif
       <!-- Quick actions -->
       <div class="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition">
-        <button @click.prevent.stop="quick=true" aria-label="Quick view" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-eye"></i></button>
-        <button data-wishlist data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to wishlist" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
+        <a href="{{ $href }}" aria-label="{{ __('Lihat detail produk') }}" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500">
+          <i class="fa-regular fa-eye"></i>
+        </a>
+        @if(auth()->check())
+        <button type="button" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to wishlist" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
+        @else
+        <button type="button" onclick="window.location='{{ $loginUrl }}'" aria-label="Login to save" class="p-2 rounded-md bg-white/90 border border-neutral-200 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
+        @endif
         <button data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to cart" class="p-2 rounded-md bg-accent-500 text-white hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-solid fa-cart-plus"></i></button>
       </div>
     </div>
@@ -106,29 +114,15 @@
   </a>
   <div class="px-4 pb-4 flex items-center gap-2">
     <x-button class="flex-1" aria-label="Tambah {{ $title }} ke keranjang" data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Tambah ke Keranjang</x-button>
-    <button aria-label="Wishlist" data-wishlist data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" class="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+    @if(auth()->check())
+    <button type="button" aria-label="Wishlist" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" class="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
       <i class="fa-regular fa-heart"></i>
     </button>
+    @else
+    <button type="button" aria-label="Login to save" onclick="window.location='{{ $loginUrl }}'" class="p-2 rounded-md border border-neutral-200 hover:bg-neutral-100">
+      <i class="fa-regular fa-heart"></i>
+    </button>
+    @endif
   </div>
 
-  <!-- Quick View Modal -->
-  <div x-cloak x-show="quick" x-transition.opacity class="fixed inset-0 z-50">
-    <div class="absolute inset-0 bg-black/40" @click="quick=false"></div>
-    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-xl bg-white dark:bg-neutral-900 rounded-2xl shadow-elevated overflow-hidden">
-      <div class="flex">
-        <img src="{{ $image }}" alt="{{ $title }}" class="w-1/2 h-full object-cover hidden md:block"/>
-        <div class="p-4 flex-1">
-          <div class="flex justify-between items-start">
-            <h3 class="font-semibold text-neutral-900 dark:text-neutral-100">{{ $title }}</h3>
-            <button class="p-2" @click="quick=false" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div class="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{{ $fmt($price) }} @if($hasDiscount)<span class="line-through text-neutral-400 ml-2">{{ $fmt($compareAt) }}</span>@endif</div>
-          <div class="mt-4 flex gap-2">
-            <x-button data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Add to Cart</x-button>
-            <x-button variant="outline">Select Options</x-button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 </article>

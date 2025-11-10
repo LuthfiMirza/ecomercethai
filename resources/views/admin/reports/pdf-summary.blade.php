@@ -15,7 +15,7 @@
     </head>
 <body>
     <div class="brand">
-        <h2>Toko Thailand — Reports</h2>
+        <h2>{{ config('app.name', 'Lungpaeit') }} — Reports</h2>
         <span class="muted">Generated: {{ now()->format('d M Y H:i') }}</span>
     </div>
     <h3>Monthly Sales</h3>
@@ -61,4 +61,3 @@
     </table>
 </body>
 </html>
-

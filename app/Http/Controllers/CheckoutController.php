@@ -257,6 +257,52 @@ class CheckoutController extends Controller
             ->with('success', __('checkout.address_added'));
     }
 
+    public function destroyAddress(Request $request, string $locale, $addressId)
+    {
+        $userId = Auth::id();
+        $address = ShippingAddress::where('user_id', $userId)->findOrFail($addressId);
+        $nextDefaultId = null;
+
+        DB::transaction(function () use ($address, $userId, &$nextDefaultId) {
+            $wasDefault = (bool) $address->is_default;
+            $address->delete();
+
+            if ($wasDefault) {
+                $next = ShippingAddress::where('user_id', $userId)
+                    ->orderByDesc('is_default')
+                    ->orderBy('created_at')
+                    ->first();
+
+                if ($next) {
+                    $next->is_default = true;
+                    $next->save();
+                    $nextDefaultId = (string) $next->id;
+                } else {
+                    $nextDefaultId = null;
+                }
+            } else {
+                $nextDefaultId = ShippingAddress::where('user_id', $userId)
+                    ->where('is_default', true)
+                    ->value('id');
+                $nextDefaultId = $nextDefaultId ? (string) $nextDefaultId : null;
+            }
+        });
+
+        $message = __('checkout.address_deleted');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'next_default_id' => $nextDefaultId,
+            ]);
+        }
+
+        return redirect()
+            ->route('checkout')
+            ->with('success', $message);
+    }
+
     public function success(Order|string $order)
     {
         if (! $order instanceof Order) {

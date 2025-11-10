@@ -4,27 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-      try {
-        var saved = localStorage.getItem('theme');
-        var isDark = saved ? saved === 'dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-          if (document.body) document.body.classList.add('dark');
-        }
-        else {
-          document.documentElement.classList.remove('dark');
-          if (document.body) document.body.classList.remove('dark');
-        }
-      } catch (e) { /* no-op */ }
-    </script>
-    <title>Toko Thailand - Your Tech Partner</title>
+    <title>{{ config('app.name', 'Lungpaeit') }} - Your Tech Partner</title>
+    <link rel="icon" type="image/png" href="{{ asset('image/logo.jpg') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+    @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>[x-cloak]{display:none !important}</style>
@@ -42,13 +30,21 @@
         .product-card:hover { box-shadow: 0 0 15px rgba(255, 112, 67, 0.3); }
         .glass-card { backdrop-filter: blur(10px); background: rgba(255,255,255,0.6); }
         .badge-counter { min-width: 1.25rem; height: 1.25rem; font-size: .75rem; }
+        [data-wishlist].wishlist-active {
+            background-color: #f43f5e !important;
+            border-color: #f43f5e !important;
+            color: #fff !important;
+        }
+        [data-wishlist].wishlist-active i {
+            color: inherit !important;
+        }
     </style>
     
     <!-- Google Fonts - Press Start 2P -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
 </head>
-<body class="bg-white text-neutral-800 dark:bg-neutral-950 dark:text-neutral-200">
+<body class="bg-white text-neutral-800">
     <x-navbar />
 
     <!-- Add padding to body to prevent content from hiding behind fixed header -->
@@ -80,9 +76,15 @@
             </button>
           </div>
           <div class="flex flex-wrap items-center justify-end gap-2">
+            @if(auth()->check())
             <a href="{{ localized_route('wishlist') }}" data-overlay-bypass class="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800">
               {{ __('common.view_wishlist') }}
             </a>
+            @else
+            <a href="{{ localized_route('login') }}" class="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50">
+              {{ __('common.login') }}
+            </a>
+            @endif
             <a href="{{ localized_route('catalog') }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-accent-600">
               {{ __('common.shop_now') }}
             </a>
@@ -120,12 +122,71 @@
             <a href="{{ localized_route('cart') }}" data-overlay-bypass class="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800">
               {{ __('common.view_cart') }}
             </a>
-            <a href="{{ localized_route('checkout') }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-accent-600">
-              {{ __('common.checkout') }}
+            <a href="{{ auth()->check() ? localized_route('checkout') : localized_route('login') }}" class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow transition {{ auth()->check() ? 'bg-accent-500 text-white hover:bg-accent-600' : 'bg-neutral-200 text-neutral-600' }}">
+              {{ auth()->check() ? __('common.checkout') : __('common.login') }}
             </a>
           </div>
         </footer>
       </aside>
+    </div>
+
+    <!-- Add-to-cart popup -->
+    <div data-cart-popup aria-hidden="true" class="fixed bottom-6 right-6 z-[85] w-full max-w-sm rounded-2xl border border-orange-100 bg-white shadow-[0_25px_70px_-30px_rgba(16,24,40,0.4)] p-4 flex gap-4 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
+      <div class="relative flex gap-4 w-full">
+        <div class="relative h-16 w-16 flex-shrink-0 rounded-xl bg-neutral-100 overflow-hidden">
+          <img data-cart-popup-image src="" alt="" class="h-full w-full object-cover hidden" />
+          <div data-cart-popup-placeholder class="absolute inset-0 flex items-center justify-center text-neutral-400">
+            <i class="fa-solid fa-bag-shopping"></i>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-wide text-orange-500">{{ __('common.cart_popup_title') }}</p>
+          <p data-cart-popup-name class="text-sm font-semibold text-neutral-900 truncate">Product</p>
+          <p data-cart-popup-meta class="text-xs text-neutral-500 mt-0.5">1 × ฿0.00</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <a href="{{ localized_route('cart') }}" class="inline-flex flex-1 min-w-[120px] items-center justify-center rounded-full bg-accent-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow hover:bg-accent-600">
+              {{ __('common.cart_popup_view_cart') }}
+            </a>
+            <a href="{{ auth()->check() ? localized_route('checkout') : localized_route('login') }}" class="inline-flex flex-1 min-w-[120px] items-center justify-center rounded-full border border-neutral-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide {{ auth()->check() ? 'text-neutral-700 hover:bg-neutral-50' : 'text-neutral-400' }}">
+              {{ auth()->check() ? __('common.cart_popup_checkout') : __('common.login') }}
+            </a>
+            <button type="button" data-cart-popup-close class="text-xs font-semibold text-neutral-500 hover:text-neutral-700">
+              {{ __('common.cart_popup_continue') }}
+            </button>
+          </div>
+        </div>
+        <button type="button" data-cart-popup-close class="absolute -top-2 -right-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Add-to-wishlist popup -->
+    <div data-wishlist-popup aria-hidden="true" class="fixed bottom-6 right-6 z-[84] w-full max-w-sm rounded-2xl border border-rose-100 bg-white shadow-[0_25px_70px_-30px_rgba(16,24,40,0.35)] p-4 flex gap-4 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
+      <div class="relative flex gap-4 w-full">
+        <div class="relative h-16 w-16 flex-shrink-0 rounded-xl bg-rose-50 overflow-hidden">
+          <img data-wishlist-popup-image src="" alt="" class="h-full w-full object-cover hidden" />
+          <div data-wishlist-popup-placeholder class="absolute inset-0 flex items-center justify-center text-rose-400">
+            <i class="fa-solid fa-heart"></i>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-wide text-rose-500">{{ __('common.wishlist_popup_title') }}</p>
+          <p data-wishlist-popup-name class="text-sm font-semibold text-neutral-900 truncate">Product</p>
+          <p data-wishlist-popup-meta class="text-xs text-neutral-500 mt-0.5">฿0.00</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <a href="{{ auth()->check() ? localized_route('wishlist') : localized_route('login') }}" class="inline-flex flex-1 min-w-[120px] items-center justify-center rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow {{ auth()->check() ? 'bg-secondary-500 text-white hover:bg-secondary-500/90' : 'bg-neutral-200 text-neutral-600' }}">
+              {{ auth()->check() ? __('common.wishlist_popup_view') : __('common.login') }}
+            </a>
+            <button type="button" data-wishlist-popup-close class="text-xs font-semibold text-neutral-500 hover:text-neutral-700">
+              {{ __('common.wishlist_popup_continue') }}
+            </button>
+          </div>
+        </div>
+        <button type="button" data-wishlist-popup-close class="absolute -top-2 -right-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Floating Quick Actions (bottom-right) -->

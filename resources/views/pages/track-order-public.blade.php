@@ -29,15 +29,15 @@
   <section class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
     <div class="soft-card p-6 space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="space-y-1">
-          <div class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Status Pesanan') }}</div>
-          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ ucfirst($order->status) }}</div>
-        </div>
-        <div class="space-y-1 text-right">
-          <div class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Pembayaran') }}</div>
-          <div class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ ucfirst($order->payment_status) }}</div>
-        </div>
+      <div class="space-y-1">
+        <div class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Status Pesanan') }}</div>
+          <div id="track-order-status" class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ ucfirst($order->status) }}</div>
       </div>
+      <div class="space-y-1 text-right">
+        <div class="text-xs uppercase tracking-wide text-neutral-400">{{ __('Pembayaran') }}</div>
+          <div id="track-payment-status" class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ ucfirst($order->payment_status) }}</div>
+      </div>
+    </div>
 
       <div class="border-t border-white/60 pt-4 dark:border-neutral-800">
         <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Ringkasan Produk') }}</h2>
@@ -72,3 +72,80 @@
   </section>
 </main>
 @endsection
+
+@if($order->track_token)
+  @push('scripts')
+  <script>
+    (function () {
+      const pollUrl = @json(localized_route('orders.track.status', ['token' => $order->track_token]));
+      if (!pollUrl) {
+        return;
+      }
+
+      const statusEl = document.getElementById('track-order-status');
+      const paymentEl = document.getElementById('track-payment-status');
+
+      const formatLabel = (value) => {
+        if (!value) {
+          return '';
+        }
+
+        return value.toString().split('_').map((part) => {
+          return part.charAt(0).toUpperCase() + part.slice(1);
+        }).join(' ');
+      };
+
+      const updateData = (payload) => {
+        if (payload.status && statusEl) {
+          statusEl.textContent = payload.status_label || formatLabel(payload.status);
+        }
+
+        if (payload.payment_status && paymentEl) {
+          paymentEl.textContent = payload.payment_status_label || formatLabel(payload.payment_status);
+        }
+      };
+
+      const poll = async () => {
+        try {
+          const response = await fetch(pollUrl, {
+            headers: {
+              'Accept': 'application/json',
+            },
+            cache: 'no-store',
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch order status');
+          }
+
+          const payload = await response.json();
+          updateData(payload);
+        } catch (error) {
+          console.warn('[track-order-poll]', error);
+        }
+      };
+
+      let intervalId;
+
+      const startPolling = () => {
+        clearInterval(intervalId);
+        intervalId = setInterval(poll, 10000);
+      };
+
+      poll();
+      startPolling();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          clearInterval(intervalId);
+        } else {
+          poll();
+          startPolling();
+        }
+      });
+
+      window.addEventListener('beforeunload', () => clearInterval(intervalId));
+    })();
+  </script>
+  @endpush
+@endif

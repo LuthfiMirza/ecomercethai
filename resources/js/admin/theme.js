@@ -23,7 +23,7 @@ function applyTheme({ mode, color, radius, density }) {
 }
 
 Alpine.store('theme', {
-  mode: localStorage.getItem('ui.mode') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  mode: localStorage.getItem('ui.mode') || 'light',
   color: localStorage.getItem('ui.color') || 'blue',
   radius: localStorage.getItem('ui.radius') || '2xl',
   density: localStorage.getItem('ui.density') || 'comfortable',
@@ -34,4 +34,3 @@ Alpine.store('theme', {
   setRadius(v){ this.radius = v; localStorage.setItem('ui.radius', v); applyTheme(this); },
   setDensity(v){ this.density = v; localStorage.setItem('ui.density', v); applyTheme(this); },
 });
-

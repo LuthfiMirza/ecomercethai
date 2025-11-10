@@ -2,6 +2,7 @@
 
 @php
   $locale = app()->getLocale();
+  $brandName = config('app.name', 'Lungpaeit');
   $currency = config('app.currency', 'THB');
   $addressData = $shippingAddresses->map(function ($address) {
       return [
@@ -52,19 +53,28 @@
       [
           'bank' => 'BCA',
           'account' => '123 456 7890',
-          'holder' => 'PT Toko Thailand',
+          'holder' => 'PT ' . $brandName,
           'is_primary' => true,
       ],
       [
           'bank' => 'Mandiri',
           'account' => '987 654 3210',
-          'holder' => 'PT Toko Thailand',
+          'holder' => 'PT ' . $brandName,
           'is_primary' => false,
       ],
   ];
 
+  $requestInstance = request();
   $addressFormFields = ['name', 'phone', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country', 'is_default'];
-  $addressOldInput = collect($addressFormFields)->mapWithKeys(fn ($field) => [$field => old($field)]);
+  $addressOldInput = collect($addressFormFields)->mapWithKeys(function ($field) use ($requestInstance) {
+      $value = old($field, $requestInstance->query($field));
+      if ($field === 'is_default') {
+          $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+      }
+      return [$field => $value];
+  });
+  $addressPrefillPresent = $addressOldInput
+      ->some(fn ($value, $key) => $key === 'is_default' ? (bool) $value : filled($value));
 
   $checkoutConfig = [
       'locale' => $locale,
@@ -88,11 +98,13 @@
           'payment_method' => old('payment_method', $paymentMethods[0]['id'] ?? 'bank_transfer'),
           'coupon_code' => old('coupon_code', ''),
       ],
-      'couponUrl' => route('checkout.apply-coupon'),
+      'couponUrl' => localized_route('checkout.apply-coupon'),
       'csrf' => csrf_token(),
-      'processUrl' => route('checkout.process'),
-      'addressStoreUrl' => route('checkout.address.store'),
-      'backToCartUrl' => route('cart'),
+      'processUrl' => localized_route('checkout.process'),
+      'addressStoreUrl' => localized_route('checkout.address.store'),
+      'backToCartUrl' => localized_route('cart'),
+      'addressDeleteUrl' => localized_route('checkout.address.destroy', ['address' => 'ADDRESS_ID_PLACEHOLDER']),
+      'forceShowAddressForm' => $addressPrefillPresent,
       'translations' => [
           'title' => __('checkout.title'),
           'subtitle' => __('checkout.subtitle'),
@@ -100,11 +112,22 @@
           'sectionAddress' => __('Alamat Pengiriman'),
           'sectionAddressHelp' => __('Pilih alamat yang akan digunakan untuk pengiriman pesanan.'),
           'addressEmpty' => __('checkout.address_empty'),
+          'addressFormTitle' => __('checkout.address_form_title'),
           'addressFormHelp' => __('checkout.address_form_help'),
+          'addressFormRequiredHint' => __('checkout.address_form_required_hint'),
           'addAddress' => __('checkout.add_address_button'),
           'hideAddressForm' => __('Sembunyikan formulir alamat'),
           'badgePrimary' => __('Utama'),
           'badgeRecommended' => __('Direkomendasikan'),
+          'selectedLabel' => __('Terpilih'),
+          'deleteAddress' => __('Hapus Alamat'),
+          'deleteAddressConfirmTitle' => __('Hapus alamat ini?'),
+          'deleteAddressConfirmText' => __('Alamat akan dihapus permanen dan tidak bisa digunakan lagi.'),
+          'deleteAddressCancel' => __('Batal'),
+          'deleteAddressConfirmAction' => __('Hapus'),
+          'deleteAddressLoading' => __('Menghapus…'),
+          'deleteAddressError' => __('Tidak dapat menghapus alamat.'),
+          'addressDeleted' => __('checkout.address_deleted'),
           'sectionPayment' => __('Metode Pembayaran'),
           'sectionPaymentHelp' => __('Pilih cara pembayaran yang Anda inginkan.'),
           'bankDetailsTitle' => __('checkout.bank_transfer_details_title'),
@@ -145,6 +168,22 @@
           'fieldState' => __('Provinsi (Opsional)'),
           'fieldPostal' => __('Kode Pos'),
           'fieldCountry' => __('Negara'),
+          'fieldRequiredLabel' => __('checkout.field_required_label'),
+          'fieldOptionalLabel' => __('checkout.field_optional_label'),
+          'fieldNamePlaceholder' => __('checkout.field_name_placeholder'),
+          'fieldPhoneHint' => __('checkout.field_phone_hint'),
+          'fieldPhonePlaceholder' => __('checkout.field_phone_placeholder'),
+          'fieldAddress1Hint' => __('checkout.field_address1_hint'),
+          'fieldAddress1Placeholder' => __('checkout.field_address1_placeholder'),
+          'fieldAddress2Hint' => __('checkout.field_address2_hint'),
+          'fieldAddress2Placeholder' => __('checkout.field_address2_placeholder'),
+          'fieldCityPlaceholder' => __('checkout.field_city_placeholder'),
+          'fieldStatePlaceholder' => __('checkout.field_state_placeholder'),
+          'fieldPostalHint' => __('checkout.field_postal_hint'),
+          'fieldPostalPlaceholder' => __('checkout.field_postal_placeholder'),
+          'fieldCountryPlaceholder' => __('checkout.field_country_placeholder'),
+          'fieldCountryHint' => __('checkout.field_country_hint'),
+          'makeDefaultHint' => __('checkout.make_default_hint'),
           'stepAddress' => __('Alamat'),
           'stepPayment' => __('Pembayaran'),
           'stepReview' => __('Review'),

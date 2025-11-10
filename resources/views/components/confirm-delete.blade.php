@@ -1,4 +1,4 @@
-@props(['action', 'title' => __('Delete Confirmation'), 'description' => __('Are you sure you want to delete this item? ')])
+@props(['action', 'title' => __('Delete Confirmation'), 'description' => __('Are you sure you want to delete this item?')])
 
 <div x-data="{ open: false }" class="inline-block">
     <button

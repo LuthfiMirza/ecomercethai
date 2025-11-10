@@ -109,12 +109,12 @@
           <span>{{ __('Total Sementara') }}</span>
           <span>{{ format_price($subtotal) }}</span>
         </div>
-        @auth
+        @if(auth()->check())
           <x-button href="{{ route('checkout') }}" class="w-full justify-center">{{ __('Lanjut ke Checkout') }}</x-button>
         @else
           <x-alert type="info" class="text-sm">{{ __('Masuk terlebih dahulu untuk melanjutkan checkout.') }}</x-alert>
-          <x-button href="{{ route('login') }}" class="w-full justify-center">{{ __('Masuk / Daftar') }}</x-button>
-        @endauth
+          <x-button href="{{ localized_route('login') }}" class="w-full justify-center">{{ __('Masuk / Daftar') }}</x-button>
+        @endif
       </aside>
     </div>
   @endif

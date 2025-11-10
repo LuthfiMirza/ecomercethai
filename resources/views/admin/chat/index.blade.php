@@ -97,8 +97,19 @@
     loadingMessages: false,
   };
 
-  let pollTimer = null;
-  let pollInFlight = false;
+  const POLL_CONV_MS = 10000;
+  const POLL_MSG_MS = 7000;
+
+  let realtimeActive = !!window.Echo;
+  let convTimer = null;
+  let msgTimer = null;
+  let lastConvJson = '';
+  let lastMsgJson = '';
+
+  const api = {
+    list: config.conversationsUrl,
+    messages: (id) => config.messagesUrlTemplate.replace('__USER__', encodeURIComponent(id)),
+  };
 
   const onlineAdmins = new Map();
 
@@ -192,27 +203,42 @@
     return updated;
   }
 
-  function startPolling() {
-    if (pollTimer || !config.conversationsUrl) {
-      return;
-    }
-    pollTimer = window.setInterval(async () => {
-      if (pollInFlight) return;
-      pollInFlight = true;
-      try {
-        await fetchConversations({ silent: true, trackChanges: true });
-      } catch (error) {
-        console.error('Chat polling failed', error);
-      } finally {
-        pollInFlight = false;
-      }
-    }, 10000);
+function startConvPolling(force = false) {
+  if ((!force && realtimeActive) || convTimer || !api.list) {
+    return;
+  }
+    convTimer = window.setInterval(() => {
+      refreshConversations({ silent: true, trackChanges: true }).catch(() => {});
+    }, POLL_CONV_MS);
   }
 
-  function stopPolling() {
-    if (!pollTimer) return;
-    window.clearInterval(pollTimer);
-    pollTimer = null;
+  function stopConvPolling() {
+    if (!convTimer) return;
+    window.clearInterval(convTimer);
+    convTimer = null;
+  }
+
+function startMsgPolling(force = false) {
+  if (!state.activeConversationId) {
+    stopMsgPolling();
+    return;
+  }
+  if (!force && realtimeActive) {
+    stopMsgPolling();
+    return;
+  }
+    if (msgTimer) {
+      window.clearInterval(msgTimer);
+    }
+    msgTimer = window.setInterval(() => {
+      refreshMessages(state.activeConversationId, { silent: true }).catch(() => {});
+    }, POLL_MSG_MS);
+  }
+
+  function stopMsgPolling() {
+    if (!msgTimer) return;
+    window.clearInterval(msgTimer);
+    msgTimer = null;
   }
 
   function upsertConversation(payload) {
@@ -365,14 +391,15 @@
     els.chatEmpty?.classList.add('hidden');
     els.chatWindow.appendChild(buildMessageNode(message, mine));
     els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
+    lastMsgJson = '';
   }
 
   function conversationUrl(id) {
-    return config.messagesUrlTemplate.replace('__USER__', encodeURIComponent(id));
+    return api.messages(id);
   }
 
-  async function fetchConversations(options = {}) {
-    if (!config.conversationsUrl) return [];
+  async function refreshConversations(options = {}) {
+    if (!api.list) return [];
     const silent = Boolean(options?.silent);
     const trackChanges = Boolean(options?.trackChanges);
 
@@ -384,26 +411,36 @@
     }
 
     try {
-      const { data } = await window.axios.get(config.conversationsUrl);
+      const { data } = await window.axios.get(api.list);
       if (!data?.ok) throw new Error('Unable to load conversations');
 
+      const payload = data.conversations || [];
+      const snapshot = JSON.stringify(payload);
+      const changed = snapshot !== lastConvJson;
+      lastConvJson = snapshot;
+
       state.conversations.clear();
-      (data.conversations || []).forEach((item) => {
+      payload.forEach((item) => {
         upsertConversation(item);
       });
 
-      renderConversationList();
+      if (changed) {
+        renderConversationList();
+      }
 
       let updated = [];
       if (trackChanges) {
         updated = detectNewMessages(previous);
       }
 
-      if (!state.activeConversationId && data.conversations?.length) {
-        const first = data.conversations[0];
+      if (!state.activeConversationId && payload.length) {
+        const first = payload[0];
         state.activeConversationId = first?.user?.id ?? null;
         if (state.activeConversationId) {
-          await fetchMessages(state.activeConversationId);
+          lastMsgJson = '';
+          await refreshMessages(state.activeConversationId, { silent: true });
+          const forcePolling = !realtimeActive || convTimer !== null;
+          startMsgPolling(forcePolling);
         }
       }
 
@@ -415,7 +452,9 @@
           updated.includes(activeId) &&
           !state.loadingMessages
         ) {
-          await fetchMessages(activeId);
+          await refreshMessages(activeId, { silent: true });
+          const forcePolling = !realtimeActive || convTimer !== null;
+          startMsgPolling(forcePolling);
         }
       }
 
@@ -423,6 +462,13 @@
         updateFormState(false);
         els.chatTitle.textContent = '{{ __('Select a conversation') }}';
         els.chatSubtitle.textContent = '{{ __('Choose a conversation from the list to begin.') }}';
+        stopMsgPolling();
+      } else if (!state.conversations.has(Number(state.activeConversationId))) {
+        state.activeConversationId = null;
+        updateFormState(false);
+        els.chatTitle.textContent = '{{ __('Select a conversation') }}';
+        els.chatSubtitle.textContent = '{{ __('Choose a conversation from the list to begin.') }}';
+        stopMsgPolling();
       }
 
       return updated;
@@ -434,10 +480,11 @@
     }
   }
 
-  async function fetchMessages(conversationId) {
-    if (!conversationId || !config.messagesUrlTemplate) return;
+  async function refreshMessages(conversationId, options = {}) {
+    if (!conversationId || !api.messages) return;
+    const silent = Boolean(options?.silent);
     state.loadingMessages = true;
-    if (els.chatEmpty) {
+    if (!silent && lastMsgJson === '' && els.chatEmpty) {
       els.chatEmpty.textContent = '{{ __('Loading messages…') }}';
       els.chatEmpty.classList.remove('hidden');
     }
@@ -450,6 +497,8 @@
       state.activeConversationId = conversation.id;
 
       const messages = data.messages || [];
+      const snapshot = JSON.stringify(messages);
+      const changed = snapshot !== lastMsgJson;
 
       upsertConversation({
         user: conversation,
@@ -458,7 +507,12 @@
       });
 
       renderConversationList();
-      renderMessages(messages);
+      if (changed) {
+        renderMessages(messages);
+        lastMsgJson = snapshot;
+      } else {
+        lastMsgJson = snapshot;
+      }
 
       els.chatTitle.textContent = conversation.name || `{{ __('Customer') }} #${conversation.id}`;
       if (messages.length) {
@@ -470,8 +524,12 @@
       updateFormState(true);
       els.chatInput.focus();
     } catch (error) {
-      console.error('Failed to load conversation', error);
-      els.chatSubtitle.textContent = '{{ __('Unable to load messages.') }}';
+      if (!silent) {
+        console.error('Failed to load conversation', error);
+      }
+      if (!silent) {
+        els.chatSubtitle.textContent = '{{ __('Unable to load messages.') }}';
+      }
     } finally {
       state.loadingMessages = false;
     }
@@ -510,6 +568,7 @@
     if (isActiveConversation) {
       const mine = Boolean(message.is_from_admin && Number(message.sender?.id) === Number(config.adminId));
       appendMessage(message, mine);
+      lastMsgJson = '';
 
       const active = state.conversations.get(Number(message.conversation_id));
       if (active) {
@@ -574,31 +633,45 @@
     }
   }
 
-  if (window.Echo) {
+  if (realtimeActive) {
     const connection = window.Echo.connector?.pusher?.connection;
     if (connection) {
       if (connection.state !== 'connected') {
-        startPolling();
+        realtimeActive = false;
+        startConvPolling(true);
+        startMsgPolling(true);
       }
       connection.bind('connected', () => {
-        stopPolling();
+        realtimeActive = true;
+        stopConvPolling();
+        stopMsgPolling();
       });
       ['unavailable', 'failed', 'disconnected'].forEach((event) => {
         connection.bind(event, () => {
-          startPolling();
+          realtimeActive = false;
+          startConvPolling(true);
+          startMsgPolling(true);
         });
       });
     } else {
-      startPolling();
+      realtimeActive = false;
+      startConvPolling(true);
+      startMsgPolling(true);
     }
 
     window.Echo.join('chat.admin')
       .here(syncOnline)
       .joining(addOnline)
       .leaving(removeOnline)
-      .listen('.message.sent', handleBroadcast);
+      .listen('.message.sent', (payload) => {
+        handleBroadcast(payload);
+        refreshConversations({ silent: true, trackChanges: true }).catch(() => {});
+        if (payload?.conversation_id && Number(payload.conversation_id) === Number(state.activeConversationId)) {
+          refreshMessages(state.activeConversationId, { silent: true }).catch(() => {});
+        }
+      });
   } else {
-    startPolling();
+    startConvPolling(true);
   }
 
   if (els.conversationItems) {
@@ -610,8 +683,13 @@
         return;
       }
       ensureAudioContext();
+      stopMsgPolling();
       state.activeConversationId = id;
-      fetchMessages(id);
+      lastMsgJson = '';
+      refreshMessages(id).then(() => {
+        const forcePolling = !realtimeActive || convTimer !== null;
+        startMsgPolling(forcePolling);
+      }).catch(() => {});
     });
   }
 
@@ -664,17 +742,24 @@
 
   els.refreshConversations?.addEventListener('click', () => {
     ensureAudioContext();
-    fetchConversations();
+    refreshConversations().catch(() => {});
   });
 
-  fetchConversations({ silent: true }).then(() => {
-    if (state.activeConversationId) {
-      fetchMessages(state.activeConversationId);
+  (async function bootstrap() {
+    try {
+      await refreshConversations();
+      if (state.activeConversationId) {
+        lastMsgJson = '';
+        await refreshMessages(state.activeConversationId);
+        const forcePolling = !realtimeActive || convTimer !== null;
+        startMsgPolling(forcePolling);
+      }
+    } catch (error) {
+      console.error('Initial chat load failed', error);
     }
-  });
+  })();
 })();
 </script>
 @endpush
 
 @endsection
-

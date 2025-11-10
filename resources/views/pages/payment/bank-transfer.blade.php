@@ -6,6 +6,7 @@
   $itemsTotal = $items->sum(fn($item) => $item->price * $item->quantity);
   $discountAmount = $order->discount_amount ?? 0;
   $shippingTotal = max($order->total_amount - $itemsTotal + $discountAmount, 0);
+  $brandName = config('app.name', 'Lungpaeit');
 @endphp
 
 @section('content')
@@ -40,13 +41,13 @@
               <span class="font-medium">BCA</span>
               <x-badge variant="outline">{{ __('Utama') }}</x-badge>
             </div>
-            <div class="mt-1 text-neutral-500">No. Rek: <strong>123 456 7890</strong><br/>a.n <strong>PT Toko Thailand</strong></div>
+            <div class="mt-1 text-neutral-500">No. Rek: <strong>123 456 7890</strong><br/>a.n <strong>PT {{ $brandName }}</strong></div>
           </li>
           <li class="border-t border-dashed border-neutral-200 pt-3 dark:border-neutral-800">
             <div class="flex items-center justify-between">
               <span class="font-medium">Mandiri</span>
             </div>
-            <div class="mt-1 text-neutral-500">No. Rek: <strong>987 654 3210</strong><br/>a.n <strong>PT Toko Thailand</strong></div>
+            <div class="mt-1 text-neutral-500">No. Rek: <strong>987 654 3210</strong><br/>a.n <strong>PT {{ $brandName }}</strong></div>
           </li>
         </ul>
         <x-alert type="info" class="mt-4 text-xs">{{ __('Gunakan berita “Pembayaran pesanan #” dan pastikan jumlah transfer sesuai total pesanan.') }}</x-alert>

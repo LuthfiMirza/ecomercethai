@@ -125,7 +125,10 @@
             <div class="container mx-auto flex h-full flex-col justify-center px-4 py-12 md:py-20 lg:py-24">
               <div class="max-w-2xl">
                 <div class="space-y-4 rounded-3xl border border-white/10 bg-white/10 p-6 text-white shadow-[0_20px_45px_rgba(15,15,15,0.45)] backdrop-blur-md sm:space-y-6 sm:p-8 md:bg-white/12 transform translate-y-4 sm:translate-y-6 md:translate-y-8 lg:translate-y-10">
-                  <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70 sm:text-sm">{{ __('Toko Thailand Exclusive') }}</p>
+                  <div class="flex items-center gap-3">
+                    <img src="{{ asset('image/logo.jpg') }}" alt="{{ config('app.name', 'Lungpaeit') }}" class="h-10 w-10 rounded-full object-cover shadow" loading="lazy">
+                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70 sm:text-sm">{{ strtoupper(config('app.name', 'Lungpaeit')) }} Exclusive</p>
+                  </div>
                   <h1 class="text-3xl font-black leading-tight sm:text-4xl md:text-5xl">{{ $slide['title'] }}</h1>
                   <p class="text-lg font-semibold text-white/95 md:text-xl">{{ $slide['subtitle'] }}</p>
                   <p class="text-sm text-white/85 md:text-base">{{ $slide['description'] }}</p>
@@ -238,12 +241,18 @@
                         <span class="text-gray-600 dark:text-neutral-400 text-sm ml-1">4.5</span>
                     </div>
                 </div>
-                <button data-cart-add data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 dark:bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 dark:hover:bg-orange-400 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
+                <button type="button" data-cart-add data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 dark:bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 dark:hover:bg-orange-400 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Buy Now
                 </button>
-                <button data-wishlist data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 dark:border-orange-400/70 text-orange-600 dark:text-orange-300 py-2 rounded-lg font-medium hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
+                @if(auth()->check())
+                <button type="button" data-wishlist data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 dark:border-orange-400/70 text-orange-600 dark:text-orange-300 py-2 rounded-lg font-medium hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
                     <i class="fa-regular fa-heart mr-2"></i> Wishlist
                 </button>
+                @else
+                <button type="button" onclick="window.location='{{ localized_route('login') }}'" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                    <i class="fa-regular fa-heart mr-2"></i> {{ __('Login untuk wishlist') }}
+                </button>
+                @endif
             </div>
         </div>
         @empty

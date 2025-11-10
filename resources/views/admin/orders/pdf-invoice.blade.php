@@ -50,7 +50,7 @@
 
     <div class="brand">
         <div>
-            <h2>Toko Thailand - Invoice</h2>
+            <h2>{{ config('app.name', 'Lungpaeit') }} - Invoice</h2>
             <div class="muted">Issued {{ $order->created_at?->format('d M Y') }}</div>
         </div>
         <div>

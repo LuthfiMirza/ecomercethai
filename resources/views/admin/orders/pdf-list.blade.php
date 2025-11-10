@@ -21,7 +21,7 @@
     </head>
 <body>
     <div class="brand">
-        <h2>Toko Thailand — Orders</h2>
+        <h2>{{ config('app.name', 'Lungpaeit') }} — Orders</h2>
         <span style="font-size: 12px; color:#64748b;">Generated: {{ now()->format('d M Y H:i') }}</span>
     </div>
     <table>

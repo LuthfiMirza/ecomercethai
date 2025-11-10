@@ -8,7 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <title>Admin Panel - Toko Thailand</title>
+    <title>Admin Panel - {{ config('app.name', 'Lungpaeit') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('image/logo.jpg') }}">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,6 +28,7 @@
     <style>[x-cloak]{display:none!important;}</style>
 
     <!-- Vite: Tailwind CSS + Alpine.js + Chart.js (bundled) -->
+    @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- Custom CSS for Admin Panel -->
@@ -190,7 +192,7 @@
                 <div class="flex items-center gap-3">
                     <div class="icon-circle bg-gradient-to-tr from-orange-400 to-amber-500 text-white font-semibold shadow-[0_18px_35px_-18px_rgba(255,120,70,0.75)]">TT</div>
                     <div>
-                        <p class="text-base font-semibold text-slate-700 dark:text-white">Toko Thailand</p>
+                        <p class="text-base font-semibold text-slate-700 dark:text-white">{{ config('app.name', 'Lungpaeit') }}</p>
                         <p class="text-xs text-slate-400 dark:text-slate-400/80">Admin Workspace</p>
                     </div>
                 </div>

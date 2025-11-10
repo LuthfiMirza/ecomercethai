@@ -18,6 +18,7 @@ use App\Http\Controllers\MegaMenuController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\ChatMessageController;
 use Illuminate\Support\Facades\Route;
 
@@ -105,6 +106,7 @@ Route::get('/mega-menu-preview', MegaMenuController::class)->name('mega-menu.pre
 
 // Public order tracking by secret token (no auth)
 Route::get('/t/{token}', [OrderTrackingController::class, 'show'])->name('orders.track');
+Route::get('/t/{token}/status', [OrderTrackingController::class, 'status'])->name('orders.track.status');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -112,6 +114,9 @@ Route::middleware('guest')->group(function () {
 
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
+
+    Route::get('/auth/google/redirect', [SocialLoginController::class, 'redirect'])->name('social.google.redirect');
+    Route::get('/auth/google/callback', [SocialLoginController::class, 'callback'])->name('social.google.callback');
 });
 
 Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -148,6 +153,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [\App\Http\Controllers\CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout/process', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('checkout.process');
     Route::post('/checkout/address', [\App\Http\Controllers\CheckoutController::class, 'storeAddress'])->name('checkout.address.store');
+    Route::delete('/checkout/address/{address}', [\App\Http\Controllers\CheckoutController::class, 'destroyAddress'])->name('checkout.address.destroy');
     Route::post('/checkout/apply-coupon', [\App\Http\Controllers\CheckoutController::class, 'applyCoupon'])->name('checkout.apply-coupon');
     Route::get('/checkout/success/{order}', [\App\Http\Controllers\CheckoutController::class, 'success'])->name('checkout.success');
 });
@@ -161,6 +167,7 @@ Route::middleware('auth')->group(function () {
 // Orders
 Route::middleware('auth')->group(function () {
     Route::get('/orders/{order}', [FrontOrderController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{order}/status', [FrontOrderController::class, 'status'])->name('orders.status');
 });
 
 Route::middleware('auth')->group(function () {

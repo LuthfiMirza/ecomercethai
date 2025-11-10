@@ -48,6 +48,7 @@ const CheckoutApp = ({ initialData = {} }) => {
     csrf,
     locale = 'en',
     currency = 'USD',
+    addressDeleteUrl,
   } = initialData;
 
   const t = (key, fallback) => translations[key] || fallback || key;
@@ -55,19 +56,36 @@ const CheckoutApp = ({ initialData = {} }) => {
   const formatter = useMemo(() => createFormatter(locale, currency), [locale, currency]);
   const formatCurrency = (value) => formatter.format(Number(value) || 0);
 
+  const hasAddressPrefill = useMemo(() => {
+    if (initialData.forceShowAddressForm) return true;
+    const entries = Object.entries(initialData.oldInput || {});
+    if (entries.length === 0) {
+      return false;
+    }
+    return entries.some(([key, value]) => {
+      if (key === 'is_default') {
+        return Boolean(value);
+      }
+      if (typeof value === 'number') return true;
+      if (typeof value === 'string') return value.trim().length > 0;
+      return Boolean(value);
+    });
+  }, [initialData.forceShowAddressForm, initialData.oldInput]);
+
   const formRef = useRef(null);
   const fileInputRef = useRef(null);
-  const formRef = useRef(null);
 
   const [step, setStep] = useState(initialData.initialStep || 1);
   const [addresses, setAddresses] = useState(initialAddresses);
   const [selectedAddressId, setSelectedAddressId] = useState(
     initialForm.shipping_address_id || initialAddresses[0]?.id || null,
   );
-  const [showAddressForm, setShowAddressForm] = useState(initialAddresses.length === 0);
+  const [showAddressForm, setShowAddressForm] = useState(initialAddresses.length === 0 || hasAddressPrefill);
   const [addressForm, setAddressForm] = useState(buildAddressForm(initialData.oldInput));
   const [addressErrors, setAddressErrors] = useState({});
   const [savingAddress, setSavingAddress] = useState(false);
+  const [addressPendingDelete, setAddressPendingDelete] = useState(null);
+  const [deletingAddress, setDeletingAddress] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState(
     initialForm.payment_method || paymentMethods[0]?.id || '',
@@ -97,6 +115,22 @@ const CheckoutApp = ({ initialData = {} }) => {
 
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) || null;
 
+  const resolveDeleteUrl = (addressId) => {
+    if (!addressDeleteUrl || !addressId) return null;
+    return addressDeleteUrl.replace('ADDRESS_ID_PLACEHOLDER', addressId);
+  };
+
+  const inputBaseClass =
+    'mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 shadow-sm transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder:text-neutral-500';
+  const helperTextClass = 'mt-1 text-xs text-neutral-500 dark:text-neutral-400';
+  const badgeClass = (optional = false) =>
+    classNames(
+      'rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide',
+      optional
+        ? 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300'
+        : 'bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-200',
+    );
+
 
   const handleNext = () => {
     if (step === 1 && !selectedAddressId) {
@@ -120,6 +154,11 @@ const CheckoutApp = ({ initialData = {} }) => {
     setStep((current) => Math.max(current - 1, 1));
   };
 
+  const resetAddressForm = () => {
+    setAddressForm(buildAddressForm(initialData.oldInput));
+    setAddressErrors({});
+  };
+
   const handleAddressFieldChange = (event) => {
     const { name, value, type, checked } = event.target;
     setAddressForm((current) => ({
@@ -129,8 +168,19 @@ const CheckoutApp = ({ initialData = {} }) => {
     setAddressErrors((current) => ({ ...current, [name]: undefined }));
   };
 
-  const handleAddressSubmit = async (event) => {
+  const handleAddressKeyDown = (event) => {
+    if (event.key !== 'Enter') return;
+    const tagName = event.target?.tagName?.toUpperCase();
+    if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return;
     event.preventDefault();
+    handleAddressSubmit();
+  };
+
+  const handleAddressSubmit = async (event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     if (!addressStoreUrl || savingAddress) return;
 
     setSavingAddress(true);
@@ -170,10 +220,11 @@ const CheckoutApp = ({ initialData = {} }) => {
       const payload = await response.json();
       if (payload?.success && payload.address) {
         setAddresses((current) => {
-          const next = payload.address.is_default
+          const normalized = payload.address;
+          const base = normalized.is_default
             ? current.map((address) => ({ ...address, is_default: false }))
             : [...current];
-          return [...next, payload.address];
+          return normalized.is_default ? [normalized, ...base] : [...base, normalized];
         });
         setSelectedAddressId(payload.address.id);
         setAddressForm(buildAddressForm());
@@ -192,6 +243,71 @@ const CheckoutApp = ({ initialData = {} }) => {
       });
     } finally {
       setSavingAddress(false);
+    }
+  };
+
+  const handleDeleteAddress = async () => {
+    if (!addressPendingDelete) return;
+    const addressId = addressPendingDelete.id;
+    const deleteUrl = resolveDeleteUrl(addressId);
+    if (!deleteUrl) {
+      setGlobalMessage({
+        type: 'error',
+        text: t('deleteAddressError', 'Unable to delete this address.'),
+      });
+      return;
+    }
+
+    setDeletingAddress(true);
+    setGlobalMessage(null);
+
+    try {
+      const response = await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-TOKEN': csrf,
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || 'Unable to delete address');
+      }
+
+      setAddresses((current) => {
+        const next = current.filter((item) => item.id !== addressId);
+        const nextDefaultId = payload.next_default_id ? String(payload.next_default_id) : null;
+        const finalList = nextDefaultId
+          ? next.map((item) => ({ ...item, is_default: item.id === nextDefaultId }))
+          : next;
+
+        if (selectedAddressId === addressId) {
+          const fallback = finalList.find((item) => item.is_default) || finalList[0] || null;
+          setSelectedAddressId(fallback ? fallback.id : null);
+        }
+
+        if (finalList.length === 0) {
+          setShowAddressForm(true);
+        }
+
+        return finalList;
+      });
+
+      setGlobalMessage({
+        type: 'success',
+        text: payload?.message || t('addressDeleted', 'Address deleted successfully.'),
+      });
+      setAddressPendingDelete(null);
+    } catch (error) {
+      setGlobalMessage({
+        type: 'error',
+        text: error.message || t('deleteAddressError', 'Unable to delete this address.'),
+      });
+    } finally {
+      setDeletingAddress(false);
     }
   };
 
@@ -404,66 +520,90 @@ const CheckoutApp = ({ initialData = {} }) => {
             </p>
           </header>
           <div className="space-y-6 px-6 py-6">
-            {addresses.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/80 px-4 py-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300">
-                {t('addressEmpty', 'You do not have any saved addresses yet.')}
-              </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {addresses.map((address) => {
-                const isActive = selectedAddressId === address.id;
-                return (
-                  <label
-                    key={address.id}
-                    className={classNames(
-                      'relative block cursor-pointer rounded-2xl border px-5 py-4 shadow-sm transition',
-                      isActive
-                        ? 'border-orange-400 bg-orange-50/70 shadow-lg dark:border-orange-400/80 dark:bg-orange-500/10'
-                        : 'border-neutral-200 bg-white hover:border-orange-200 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900/70',
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="shipping_address_id"
-                      value={address.id}
-                      checked={isActive}
-                      onChange={() => {
-                        setSelectedAddressId(address.id);
-                        setValidationErrors((prev) => ({ ...prev, shipping_address_id: undefined }));
-                        setGlobalMessage(null);
-                      }}
-                      className="sr-only"
-                    />
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-neutral-900 dark:text-neutral-100">{address.name}</p>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-300">{address.phone}</p>
-                        <ul className="mt-2 space-y-1 text-sm text-neutral-500 dark:text-neutral-300">
-                          {(address.lines || []).map((line, index) => (
-                            <li key={index}>{line}</li>
-                          ))}
-                        </ul>
-                      </div>
-                      {address.is_default && (
-                        <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">
-                          {t('badgePrimary', 'Primary')}
-                        </span>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowAddressForm((open) => !open)}
-                className="btn-outline text-sm"
-              >
-                {showAddressForm ? t('hideAddressForm', 'Hide address form') : t('addAddress', 'Add new address')}
-              </button>
+              <div className="rounded-3xl border border-neutral-100 bg-white/90 p-5 shadow-lg ring-1 ring-black/5 dark:border-neutral-700/80 dark:bg-neutral-900/50 dark:ring-white/5">
+              {addresses.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/80 px-4 py-6 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-300">
+                  {t('addressEmpty', 'You do not have any saved addresses yet.')}
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {addresses.map((address) => {
+                    const isActive = selectedAddressId === address.id;
+                    return (
+                      <label
+                        key={address.id}
+                        className={classNames(
+                          'group relative block cursor-pointer rounded-2xl border px-5 py-4 shadow-sm transition focus-within:ring-2 focus-within:ring-orange-300 focus:outline-none',
+                          isActive
+                            ? 'border-orange-400 bg-orange-50/70 shadow-lg dark:border-orange-400/80 dark:bg-orange-500/10'
+                            : 'border-neutral-200 bg-white hover:border-orange-200 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900/70',
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="shipping_address_id"
+                          value={address.id}
+                          checked={isActive}
+                          onChange={() => {
+                            setSelectedAddressId(address.id);
+                            setValidationErrors((prev) => ({ ...prev, shipping_address_id: undefined }));
+                            setGlobalMessage(null);
+                          }}
+                          className="sr-only"
+                          aria-checked={isActive}
+                        />
+                        {isActive && (
+                          <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-white/95 px-2 py-1 text-xs font-semibold text-orange-600 shadow">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              aria-hidden="true"
+                              className="h-3.5 w-3.5"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.25 7.3a1 1 0 0 1-1.42.01L3.29 9.29a1 1 0 1 1 1.42-1.41l3.08 3.08 6.54-6.58a1 1 0 0 1 1.374-.09z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            <span>{t('selectedLabel', 'Selected')}</span>
+                          </span>
+                        )}
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold text-neutral-900 dark:text-neutral-100">{address.name}</p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-300">{address.phone}</p>
+                            <ul className="mt-2 space-y-1 text-sm text-neutral-500 dark:text-neutral-300">
+                              {(address.lines || []).map((line, index) => (
+                                <li key={index}>{line}</li>
+                              ))}
+                            </ul>
+                          </div>
+                          {address.is_default && (
+                            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-300">
+                              {t('badgePrimary', 'Primary')}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setAddressPendingDelete(address);
+                            }}
+                            className="rounded-full px-3 py-1 text-xs font-semibold text-rose-600 transition hover:text-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+                          >
+                            {t('deleteAddress', 'Delete address')}
+                          </button>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {firstError(validationErrors, 'shipping_address_id') && (
@@ -471,51 +611,89 @@ const CheckoutApp = ({ initialData = {} }) => {
             )}
 
             {showAddressForm && (
-              <form
-                onSubmit={handleAddressSubmit}
-                className="grid gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-5 shadow-inner dark:border-neutral-700 dark:bg-neutral-900/70"
+              <div
+                role="group"
+                aria-label={t('addAddress', 'Add new address')}
+                onKeyDown={handleAddressKeyDown}
+                className="space-y-6 rounded-2xl border border-neutral-200 bg-white px-5 py-5 shadow-inner dark:border-neutral-700 dark:bg-neutral-900/70"
               >
-                <div className="md:col-span-2">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                    {t('addressFormHelp', 'Fill in your shipping details below.')}
+                <div className="rounded-2xl bg-gradient-to-r from-orange-50 to-orange-100/70 px-5 py-4 dark:from-orange-500/10 dark:to-orange-500/5">
+                  <div className="flex flex-wrap items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-orange-500 shadow-sm dark:bg-neutral-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="h-6 w-6"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 2a7 7 0 0 0-7 7c0 4.13 5.59 10.2 6.23 10.88a1.05 1.05 0 0 0 1.54 0C13.41 19.2 19 13.13 19 9a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                        {t('addressFormTitle', 'Add shipping address')}
+                      </p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-200">
+                        {t('addressFormHelp', 'Fill in your shipping details below.')}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                    {t('addressFormRequiredHint', 'All fields are required unless marked optional.')}
                   </p>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldName', 'Recipient Name')}
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldName', 'Recipient Name')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
                       name="name"
                       required
+                      placeholder={t('fieldNamePlaceholder', 'e.g., John Doe')}
                       value={addressForm.name}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      autoComplete="name"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'name'))}
                     />
                     {firstError(addressErrors, 'name') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'name')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'name')}</p>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldPhone', 'Phone Number')}
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldPhone', 'Phone Number')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
-                      type="text"
+                      type="tel"
                       name="phone"
                       required
                       value={addressForm.phone}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldPhonePlaceholder', '+66 812-345-678')}
+                      autoComplete="tel"
+                      inputMode="tel"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'phone'))}
                     />
+                    <p className={helperTextClass}>
+                      {t('fieldPhoneHint', 'Include country code, e.g., +66 812-345-678.')}
+                    </p>
                     {firstError(addressErrors, 'phone') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'phone')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'phone')}</p>
                     )}
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldAddress1', 'Address Line 1')}
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldAddress1', 'Address Line 1')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
@@ -523,30 +701,46 @@ const CheckoutApp = ({ initialData = {} }) => {
                       required
                       value={addressForm.address_line1}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldAddress1Placeholder', '123 Sukhumvit Rd, Building A')}
+                      autoComplete="address-line1"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'address_line1'))}
                     />
+                    <p className={helperTextClass}>
+                      {t('fieldAddress1Hint', 'Street, building, or house number.')}
+                    </p>
                     {firstError(addressErrors, 'address_line1') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'address_line1')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'address_line1')}</p>
                     )}
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldAddress2', 'Additional Details (Optional)')}
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldAddress2', 'Additional Details (Optional)')}</span>
+                      <span className={badgeClass(true)}>{t('fieldOptionalLabel', 'Optional')}</span>
                     </label>
                     <input
                       type="text"
                       name="address_line2"
                       value={addressForm.address_line2}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldAddress2Placeholder', 'Apartment or delivery details')}
+                      autoComplete="address-line2"
+                      aria-required="false"
+                      aria-invalid={Boolean(firstError(addressErrors, 'address_line2'))}
                     />
+                    <p className={helperTextClass}>
+                      {t('fieldAddress2Hint', 'Apartment, floor, or delivery notes (optional).')}
+                    </p>
                     {firstError(addressErrors, 'address_line2') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'address_line2')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'address_line2')}</p>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldCity', 'City')}
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldCity', 'City')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
@@ -554,30 +748,40 @@ const CheckoutApp = ({ initialData = {} }) => {
                       required
                       value={addressForm.city}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldCityPlaceholder', 'e.g., Bangkok')}
+                      autoComplete="address-level2"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'city'))}
                     />
                     {firstError(addressErrors, 'city') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'city')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'city')}</p>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldState', 'State / Province (Optional)')}
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldState', 'State / Province (Optional)')}</span>
+                      <span className={badgeClass(true)}>{t('fieldOptionalLabel', 'Optional')}</span>
                     </label>
                     <input
                       type="text"
                       name="state"
                       value={addressForm.state}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldStatePlaceholder', 'e.g., Bangkok')}
+                      autoComplete="address-level1"
+                      aria-required="false"
+                      aria-invalid={Boolean(firstError(addressErrors, 'state'))}
                     />
                     {firstError(addressErrors, 'state') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'state')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'state')}</p>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldPostal', 'Postal Code')}
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldPostal', 'Postal Code')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
@@ -585,15 +789,24 @@ const CheckoutApp = ({ initialData = {} }) => {
                       required
                       value={addressForm.postal_code}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldPostalPlaceholder', '10110')}
+                      autoComplete="postal-code"
+                      inputMode="numeric"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'postal_code'))}
                     />
+                    <p className={helperTextClass}>
+                      {t('fieldPostalHint', 'Numbers only, e.g., 10110.')}
+                    </p>
                     {firstError(addressErrors, 'postal_code') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'postal_code')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'postal_code')}</p>
                     )}
                   </div>
-                  <div>
-                    <label className="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      {t('fieldCountry', 'Country')}
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldCountry', 'Country')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
@@ -601,36 +814,118 @@ const CheckoutApp = ({ initialData = {} }) => {
                       required
                       value={addressForm.country}
                       onChange={handleAddressFieldChange}
-                      className="mt-1 w-full rounded-xl"
+                      className={inputBaseClass}
+                      placeholder={t('fieldCountryPlaceholder', 'e.g., Thailand')}
+                      autoComplete="country-name"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'country'))}
                     />
+                    <p className={helperTextClass}>
+                      {t('fieldCountryHint', 'Use the full country name.')}
+                    </p>
                     {firstError(addressErrors, 'country') && (
-                      <p className="mt-1 text-xs text-rose-600">{firstError(addressErrors, 'country')}</p>
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'country')}</p>
                     )}
                   </div>
-                  <div className="md:col-span-2 flex items-center gap-2 pt-1">
-                    <input
-                      id="address-is-default"
-                      type="checkbox"
-                      name="is_default"
-                      checked={addressForm.is_default}
-                      onChange={handleAddressFieldChange}
-                      className="h-4 w-4 rounded"
-                    />
-                    <label htmlFor="address-is-default" className="text-sm text-neutral-600 dark:text-neutral-300">
-                      {t('makeDefault', 'Set as default address')}
+                  <div className="md:col-span-2 rounded-2xl border border-neutral-100 bg-neutral-50/80 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/60">
+                    <label htmlFor="address-is-default" className="flex items-start gap-3">
+                      <input
+                        id="address-is-default"
+                        type="checkbox"
+                        name="is_default"
+                        checked={addressForm.is_default}
+                        onChange={handleAddressFieldChange}
+                        className="mt-1 h-5 w-5 rounded border-neutral-300 text-orange-500 focus:ring-orange-400"
+                      />
+                      <div>
+                        <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+                          {t('makeDefault', 'Set as default address')}
+                        </span>
+                        <p className={helperTextClass}>
+                          {t('makeDefaultHint', 'We will preselect this address for your next checkout.')}
+                        </p>
+                      </div>
                     </label>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-3 pt-2">
-                  <button type="button" className="btn-ghost text-sm" onClick={() => setShowAddressForm(false)}>
-                    {t('previous', 'Cancel')}
+              </div>
+            )}
+            <div className="mt-8 space-y-4">
+              {showAddressForm ? (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    className="btn-outline w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 sm:flex-1"
+                    onClick={() => setShowAddressForm(false)}
+                  >
+                    {t('hideAddressForm', 'Hide address form')}
                   </button>
-                  <button type="submit" className="btn-primary text-sm" disabled={savingAddress}>
+                  <button
+                    type="button"
+                    onClick={handleAddressSubmit}
+                    className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
+                    disabled={savingAddress}
+                  >
                     {savingAddress ? t('couponApplying', 'Saving...') : t('saveAddress', 'Save Address')}
                   </button>
                 </div>
-              </form>
-            )}
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    className="btn-outline w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 sm:flex-1"
+                    onClick={() => {
+                      resetAddressForm();
+                      setShowAddressForm(true);
+                    }}
+                  >
+                    {t('addAddress', 'Add new address')}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
+                    onClick={handleNext}
+                  >
+                    {t('next', 'Next')}
+                  </button>
+                </div>
+              )}
+              <div className="text-center">
+                <a
+                  href={initialData.backToCartUrl}
+                  className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold text-neutral-600 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:text-neutral-200"
+                >
+                  {t('backToCart', 'Back to cart')}
+                </a>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 px-5 py-5 text-sm text-neutral-600 shadow-inner dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-200">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-400">
+                  {t('sectionCoupon', 'Coupon Code')}
+                </h3>
+                <form onSubmit={handleApplyCoupon} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(event) => setCouponCode(event.target.value)}
+                    placeholder={t('couponPlaceholder', 'Enter code')}
+                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60 dark:border-neutral-700 dark:bg-neutral-900"
+                  />
+                  <button type="submit" className="btn-primary text-sm" disabled={couponFeedback.loading}>
+                    {couponFeedback.loading ? t('couponApplying', 'Applying...') : t('couponApply', 'Apply')}
+                  </button>
+                </form>
+                {couponFeedback.message && (
+                  <p
+                    className={classNames(
+                      'mt-2 text-sm',
+                      couponFeedback.status === 'success' ? 'text-emerald-600' : 'text-rose-600',
+                    )}
+                  >
+                    {couponFeedback.message}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </section>
         <section
@@ -739,6 +1034,33 @@ const CheckoutApp = ({ initialData = {} }) => {
                 <p className="text-xs text-rose-600">{firstError(validationErrors, 'payment_proof')}</p>
               )}
             </div>
+
+            <div className="pt-2 space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  className="btn-outline w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 sm:flex-1"
+                >
+                  {t('previous', 'Previous')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
+                >
+                  {t('next', 'Next')}
+                </button>
+              </div>
+              <div className="text-center">
+                <a
+                  href={initialData.backToCartUrl}
+                  className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold text-neutral-600 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:text-neutral-200"
+                >
+                  {t('backToCart', 'Back to cart')}
+                </a>
+              </div>
+            </div>
           </div>
         </section>
         <section
@@ -785,54 +1107,34 @@ const CheckoutApp = ({ initialData = {} }) => {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/70 px-5 py-5 text-sm text-neutral-600 shadow-inner dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-200">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-400">
-                {t('sectionCoupon', 'Coupon Code')}
-              </h3>
-              <form onSubmit={handleApplyCoupon} className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  value={couponCode}
-                  onChange={(event) => setCouponCode(event.target.value)}
-                  placeholder={t('couponPlaceholder', 'Enter code')}
-                  className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-orange-400 focus:ring-4 focus:ring-orange-200/60 dark:border-neutral-700 dark:bg-neutral-900"
-                />
-                <button type="submit" className="btn-primary text-sm" disabled={couponFeedback.loading}>
-                  {couponFeedback.loading ? t('couponApplying', 'Applying...') : t('couponApply', 'Apply')}
+            <div className="pt-2 space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  className="btn-outline w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 sm:flex-1"
+                >
+                  {t('previous', 'Previous')}
                 </button>
-              </form>
-              {couponFeedback.message && (
-                <p className={classNames('mt-2 text-sm', couponFeedback.status === 'success' ? 'text-emerald-600' : 'text-rose-600')}>
-                  {couponFeedback.message}
-                </p>
-              )}
+                <button
+                  type="submit"
+                  className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
+                  disabled={submitting}
+                >
+                  {submitting ? t('couponApplying', 'Processing...') : t('placeOrder', 'Place Order')}
+                </button>
+              </div>
+              <div className="text-center">
+                <a
+                  href={initialData.backToCartUrl}
+                  className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-base font-semibold text-neutral-600 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:text-neutral-200"
+                >
+                  {t('backToCart', 'Back to cart')}
+                </a>
+              </div>
             </div>
           </div>
         </section>
-        <footer className="flex flex-col gap-3 rounded-3xl border border-neutral-200 bg-white px-6 py-5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <a href={initialData.backToCartUrl} className="btn-ghost text-sm">
-              {t('backToCart', 'Back to cart')}
-            </a>
-            <div className="flex flex-wrap items-center gap-3">
-              {step > 1 && (
-                <button type="button" onClick={handlePrevious} className="btn-outline text-sm">
-                  {t('previous', 'Previous')}
-                </button>
-              )}
-              {step < 3 && (
-                <button type="button" onClick={handleNext} className="btn-primary text-sm">
-                  {t('next', 'Next')}
-                </button>
-              )}
-              {step === 3 && (
-                <button type="submit" className="btn-primary text-sm" disabled={submitting}>
-                  {submitting ? t('couponApplying', 'Processing...') : t('placeOrder', 'Place Order')}
-                </button>
-              )}
-            </div>
-          </div>
-        </footer>
       </div>
 
       <aside className="space-y-5">
@@ -901,6 +1203,55 @@ const CheckoutApp = ({ initialData = {} }) => {
           </ul>
         </div>
       </aside>
+
+      {addressPendingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl dark:border-neutral-700 dark:bg-neutral-900"
+          >
+            <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              {t('deleteAddressConfirmTitle', 'Delete this address?')}
+            </h3>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+              {t(
+                'deleteAddressConfirmText',
+                'This address will be removed permanently and cannot be used again.',
+              )}
+            </p>
+            <div className="mt-4 rounded-2xl border border-neutral-100 bg-neutral-50/80 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-200">
+              <p className="font-semibold text-neutral-900 dark:text-neutral-100">{addressPendingDelete.name}</p>
+              <p>{addressPendingDelete.phone}</p>
+              <ul className="mt-1 space-y-1">
+                {(addressPendingDelete.lines || []).map((line, index) => (
+                  <li key={index}>{line}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                className="btn-ghost text-sm"
+                onClick={() => {
+                  if (deletingAddress) return;
+                  setAddressPendingDelete(null);
+                }}
+              >
+                {t('deleteAddressCancel', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn-outline text-sm text-rose-600 hover:border-rose-600 hover:text-rose-700"
+                onClick={handleDeleteAddress}
+                disabled={deletingAddress}
+              >
+                {deletingAddress ? t('deleteAddressLoading', 'Deleting...') : t('deleteAddressConfirmAction', 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   );
 };

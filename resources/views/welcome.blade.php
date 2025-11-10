@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Toko Thailand - Your Tech Partner</title>
+    <title>{{ config('app.name', 'Lungpaeit') }} - Your Tech Partner</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -84,12 +84,20 @@
         }
     </style>
 </head>
+@php
+    $brandName = config('app.name', 'Lungpaeit');
+    $brandLogo = asset('image/logo.jpg');
+@endphp
+
 <body class="bg-gray-50 font-sans">
     <!-- Top Orange Header -->
     <div class="bg-orange-600 text-white py-2">
         <div class="max-w-7xl mx-auto px-4 flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <h1 class="text-xl font-bold">��🇭 Toko Thailand</h1>
+                <div class="flex items-center gap-2">
+                    <img src="{{ $brandLogo }}" alt="{{ $brandName }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy">
+                    <h1 class="text-xl font-bold">🇹🇭 {{ $brandName }}</h1>
+                </div>
             </div>
             <div class="flex items-center space-x-6">
                 <div class="relative">
@@ -285,7 +293,7 @@
                 </div>
             </div>
             <div class="bg-green-500 text-white p-4 rounded-lg text-center">
-                <p class="font-semibold">ติดต่อสื่อสาร "Toko Thailand" ตัวจริง +66 2-123-4567</p>
+                <p class="font-semibold">ติดต่อสื่อสาร "{{ $brandName }}" ตัวจริง +66 2-123-4567</p>
             </div>
         </div>
     </div>
@@ -533,7 +541,7 @@
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid md:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-2xl font-bold mb-4">��🇭 Toko Thailand</h3>
+                    <h3 class="text-2xl font-bold mb-4">🇹🇭 {{ $brandName }}</h3>
                     <p class="text-gray-400">Your trusted technology partner in Southeast Asia. Quality products, competitive prices, excellent service.</p>
                 </div>
                 <div>
@@ -572,7 +580,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-                <p>&copy; {{ date('Y') }} Toko Thailand. All rights reserved. | Laravel v{{ Illuminate\Foundation\Application::VERSION }}</p>
+                <p>&copy; {{ date('Y') }} {{ $brandName }}. All rights reserved. | Laravel v{{ Illuminate\Foundation\Application::VERSION }}</p>
             </div>
         </div>
     </footer>

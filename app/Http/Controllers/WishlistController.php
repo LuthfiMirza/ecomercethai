@@ -32,11 +32,17 @@ class WishlistController extends Controller
             ->where('product_id', $request->product_id)
             ->exists();
 
+        $alreadyMessage = __('wishlist.already_exists');
+
         if ($exists) {
-            return response()->json([
-                'success' => false,
-                'message' => __('wishlist.already_exists'),
-            ]);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $alreadyMessage,
+                ]);
+            }
+
+            return redirect()->back()->with('error', $alreadyMessage);
         }
 
         Wishlist::create([
@@ -44,10 +50,16 @@ class WishlistController extends Controller
             'product_id' => $request->product_id,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => __('wishlist.added'),
-        ]);
+        $successMessage = __('wishlist.added');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMessage,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $successMessage);
     }
 
     public function remove(string $locale, $id)

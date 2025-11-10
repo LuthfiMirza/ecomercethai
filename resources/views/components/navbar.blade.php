@@ -1,3 +1,9 @@
+@php
+    $brandName = config('app.name', 'Lungpaeit');
+    $brandLogo = asset('image/logo.jpg');
+    $loginUrl = localized_route('login');
+@endphp
+
 <header x-data="navbar()"
         x-ref="hdr"
         class="sticky top-0 z-[90] bg-white/90 dark:bg-neutral-900/80 backdrop-blur"
@@ -10,16 +16,10 @@
         <a href="{{ route('catalog') }}" class="px-3 hover:text-white">{{ __('common.product') }}</a>
         <a href="{{ route('contact') }}" class="px-3 hover:text-white">{{ __('common.contact_us') }}</a>
       </nav>
-      <!-- Right items: text links | language | theme -->
+      <!-- Right items: text links | language -->
       <div class="flex items-center gap-4">
         <!-- Removed Wishlist/Login from topbar per request -->
-        
           <x-language-switcher />
-          <button x-on:click="toggleTheme" class="p-1.5 rounded hover:bg-white/10" aria-label="{{ __('common.theme_toggle') }}">
-            <i x-show="isDark" class="fa-solid fa-moon text-neutral-300"></i>
-            <i x-show="!isDark" class="fa-solid fa-sun text-yellow-400"></i>
-          </button>
-        
       </div>
     </div>
   </div>
@@ -27,8 +27,8 @@
     <div class="flex h-16 items-center gap-3 justify-between">
       <!-- Logo -->
       <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="Go to homepage">
-        <img src="{{ asset('favicon.ico') }}" alt="Toko Thailand" class="h-8 w-8 rounded"/>
-        <span class="font-semibold text-neutral-800 dark:text-neutral-100">Toko Thailand</span>
+        <img src="{{ $brandLogo }}" alt="{{ $brandName }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy"/>
+        <span class="font-semibold text-neutral-800 dark:text-neutral-100">{{ $brandName }}</span>
       </a>
       
 
@@ -64,26 +64,26 @@
 
       <!-- Right icons (mobile only) -->
       <div class="flex items-center gap-3 md:hidden">
-        <!-- Dark mode toggle -->
-        <button x-on:click="toggleTheme" class="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="{{ __('common.theme_toggle') }}">
-          <i x-show="isDark" class="fa-solid fa-moon text-neutral-700 dark:text-neutral-200"></i>
-          <i x-show="!isDark" class="fa-solid fa-sun text-yellow-500"></i>
-        </button>
-
         <!-- Wishlist -->
-        <a href="{{ route('wishlist') }}" data-open-wishlist class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="{{ __('common.wishlist') }}">
-          <i class="fa-regular fa-heart text-neutral-700 dark:text-neutral-200"></i>
-          <span id="wishlist-count" class="absolute -top-1 -right-1 bg-secondary-500 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
+        @if(auth()->check())
+        <a href="{{ route('wishlist') }}" data-open-wishlist class="relative inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:border-accent-500" aria-label="{{ __('common.wishlist') }}">
+          <i class="fa-regular fa-heart text-base"></i>
+          <span data-wishlist-count data-show-zero="true" class="absolute -top-1 -right-1 inline-flex min-w-[1.15rem] h-[1.15rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white shadow ring-1 ring-white">0</span>
         </a>
+        @else
+        <a href="{{ $loginUrl }}" class="relative inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm" aria-label="{{ __('common.wishlist') }}">
+          <i class="fa-regular fa-heart text-base"></i>
+        </a>
+        @endif
 
         <!-- Cart -->
-        <a href="{{ route('cart') }}" data-open-cart class="relative inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="{{ __('common.cart_title') }}">
+        <a href="{{ route('cart') }}" data-open-cart class="relative inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:border-accent-500" aria-label="{{ __('common.cart_title') }}">
           <i class="fa-solid fa-cart-shopping text-neutral-700 dark:text-neutral-200"></i>
           <span id="cart-count" class="absolute -top-1 -right-1 bg-primary-600 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
 
         <!-- Account -->
-        @auth
+        @if(auth()->check())
         <a href="{{ route('account') }}" class="hidden sm:inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Account menu">
           <i class="fa-solid fa-user-check text-neutral-700 dark:text-neutral-200"></i>
         </a>
@@ -91,7 +91,7 @@
         <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Account menu">
           <i class="fa-regular fa-user text-neutral-700 dark:text-neutral-200"></i>
         </a>
-        @endauth
+        @endif
 
         <!-- Mobile search button -->
         <button class="md:hidden p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800" x-on:click="openSearch = true" aria-label="{{ __('common.search') }}">
@@ -147,7 +147,9 @@
                 </div>
                 <div class="p-3 pt-0 grid grid-cols-2 gap-2">
                   <a href="{{ route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">View Cart</a>
-                  <a href="{{ route('checkout') }}" class="px-3 py-2 text-sm rounded-md bg-accent-500 hover:bg-accent-600 text-white text-center">Checkout</a>
+                  <a href="{{ auth()->check() ? route('checkout') : $loginUrl }}" class="px-3 py-2 text-sm rounded-md {{ auth()->check() ? 'bg-accent-500 hover:bg-accent-600 text-white' : 'bg-neutral-200 text-neutral-600' }} text-center">
+                    {{ auth()->check() ? __('common.checkout') : __('common.login') }}
+                  </a>
                 </div>
               </div>
             </template>
@@ -186,12 +188,18 @@
               }
             }"
              x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
-          <a href="{{ route('wishlist') }}" data-open-wishlist class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200">
-            <i class="fa-regular fa-heart"></i>
-            <span>{{ __('common.wishlist') }}</span>
-            <span x-show="items.length>0" x-text="items.length"
-                  class="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-secondary-500 px-1 text-xs font-semibold text-white"></span>
-          </a>
+        @if(auth()->check())
+        <a href="{{ route('wishlist') }}" data-open-wishlist class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-sm font-medium text-neutral-700 shadow-sm transition hover:border-accent-500 dark:text-neutral-200 dark:bg-neutral-900 dark:border-neutral-800">
+          <i class="fa-regular fa-heart text-sm"></i>
+          <span>{{ __('common.wishlist') }}</span>
+          <span data-wishlist-count data-show-zero="true" class="inline-flex min-w-[1.35rem] h-[1.35rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white shadow ring-1 ring-white dark:ring-neutral-900">0</span>
+        </a>
+        @else
+        <a href="{{ $loginUrl }}" class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-1.5 text-sm font-medium text-neutral-700 shadow-sm transition dark:text-neutral-200 dark:bg-neutral-900 dark:border-neutral-800">
+          <i class="fa-regular fa-heart text-sm"></i>
+          <span>{{ __('common.login') }}</span>
+        </a>
+        @endif
           <div x-cloak x-show="open" x-transition.origin.top.right
                class="absolute right-0 top-full mt-2 w-72 soft-card p-0 overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
@@ -212,13 +220,13 @@
                   </template>
                 </ul>
                 <div class="p-3 pt-0 grid grid-cols-1 gap-2">
-                  <a href="{{ route('wishlist') }}" class="btn-accent text-sm text-center">View Wishlist</a>
+                  <a href="{{ $loginUrl }}" class="btn-accent text-sm text-center">Login</a>
                 </div>
               </div>
             </template>
           </div>
         </div>
-        @auth
+        @if(auth()->check())
         <div class="relative" x-data="{open:false}" x-on:keydown.escape.window="open=false">
           <button type="button" class="inline-flex items-center gap-2 text-neutral-700 hover:text-accent-600 dark:text-neutral-200" x-on:click="open=!open">
             <i class="fa-regular fa-user"></i>
@@ -245,7 +253,7 @@
           <span class="text-neutral-300" aria-hidden="true">|</span>
           <a href="{{ route('register') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">{{ __('common.register') }}</a>
         </div>
-        @endauth
+        @endif
       </div>
     </nav>
   </div>
@@ -271,7 +279,6 @@
     function navbar(){
       return {
         open:false, openSearch:false,
-        isDark: document.documentElement.classList.contains('dark'),
         lang: '{{ app()->getLocale() }}',
         currency: document.documentElement.dataset.currency || 'THB',
         formatter: null,
@@ -280,32 +287,7 @@
           th: { search_placeholder: @json(__('common.search_placeholder', [], 'th')) },
         },
         t(key){ return (this.dict[this.lang]||{})[key] || key; },
-        toggleTheme(){
-          this.isDark = !this.isDark;
-          document.documentElement.classList.toggle('dark', this.isDark);
-          if (document.body) {
-            document.body.classList.toggle('dark', this.isDark);
-          }
-          try {
-            localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-          } catch (error) {
-            // ignore storage errors (e.g., private browsing)
-          }
-        },
         init(){
-          let saved = null;
-          try {
-            saved = localStorage.getItem('theme');
-          } catch (error) {
-            saved = null;
-          }
-          if(saved !== null){
-            this.isDark = saved === 'dark';
-            document.documentElement.classList.toggle('dark', this.isDark);
-            if (document.body) {
-              document.body.classList.toggle('dark', this.isDark);
-            }
-          }
           try {
             localStorage.setItem('lang', this.lang);
           } catch (error) {
