@@ -2,11 +2,12 @@
     $brandName = config('app.name', 'Lungpaeit');
     $brandLogo = asset('image/logo.jpg');
     $loginUrl = localized_route('login');
+    $mobileCategories = $navMegaCategories ?? [];
 @endphp
 
 <header x-data="navbar()"
         x-ref="hdr"
-        class="sticky top-0 z-[90] bg-white/90 dark:bg-neutral-900/80 backdrop-blur"
+        class="sticky top-0 z-[250] bg-white/90 dark:bg-neutral-900/80 backdrop-blur"
         role="banner">
   <!-- Topbar -->
   <div class="hidden md:block bg-[#0b0720] text-neutral-300">
@@ -25,11 +26,20 @@
   </div>
   <div class="container mx-auto px-4">
     <div class="flex h-16 items-center gap-3 justify-between">
-      <!-- Logo -->
-      <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="Go to homepage">
-        <img src="{{ $brandLogo }}" alt="{{ $brandName }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy"/>
-        <span class="font-semibold text-neutral-800 dark:text-neutral-100">{{ $brandName }}</span>
-      </a>
+      <div class="flex items-center gap-2 md:gap-3">
+        <button type="button"
+                class="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:border-accent-500 dark:bg-neutral-900 dark:text-neutral-100"
+                aria-label="{{ __('common.menu') }}"
+                x-ref="mobileTrigger"
+                @click="mobileOpen = true">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <!-- Logo -->
+        <a href="{{ route('home') }}" class="flex items-center gap-2" aria-label="{{ __('common.go_home') }}">
+          <img src="{{ $brandLogo }}" alt="{{ $brandName }}" class="h-10 w-10 rounded-full object-cover shadow-sm" loading="lazy"/>
+          <span class="font-semibold text-neutral-800 dark:text-neutral-100">{{ $brandName }}</span>
+        </a>
+      </div>
       
 
       <!-- Center Search -->
@@ -44,7 +54,7 @@
         </form>
         <!-- Suggestions -->
         <!-- Suggestions dropdown: right-aligned, precise under input -->
-        <div x-cloak x-show="open" role="listbox" aria-label="Search suggestions"
+        <div x-cloak x-show="open" role="listbox" aria-label="{{ __('common.suggestions') }}"
              x-transition.opacity x-transition.scale.origin.top-right
              class="absolute top-full left-0 right-0 mt-2 w-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-elevated p-2 z-[140]">
           <div class="text-xs text-neutral-500 px-2 py-1">{{ __('common.suggestions') }}</div>
@@ -101,15 +111,20 @@
       </div>
 
       <!-- Right rail (md+): LINE ID + cart summary -->
+      @php
+        $lineRaw = config('services.line.id', '@jag3901n');
+        $lineNormalized = ltrim($lineRaw ?: '@jag3901n', '@');
+        $lineDisplay = '@' . $lineNormalized;
+      @endphp
       <div class="hidden md:flex items-center gap-6">
         <!-- LINE ID -->
-        <a id="nav-line" href="https://line.me/ti/p/~tokothai" target="_blank" rel="noopener" class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
+        <button type="button" id="nav-line" data-line-modal-open class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100 bg-transparent hover:text-green-600 dark:hover:text-green-400 focus:outline-none">
           <i class="fa-brands fa-line text-2xl text-green-500"></i>
           <div class="leading-tight">
             <div class="text-xs opacity-90">{{ __('common.line_id') }}</div>
-            <div class="text-sm font-medium">tokothai</div>
+            <div class="text-sm font-medium">{{ $lineDisplay }}</div>
           </div>
-        </a>
+        </button>
         <span class="h-8 w-px bg-neutral-200 dark:bg-neutral-700" aria-hidden="true"></span>
         <!-- Cart summary with hover preview (desktop) -->
         <div class="relative" x-data="{open:false, items:[], subtotal:0, load(){ try{ this.items=JSON.parse(localStorage.getItem('cartItems')||'[]'); this.subtotal=this.items.reduce((s,i)=>s+Number(i.price||0),0);}catch(e){ this.items=[]; this.subtotal=0; } }}"
@@ -142,11 +157,11 @@
                   </template>
                 </ul>
                 <div class="p-3 flex items-center justify-between">
-                  <div class="text-sm text-neutral-600 dark:text-neutral-300">Subtotal</div>
+                  <div class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('common.subtotal') }}</div>
                   <div class="font-semibold text-neutral-900 dark:text-neutral-100" x-text="'$' + subtotal.toFixed(2)"></div>
                 </div>
                 <div class="p-3 pt-0 grid grid-cols-2 gap-2">
-                  <a href="{{ route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">View Cart</a>
+                  <a href="{{ route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.view_cart') }}</a>
                   <a href="{{ auth()->check() ? route('checkout') : $loginUrl }}" class="px-3 py-2 text-sm rounded-md {{ auth()->check() ? 'bg-accent-500 hover:bg-accent-600 text-white' : 'bg-neutral-200 text-neutral-600' }} text-center">
                     {{ auth()->check() ? __('common.checkout') : __('common.login') }}
                   </a>
@@ -159,11 +174,11 @@
     </div>
 
     <!-- Menu row -->
-    <nav class="hidden md:flex items-center gap-6 h-12 text-sm" aria-label="Primary">
+    <nav class="hidden md:flex items-center gap-6 h-12 text-sm" aria-label="{{ __('common.menu') }}">
       <!-- Left: categories + main links -->
       <div class="flex items-center gap-6">
         @include('components.mega-menu', ['categories' => $navMegaCategories ?? []])
-        <a href="{{ route('faqs') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">FAQs</a>
+        <a href="{{ route('faqs') }}" class="text-neutral-700 hover:text-accent-600 dark:text-neutral-200">{{ __('common.faqs') }}</a>
       </div>
 
       <!-- Right: wishlist + login/register (back to bottom row) -->
@@ -236,9 +251,9 @@
           <div x-cloak x-show="open" x-transition.origin.top.right
                class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-elevated overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
-            <a href="{{ route('account') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('Dashboard') }}</a>
+            <a href="{{ route('account') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.dashboard') }}</a>
             @role('admin')
-              <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">Admin Panel</a>
+              <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.admin_panel') }}</a>
             @endrole
             <div class="border-t border-neutral-200 dark:border-neutral-800"></div>
             <form method="POST" action="{{ route('logout') }}">
@@ -260,14 +275,91 @@
 
 
   <!-- Mobile slide-over -->
-  
+  <template x-teleport="body">
+    <div x-cloak
+         x-show="mobileOpen"
+         x-transition.opacity
+         class="fixed inset-0 z-[400]"
+         role="dialog"
+         aria-modal="true"
+         @keydown.escape.prevent.stop="closeMobile()">
+      <div class="absolute inset-0 bg-black/60" @click="closeMobile()" aria-hidden="true"></div>
+      <aside x-ref="mobilePanel"
+             tabindex="-1"
+             x-trap.noscroll="mobileOpen"
+             class="absolute inset-y-0 left-0 w-full max-w-sm bg-white dark:bg-neutral-900 shadow-2xl p-6 overflow-y-auto focus:outline-none"
+             x-transition:enter="transform transition ease-out duration-300"
+             x-transition:enter-start="-translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transform transition ease-in duration-200"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="-translate-x-full">
+        <div class="flex items-center justify-between">
+          <p class="text-lg font-semibold text-neutral-900 dark:text-neutral-50">{{ __('common.menu') }}</p>
+          <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-100" @click="closeMobile()">
+            <span class="sr-only">{{ __('common.close') }}</span>
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="mt-6 space-y-6">
+        <form action="{{ route('catalog') }}" method="get" role="search" class="flex items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800">
+          <label for="mobile-search" class="sr-only">{{ __('common.search_placeholder') }}</label>
+          <i class="fa-solid fa-magnifying-glass text-neutral-400"></i>
+          <input id="mobile-search" name="q" type="search" placeholder="{{ __('common.search_placeholder') }}" class="flex-1 bg-transparent text-sm text-neutral-800 outline-none dark:text-neutral-100"/>
+          <button type="submit" class="text-sm font-semibold text-accent-500">{{ __('common.search') }}</button>
+        </form>
+        <nav class="space-y-3 text-sm text-neutral-700 dark:text-neutral-200" aria-label="{{ __('common.menu') }}">
+          <a href="{{ route('catalog') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 font-semibold hover:border-accent-500 dark:border-neutral-800">{{ __('common.catalog') }}</a>
+          <a href="{{ route('faqs') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 font-semibold hover:border-accent-500 dark:border-neutral-800">{{ __('common.faqs') }}</a>
+          <a href="{{ route('contact') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 font-semibold hover:border-accent-500 dark:border-neutral-800">{{ __('common.contact_us') }}</a>
+        </nav>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('common.categories') }}</p>
+          <div class="mt-3 grid gap-2">
+            @forelse($mobileCategories as $category)
+              <a href="{{ $category['url'] ?? '#' }}" class="inline-flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:border-accent-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100">
+                <span>{{ $category['name'] ?? __('common.mega_view_category') }}</span>
+                <i class="fa-solid fa-arrow-right-long text-[10px] opacity-50"></i>
+              </a>
+            @empty
+              <p class="text-sm text-neutral-500 dark:text-neutral-300">{{ __('common.mega_no_categories') }}</p>
+            @endforelse
+          </div>
+        </div>
+        <div class="space-y-3">
+          <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('common.account') }}</p>
+          @auth
+            <a href="{{ route('account') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.dashboard') }}</a>
+            @role('admin')
+              <a href="{{ route('admin.dashboard') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.admin_panel') }}</a>
+            @endrole
+            <a href="{{ route('wishlist') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.wishlist') }}</a>
+            <a href="{{ route('cart') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.view_cart') }}</a>
+          @else
+            <a href="{{ $loginUrl }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.login') }}</a>
+            <a href="{{ localized_route('register') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.register') }}</a>
+          @endauth
+        </div>
+        <div class="flex items-center justify-between rounded-2xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 dark:border-neutral-800 dark:text-neutral-100">
+          <span>{{ __('common.line_id') }}</span>
+          <button type="button" data-line-modal-open class="inline-flex items-center gap-1 text-accent-500">
+            <i class="fa-brands fa-line"></i> LINE
+          </button>
+        </div>
+        <div>
+          <x-language-switcher />
+        </div>
+      </div>
+    </aside>
+    </div>
+  </template>
 
   <!-- Mobile search modal -->
-  <div x-cloak x-show="openSearch" x-transition.opacity class="fixed inset-0 z-50" aria-hidden="true">
+  <div x-cloak x-show="openSearch" x-transition.opacity class="fixed inset-0 z-[320]" aria-hidden="true">
     <div class="absolute inset-0 bg-black/40" x-on:click="openSearch=false"></div>
     <div class="absolute inset-x-4 top-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-elevated p-3">
       <form action="{{ route('catalog') }}" method="get" role="search" class="flex items-center gap-2" autocomplete="off">
-        <label for="mq" class="sr-only">Search products</label>
+        <label for="mq" class="sr-only">{{ __('common.search_placeholder') }}</label>
         <i class="fa-solid fa-magnifying-glass text-neutral-400"></i>
         <input id="mq" name="q" type="search" placeholder="{{ __('common.search_placeholder') }}" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" class="flex-1 bg-transparent outline-none text-sm text-neutral-800 dark:text-neutral-100"/>
         <button type="submit" class="px-3 py-1.5 rounded-md bg-accent-500 hover:bg-accent-600 text-white text-sm">{{ __('common.search') }}</button>
@@ -278,7 +370,7 @@
   <script>
     function navbar(){
       return {
-        open:false, openSearch:false,
+        open:false, openSearch:false, mobileOpen:false,
         lang: '{{ app()->getLocale() }}',
         currency: document.documentElement.dataset.currency || 'THB',
         formatter: null,
@@ -287,6 +379,7 @@
           th: { search_placeholder: @json(__('common.search_placeholder', [], 'th')) },
         },
         t(key){ return (this.dict[this.lang]||{})[key] || key; },
+        closeMobile(){ this.mobileOpen = false; },
         init(){
           try {
             localStorage.setItem('lang', this.lang);
@@ -352,6 +445,20 @@
           document.addEventListener('i18n:change', (e)=>{
             this.lang = e.detail.lang;
             document.documentElement.setAttribute('lang', this.lang);
+          });
+          this.$watch('mobileOpen', (value) => {
+            try {
+              document.body.classList.toggle('overflow-hidden', value);
+            } catch (error) {}
+            if (value) {
+              this.$nextTick(() => {
+                this.$refs.mobilePanel?.focus?.();
+              });
+            } else {
+              this.$nextTick(() => {
+                this.$refs.mobileTrigger?.focus?.();
+              });
+            }
           });
         }
       }

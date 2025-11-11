@@ -2,6 +2,30 @@
 @section('title', __('Live Chat'))
 @section('content')
 
+@php
+  $conversationSeed = ($initialConversations ?? collect())->values();
+  $messageSeed = ($initialMessages ?? collect())->values();
+  $activeConversationId = optional($initialConversation)->id;
+  $initialLastMessageAt = $messageSeed->last()['created_at'] ?? null;
+  $lastMessageLabel = $initialLastMessageAt
+      ? \Illuminate\Support\Carbon::parse($initialLastMessageAt)->timezone(config('app.timezone'))->format('H:i')
+      : null;
+@endphp
+
+<style>
+  .chat-bubble-me {
+    background: linear-gradient(145deg, #4f46e5, #6366f1);
+    color: #fff;
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    box-shadow: 0 15px 30px -18px rgba(79, 70, 229, 0.8);
+  }
+  .chat-avatar-me {
+    background: linear-gradient(145deg, #4f46e5, #6366f1);
+    color: #fff;
+    box-shadow: 0 8px 20px -12px rgba(99, 102, 241, 0.8);
+  }
+</style>
+
 <x-admin.header :title="__('Live Chat')" :breadcrumbs="[['label' => 'Admin', 'href' => localized_route('admin.dashboard')], ['label' => __('Live Chat')]]">
   <div class="flex items-center gap-3 text-sm">
     <span class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1">
@@ -28,12 +52,60 @@
       </div>
     </div>
     <div class="flex-1 overflow-y-auto">
-      <div id="conversationEmpty" class="p-4 text-sm text-gray-500 dark:text-gray-400">{{ __('No conversations yet.') }}</div>
-      <div id="conversationItems" class="divide-y divide-gray-200 dark:divide-gray-700"></div>
+      <div id="conversationEmpty" class="p-4 text-sm text-gray-500 dark:text-gray-400 {{ $conversationSeed->isNotEmpty() ? 'hidden' : '' }}">{{ __('No conversations yet.') }}</div>
+      <div id="conversationItems" class="divide-y divide-gray-200 dark:divide-gray-700">
+        @foreach($conversationSeed as $conversation)
+          @php
+            $user = $conversation['user'] ?? null;
+            $last = $conversation['last_message'] ?? null;
+            $isActive = $user && $activeConversationId && (int) $user['id'] === (int) $activeConversationId;
+            $lastSnippet = $last['content'] ?? __('No messages yet.');
+            $lastTime = $conversation['last_message_at']
+                ? \Illuminate\Support\Carbon::parse($conversation['last_message_at'])->timezone(config('app.timezone'))->format('H:i')
+                : '';
+            $conversationHref = $user && $user['id']
+                ? localized_route('admin.chat.index', ['conversation' => $user['id']])
+                : '#';
+          @endphp
+          <a href="{{ $conversationHref }}"
+             data-conversation-id="{{ $user['id'] ?? '' }}"
+             class="group relative block w-full rounded-xl border border-transparent text-left p-4 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 {{ $isActive ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 shadow-inner shadow-primary-500/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60' }}"
+             @if($isActive) aria-current="true" @endif>
+            <div class="flex items-center justify-between">
+              <span class="font-medium {{ $isActive ? 'text-primary-700 dark:text-primary-200' : 'text-gray-800 dark:text-gray-100' }}">{{ $user['name'] ?? __('Customer') }}</span>
+              <span class="text-xs text-gray-400">{{ $lastTime }}</span>
+            </div>
+            <div class="mt-1 text-sm text-gray-500 dark:text-gray-300 truncate">{{ \Illuminate\Support\Str::limit($lastSnippet, 90) }}</div>
+            @if(($conversation['unread'] ?? false) && ! $isActive)
+              <span class="mt-2 inline-flex items-center gap-1 text-xs text-primary-600">
+                <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+                {{ __('New') }}
+              </span>
+            @endif
+          </a>
+        @endforeach
+      </div>
     </div>
     <div class="border-t border-gray-200 dark:border-gray-700 p-4">
       <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">{{ __('Online admins') }}</div>
       <ul id="onlineList" class="space-y-1 text-sm text-gray-700 dark:text-gray-300 max-h-28 overflow-y-auto"></ul>
+    </div>
+    <div class="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
+      <div>
+        <label for="newConversationSelect" class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('Start a new conversation') }}</label>
+        <select id="newConversationSelect" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-100 px-3 py-2">
+          <option value="">{{ __('Select customer') }}</option>
+          @foreach(($customerChoices ?? []) as $customer)
+            <option value="{{ $customer->id }}">
+              {{ $customer->name ?? __('Customer') }} — {{ $customer->email }}
+            </option>
+          @endforeach
+        </select>
+      </div>
+      <button type="button" id="newConversationButton" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 text-white text-sm font-medium py-2 hover:bg-primary-700 disabled:opacity-60">
+        <i class="fa-solid fa-comments"></i>
+        <span>{{ __('Open Chat') }}</span>
+      </button>
     </div>
   </div>
 
@@ -43,20 +115,58 @@
       <div>
         <div class="font-medium text-gray-800 dark:text-gray-100" id="chatTitle">{{ optional($initialConversation)->name ?? __('Select a conversation') }}</div>
         <div class="text-xs text-gray-500 dark:text-gray-400" id="chatSubtitle">
-          {{ $initialConversation ? __('Loading latest messages…') : __('Choose a conversation from the list to begin.') }}
+          @if($initialConversation && $lastMessageLabel)
+            {{ __('Last message at') }} {{ $lastMessageLabel }}
+          @elseif($initialConversation)
+            {{ __('No messages yet.') }}
+          @else
+            {{ __('Choose a conversation from the list to begin.') }}
+          @endif
         </div>
       </div>
       <button id="scrollBottom" type="button" class="hidden lg:inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60">{{ __('Jump to latest') }}</button>
     </div>
 
     <div id="chatWindow" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900/20">
-      <div class="text-sm text-gray-500 dark:text-gray-400" id="chatEmpty">
-        {{ $initialConversation ? __('Loading messages…') : __('No conversation selected.') }}
+      <div class="text-sm text-gray-500 dark:text-gray-400 {{ $messageSeed->isNotEmpty() ? 'hidden' : '' }}" id="chatEmpty">
+        {{ $initialConversation ? __('No messages yet.') : __('No conversation selected.') }}
       </div>
+      @foreach($messageSeed as $message)
+        @php
+          $senderName = $message['sender']['name'] ?? ($message['is_from_admin'] ? __('Admin') : __('Customer'));
+          $senderId = $message['sender']['id'] ?? null;
+          $mine = $message['is_from_admin'] && $senderId && (int) $senderId === (int) auth()->id();
+          $initials = mb_strtoupper(mb_substr($senderName, 0, 1));
+          $timeStamp = $message['created_at']
+            ? \Illuminate\Support\Carbon::parse($message['created_at'])->timezone(config('app.timezone'))->format('H:i')
+            : '';
+        @endphp
+        <div class="flex items-end gap-2 {{ $mine ? 'justify-end' : '' }}">
+          @if($mine)
+            <div class="max-w-[75%] rounded-2xl px-4 py-2 bg-neutral-900 text-white shadow-lg">
+              <div class="text-[11px] opacity-70 mb-0.5">{{ $senderName }} • {{ $timeStamp }}</div>
+              <div class="leading-relaxed whitespace-pre-wrap break-words">{{ $message['content'] }}</div>
+            </div>
+            <div class="h-8 w-8 shrink-0 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-semibold">{{ $initials }}</div>
+          @else
+            <div class="h-8 w-8 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center justify-center text-xs font-semibold">{{ $initials }}</div>
+            <div class="max-w-[75%] rounded-2xl px-4 py-2 bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+              <div class="text-[11px] opacity-70 mb-0.5">{{ $senderName }} • {{ $timeStamp }}</div>
+              <div class="leading-relaxed whitespace-pre-wrap break-words">{{ $message['content'] }}</div>
+            </div>
+          @endif
+        </div>
+      @endforeach
     </div>
 
-    <form id="chatForm" class="border-t border-gray-200 dark:border-gray-700 p-3 flex gap-2" data-active="{{ $initialConversation ? 'true' : 'false' }}">
-      <input id="chatInput" type="text" class="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 h-11" placeholder="{{ __('Type a message and press Enter…') }}" autocomplete="off" {{ $initialConversation ? '' : 'disabled' }} />
+    <form id="chatForm"
+          method="POST"
+          action="{{ localized_route('admin.chat.send') }}"
+          class="border-t border-gray-200 dark:border-gray-700 p-3 flex gap-2"
+          data-active="{{ $initialConversation ? 'true' : 'false' }}">
+      @csrf
+      <input type="hidden" name="conversation_id" id="chatConversationId" value="{{ optional($initialConversation)->id }}">
+      <input id="chatInput" name="content" type="text" class="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 h-11" placeholder="{{ __('Type a message and press Enter…') }}" autocomplete="off" {{ $initialConversation ? '' : 'disabled' }} />
       <button id="chatSend" type="submit" class="h-11 px-4 rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-60" {{ $initialConversation ? '' : 'disabled' }}>{{ __('Send') }}</button>
     </form>
   </div>
@@ -67,10 +177,14 @@
 (function () {
   const config = {
     adminId: @json(auth()->id()),
-    conversationsUrl: @json(route('admin.chat.conversations', ['locale' => app()->getLocale()])),
-    messagesUrlTemplate: @json(route('admin.chat.conversations.show', ['locale' => app()->getLocale(), 'user' => '__USER__'])),
-    sendUrl: @json(route('admin.chat.send', ['locale' => app()->getLocale()])),
+    conversationsUrl: @json(localized_route('admin.chat.conversations')),
+    messagesUrlTemplate: @json(localized_route('admin.chat.conversations.show', ['user' => '__USER__'])),
+    sendUrl: @json(localized_route('admin.chat.send')),
+    indexUrlTemplate: @json(localized_route('admin.chat.index', ['conversation' => '__CONV__'])),
     initialConversation: @json(optional($initialConversation)?->only(['id', 'name'])),
+    initialConversations: @json($conversationSeed),
+    initialMessages: @json($messageSeed),
+    initialConversationLatestId: @json($initialConversationLatestId),
   };
 
   const els = {
@@ -88,6 +202,9 @@
     scrollBtn: document.getElementById('scrollBottom'),
     onlineList: document.getElementById('onlineList'),
     onlineCount: document.getElementById('onlineCount'),
+    newConversationSelect: document.getElementById('newConversationSelect'),
+    newConversationButton: document.getElementById('newConversationButton'),
+    convoHidden: document.getElementById('chatConversationId'),
   };
 
   const state = {
@@ -100,11 +217,12 @@
   const POLL_CONV_MS = 10000;
   const POLL_MSG_MS = 7000;
 
-  let realtimeActive = !!window.Echo;
+  let realtimeActive = false;
   let convTimer = null;
   let msgTimer = null;
   let lastConvJson = '';
   let lastMsgJson = '';
+  const messageCursor = new Map();
 
   const api = {
     list: config.conversationsUrl,
@@ -112,6 +230,42 @@
   };
 
   const onlineAdmins = new Map();
+
+  const seededConversations = Array.isArray(config.initialConversations) ? config.initialConversations : [];
+  const seededMessages = Array.isArray(config.initialMessages) ? config.initialMessages : [];
+  const lastSeedMessage = seededMessages.length ? seededMessages[seededMessages.length - 1] : null;
+
+  if (els.convoHidden && state.activeConversationId) {
+    els.convoHidden.value = state.activeConversationId;
+  }
+
+  if (seededConversations.length) {
+    seededConversations.forEach((item) => {
+      if (item?.user?.id) {
+        upsertConversation(item);
+      }
+    });
+    renderConversationList();
+    els.conversationEmpty?.classList.add('hidden');
+  }
+
+  if (config.initialConversation?.id && seededMessages.length) {
+    renderMessages(seededMessages, config.initialConversation.id);
+    if (lastSeedMessage?.created_at) {
+      els.chatSubtitle.textContent = '{{ __('Last message at') }} ' + timeLabel(lastSeedMessage.created_at);
+    }
+    updateFormState(true);
+  } else if (config.initialConversation && !seededMessages.length) {
+    els.chatSubtitle.textContent = '{{ __('No messages yet.') }}';
+    updateFormState(true);
+  }
+
+  if (config.initialConversation?.id) {
+    const cursorSeed = Number(config.initialConversationLatestId ?? (lastSeedMessage?.id ?? 0));
+    if (!Number.isNaN(cursorSeed) && cursorSeed > 0) {
+      messageCursor.set(Number(config.initialConversation.id), cursorSeed);
+    }
+  }
 
   let audioCtx = null;
   function ensureAudioContext() {
@@ -231,7 +385,7 @@ function startMsgPolling(force = false) {
       window.clearInterval(msgTimer);
     }
     msgTimer = window.setInterval(() => {
-      refreshMessages(state.activeConversationId, { silent: true }).catch(() => {});
+      pollMessages(state.activeConversationId).catch(() => {});
     }, POLL_MSG_MS);
   }
 
@@ -312,23 +466,29 @@ function startMsgPolling(force = false) {
     els.conversationEmpty?.classList.add('hidden');
 
     const markup = filteredItems.map((item) => {
-      const active = Number(item.user.id) === Number(state.activeConversationId);
+      const userId = item?.user?.id ?? '';
+      const active = Number(userId) === Number(state.activeConversationId);
+      const userName = item?.user?.name || 'Customer';
       const badge = item.unread && !active
         ? '<span class="mt-2 inline-flex items-center gap-1 text-xs text-primary-600"><span class="h-2 w-2 rounded-full bg-primary-500"></span>{{ __('New') }}</span>'
         : '';
 
       const lastSnippet = item.lastMessage?.content ?? '{{ __('No messages yet.') }}';
       const lastTime = item.lastMessageAt ? timeLabel(item.lastMessageAt.toISOString()) : '';
+      const fallbackUrlTemplate = config.indexUrlTemplate || '#';
+      const fallbackUrl = fallbackUrlTemplate.includes('__CONV__')
+        ? fallbackUrlTemplate.replace('__CONV__', encodeURIComponent(userId || ''))
+        : fallbackUrlTemplate;
 
       return `
-        <button type="button" class="w-full text-left p-4 transition ${active ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'}" data-conversation-id="${escapeHtml(item.user.id)}">
+        <a href="${escapeHtml(fallbackUrl)}" class="block w-full text-left p-4 rounded-xl transition border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-300 ${active ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-400 shadow-inner shadow-primary-500/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60'}" data-conversation-id="${escapeHtml(userId)}" ${active ? 'aria-current="true"' : ''}>
           <div class="flex items-center justify-between">
-            <span class="font-medium ${active ? 'text-primary-700 dark:text-primary-200' : 'text-gray-800 dark:text-gray-100'}">${escapeHtml(item.user.name || 'Customer')}</span>
+            <span class="font-medium ${active ? 'text-primary-700 dark:text-primary-200' : 'text-gray-800 dark:text-gray-100'}">${escapeHtml(userName)}</span>
             <span class="text-xs text-gray-400">${escapeHtml(lastTime)}</span>
           </div>
           <div class="mt-1 text-sm text-gray-500 dark:text-gray-300 truncate">${escapeHtml(lastSnippet)}</div>
           ${badge}
-        </button>`;
+        </a>`;
     }).join('');
 
     els.conversationItems.innerHTML = markup;
@@ -343,12 +503,22 @@ function startMsgPolling(force = false) {
     const time = timeLabel(message.created_at);
 
     const avatar = document.createElement('div');
-    avatar.className = `h-8 w-8 shrink-0 rounded-full ${mine ? 'bg-primary-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'} flex items-center justify-center text-xs font-semibold`;
+    avatar.className = `h-8 w-8 shrink-0 rounded-full ${mine ? 'text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200'} flex items-center justify-center text-xs font-semibold`;
     avatar.textContent = initials;
+    if (mine) {
+      avatar.style.background = 'linear-gradient(145deg,#4f46e5,#6366f1)';
+      avatar.style.boxShadow = '0 8px 20px -12px rgba(99,102,241,0.7)';
+    }
 
     const bubble = document.createElement('div');
-    bubble.className = `max-w-[75%] rounded-2xl px-4 py-2 ${mine ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600'}`;
-    bubble.innerHTML = `<div class="text-[11px] opacity-70 mb-0.5">${escapeHtml(senderName)} • ${escapeHtml(time)}</div><div class="leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(message.content)}</div>`;
+    bubble.className = `max-w-[75%] rounded-2xl px-4 py-2 ${mine ? 'text-white' : 'bg-white border border-gray-200 dark:bg-gray-700 dark:border-gray-600 text-gray-800 dark:text-gray-50'}`;
+    if (mine) {
+      bubble.style.background = '#111827';
+      bubble.style.border = '1px solid rgba(17,24,39,0.2)';
+      bubble.style.boxShadow = '0 12px 28px -16px rgba(15,23,42,0.7)';
+      bubble.style.color = '#fff';
+    }
+    bubble.innerHTML = `<div class="text-[11px] ${mine ? 'text-white/80' : 'opacity-70'} mb-0.5">${escapeHtml(senderName)} • ${escapeHtml(time)}</div><div class="leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(message.content)}</div>`;
 
     if (mine) {
       wrapper.appendChild(bubble);
@@ -361,7 +531,7 @@ function startMsgPolling(force = false) {
     return wrapper;
   }
 
-  function renderMessages(messages) {
+  function renderMessages(messages, conversationId = state.activeConversationId) {
     if (!els.chatWindow) return;
 
     els.chatWindow.innerHTML = '';
@@ -371,6 +541,10 @@ function startMsgPolling(force = false) {
         els.chatEmpty.textContent = '{{ __('No messages yet.') }}';
         els.chatEmpty.classList.remove('hidden');
         els.chatWindow.appendChild(els.chatEmpty);
+      }
+      const convKey = Number(conversationId);
+      if (!Number.isNaN(convKey) && convKey > 0) {
+        messageCursor.delete(convKey);
       }
       return;
     }
@@ -384,6 +558,19 @@ function startMsgPolling(force = false) {
     });
     els.chatWindow.appendChild(fragment);
     els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
+
+    const latest = messages[messages.length - 1];
+    const convKey = Number(conversationId);
+    if (!Number.isNaN(convKey) && convKey > 0) {
+      if (latest?.id) {
+        const latestId = Number(latest.id);
+        if (!Number.isNaN(latestId)) {
+          messageCursor.set(convKey, latestId);
+        }
+      } else {
+        messageCursor.delete(convKey);
+      }
+    }
   }
 
   function appendMessage(message, mine = false) {
@@ -392,6 +579,14 @@ function startMsgPolling(force = false) {
     els.chatWindow.appendChild(buildMessageNode(message, mine));
     els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
     lastMsgJson = '';
+
+    const convKey = Number(message?.conversation_id ?? state.activeConversationId ?? 0);
+    if (!Number.isNaN(convKey) && convKey > 0 && message?.id) {
+      const latestId = Number(message.id);
+      if (!Number.isNaN(latestId)) {
+        messageCursor.set(convKey, latestId);
+      }
+    }
   }
 
   function conversationUrl(id) {
@@ -495,6 +690,9 @@ function startMsgPolling(force = false) {
 
       const conversation = data.conversation || { id: conversationId, name: '{{ __('Customer') }}' };
       state.activeConversationId = conversation.id;
+      if (els.convoHidden) {
+        els.convoHidden.value = conversation.id;
+      }
 
       const messages = data.messages || [];
       const snapshot = JSON.stringify(messages);
@@ -508,7 +706,7 @@ function startMsgPolling(force = false) {
 
       renderConversationList();
       if (changed) {
-        renderMessages(messages);
+        renderMessages(messages, conversation.id);
         lastMsgJson = snapshot;
       } else {
         lastMsgJson = snapshot;
@@ -535,67 +733,66 @@ function startMsgPolling(force = false) {
     }
   }
 
-  function handleBroadcast(payload) {
-    if (!payload?.conversation_id) return;
-    const message = {
-      id: payload.id,
-      conversation_id: payload.conversation_id,
-      content: payload.content,
-      is_from_admin: Boolean(payload.is_from_admin),
-      created_at: payload.created_at,
-      sender: payload.user ?? null,
-    };
+  async function pollMessages(conversationId) {
+    if (!conversationId || !api.messages) return;
+    if (state.loadingMessages) return;
 
-    const isUserMessage = !message.is_from_admin;
-    const isActiveConversation = Number(state.activeConversationId) === Number(message.conversation_id);
+    const convKey = Number(conversationId);
+    if (Number.isNaN(convKey) || convKey <= 0) {
+      return;
+    }
 
-    const conversationUser = payload.conversation_user || (payload.is_from_admin ? null : payload.user) || null;
+    const cursor = messageCursor.get(convKey);
+    if (!cursor) {
+      await refreshMessages(conversationId, { silent: true });
+      return;
+    }
 
-    if (conversationUser) {
-      upsertConversation({
-        user: conversationUser,
-        last_message: {
-          id: message.id,
-          content: message.content,
-          is_from_admin: message.is_from_admin,
-          created_at: message.created_at,
-          sender: message.sender,
-        },
-        unread: !message.is_from_admin,
+    try {
+      const { data } = await window.axios.get(conversationUrl(conversationId), {
+        params: { after: cursor },
       });
-    }
+      if (!data?.ok) throw new Error('Unable to load new messages');
 
-    if (isActiveConversation) {
-      const mine = Boolean(message.is_from_admin && Number(message.sender?.id) === Number(config.adminId));
-      appendMessage(message, mine);
-      lastMsgJson = '';
-
-      const active = state.conversations.get(Number(message.conversation_id));
-      if (active) {
-        active.lastMessage = message;
-        active.lastMessageAt = message.created_at ? new Date(message.created_at) : active.lastMessageAt;
-        active.unread = false;
+      const messages = data.messages || [];
+      if (!messages.length) {
+        const latestId = Number(data.latest_id ?? 0);
+        if (!Number.isNaN(latestId) && latestId > 0) {
+          messageCursor.set(convKey, latestId);
+        }
+        return;
       }
-      renderConversationList();
-    } else if (conversationUser) {
-      const entry = state.conversations.get(Number(conversationUser.id));
-      if (entry) {
-        entry.lastMessage = message;
-        entry.lastMessageAt = message.created_at ? new Date(message.created_at) : entry.lastMessageAt;
-        entry.unread = !message.is_from_admin;
-      } else {
-        state.conversations.set(Number(conversationUser.id), {
-          user: conversationUser,
-          lastMessage: message,
-          lastMessageAt: message.created_at ? new Date(message.created_at) : null,
-          unread: !message.is_from_admin,
-        });
-      }
-      renderConversationList();
-    }
 
-    if (isUserMessage && (!isActiveConversation || !document.hasFocus())) {
-      playNotification();
+      let shouldNotify = false;
+
+      messages.forEach((message) => {
+        const mine = Boolean(message.is_from_admin && Number(message.sender?.id) === Number(config.adminId));
+        appendMessage(message, mine);
+        if (!message.is_from_admin && (!document.hasFocus() || document.hidden)) {
+          shouldNotify = true;
+        }
+      });
+
+      const latestMessage = messages[messages.length - 1];
+      const entry = state.conversations.get(convKey) || {
+        user: latestMessage?.sender || { id: convKey, name: '{{ __('Customer') }}' },
+        lastMessage: null,
+        lastMessageAt: null,
+        unread: false,
+      };
+      if (latestMessage) {
+        entry.lastMessage = latestMessage;
+        entry.lastMessageAt = latestMessage.created_at ? new Date(latestMessage.created_at) : entry.lastMessageAt;
+        entry.unread = false;
+        state.conversations.set(convKey, entry);
+        renderConversationList();
+      }
+
+      if (shouldNotify) {
+        playNotification();
+      }
+    } catch (error) {
+      console.debug('Message poll skipped', error);
     }
   }
 
@@ -611,75 +808,29 @@ function startMsgPolling(force = false) {
     }
   }
 
-  function syncOnline(users) {
-    onlineAdmins.clear();
-    (users || []).forEach((user) => {
-      if (user?.id) onlineAdmins.set(user.id, user);
+  if (config.adminId) {
+    onlineAdmins.set(Number(config.adminId), {
+      id: Number(config.adminId),
+      name: '{{ __('You') }}',
     });
     renderOnlineAdmins();
   }
 
-  function addOnline(user) {
-    if (user?.id) {
-      onlineAdmins.set(user.id, user);
-      renderOnlineAdmins();
-    }
-  }
-
-  function removeOnline(user) {
-    if (user?.id) {
-      onlineAdmins.delete(user.id);
-      renderOnlineAdmins();
-    }
-  }
-
-  if (realtimeActive) {
-    const connection = window.Echo.connector?.pusher?.connection;
-    if (connection) {
-      if (connection.state !== 'connected') {
-        realtimeActive = false;
-        startConvPolling(true);
-        startMsgPolling(true);
-      }
-      connection.bind('connected', () => {
-        realtimeActive = true;
-        stopConvPolling();
-        stopMsgPolling();
-      });
-      ['unavailable', 'failed', 'disconnected'].forEach((event) => {
-        connection.bind(event, () => {
-          realtimeActive = false;
-          startConvPolling(true);
-          startMsgPolling(true);
-        });
-      });
-    } else {
-      realtimeActive = false;
-      startConvPolling(true);
-      startMsgPolling(true);
-    }
-
-    window.Echo.join('chat.admin')
-      .here(syncOnline)
-      .joining(addOnline)
-      .leaving(removeOnline)
-      .listen('.message.sent', (payload) => {
-        handleBroadcast(payload);
-        refreshConversations({ silent: true, trackChanges: true }).catch(() => {});
-        if (payload?.conversation_id && Number(payload.conversation_id) === Number(state.activeConversationId)) {
-          refreshMessages(state.activeConversationId, { silent: true }).catch(() => {});
-        }
-      });
-  } else {
-    startConvPolling(true);
-  }
+  startConvPolling(true);
 
   if (els.conversationItems) {
     els.conversationItems.addEventListener('click', (event) => {
       const target = event.target.closest('[data-conversation-id]');
       if (!target) return;
       const id = Number(target.dataset.conversationId);
-      if (!id || Number(state.activeConversationId) === id && !state.loadingMessages) {
+      if (!id) {
+        return;
+      }
+      if (typeof target.href === 'string') {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (Number(state.activeConversationId) === id && !state.loadingMessages) {
         return;
       }
       ensureAudioContext();
@@ -695,7 +846,11 @@ function startMsgPolling(force = false) {
 
   els.chatForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!state.activeConversationId) return;
+    const conversationId = Number(state.activeConversationId);
+    if (!conversationId) {
+      alert('{{ __('No conversation selected.') }}');
+      return;
+    }
 
     const text = els.chatInput.value.trim();
     if (!text) return;
@@ -703,7 +858,7 @@ function startMsgPolling(force = false) {
     try {
       els.chatSend.disabled = true;
       const { data } = await window.axios.post(config.sendUrl, {
-        conversation_id: state.activeConversationId,
+        conversation_id: conversationId,
         content: text,
       });
 
@@ -713,7 +868,7 @@ function startMsgPolling(force = false) {
       appendMessage(message, true);
       els.chatInput.value = '';
 
-      const entry = state.conversations.get(Number(state.activeConversationId));
+      const entry = state.conversations.get(conversationId);
       if (entry) {
         entry.lastMessage = message;
         entry.lastMessageAt = message.created_at ? new Date(message.created_at) : entry.lastMessageAt;
@@ -743,6 +898,26 @@ function startMsgPolling(force = false) {
   els.refreshConversations?.addEventListener('click', () => {
     ensureAudioContext();
     refreshConversations().catch(() => {});
+  });
+
+  els.newConversationButton?.addEventListener('click', () => {
+    const value = Number(els.newConversationSelect?.value || 0);
+    if (!value) {
+      alert('{{ __('Please choose a customer first.') }}');
+      return;
+    }
+
+    els.newConversationButton.disabled = true;
+    stopMsgPolling();
+    state.activeConversationId = value;
+    lastMsgJson = '';
+    messageCursor.delete(value);
+    refreshMessages(value).then(() => {
+      const forcePolling = !realtimeActive || convTimer !== null;
+      startMsgPolling(forcePolling);
+    }).finally(() => {
+      els.newConversationButton.disabled = false;
+    });
   });
 
   (async function bootstrap() {

@@ -40,29 +40,34 @@
 
   <section x-cloak
            x-show="open"
-           x-transition.origin.top
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 -translate-y-3"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0"
+           x-transition:leave-end="opacity-0 -translate-y-2"
            :id="$id('mega-menu')"
            role="region"
-           aria-label="{{ __('Browse Categories') }}"
+           aria-label="{{ __('common.mega_browse_title') }}"
            tabindex="-1"
-           class="mega-menu-panel z-[150]"
+           class="mega-menu-panel z-[150] transform"
            :style="panelStyle"
            @mouseenter="setHover(true)"
            @mouseleave="setHover(false)"
            @click.outside="close()">
     <div class="mega-menu-header">
       <div>
-        <h2 class="text-lg font-semibold tracking-tight">{{ __('Browse Categories') }}</h2>
-        <p class="text-sm text-white/60">{{ __('Select a category to see featured products.') }}</p>
+        <h2 class="text-lg font-semibold tracking-tight">{{ __('common.mega_browse_title') }}</h2>
+        <p class="text-sm text-white/60">{{ __('common.mega_browse_hint') }}</p>
       </div>
       <button type="button" class="mega-menu-close" @click="close()">
         <i class="fa-solid fa-xmark"></i>
-        <span class="sr-only">{{ __('Close mega menu') }}</span>
+        <span class="sr-only">{{ __('common.mega_close') }}</span>
       </button>
     </div>
 
     <div class="mega-menu-grid">
-      <nav class="mega-menu-sidebar" aria-label="{{ __('Category list') }}">
+      <nav class="mega-menu-sidebar" aria-label="{{ __('common.mega_category_list') }}">
         <template x-for="category in categories" :key="category.id">
           <button type="button"
                   class="mega-menu-sidebar-item"
@@ -76,7 +81,7 @@
         </template>
 
         <template x-if="!categories.length">
-          <div class="mega-menu-empty">{{ __('No categories available yet.') }}</div>
+          <div class="mega-menu-empty">{{ __('common.mega_no_categories') }}</div>
         </template>
       </nav>
 
@@ -88,7 +93,7 @@
           </div>
           <a :href="activeCategory?.url"
              class="mega-menu-view-all">
-            {{ __('View Category') }}
+            {{ __('common.mega_view_category') }}
             <i class="fa-solid fa-arrow-right-long text-[10px]"></i>
           </a>
         </div>
@@ -105,7 +110,7 @@
           </template>
 
           <template x-if="activeCategory && !activeCategory.products.length">
-            <div class="mega-menu-empty">{{ __('Products coming soon.') }}</div>
+            <div class="mega-menu-empty">{{ __('common.mega_products_coming') }}</div>
           </template>
         </div>
       </div>
@@ -121,7 +126,7 @@
           </div>
         </template>
         <a :href="activeCategory?.url ?? '#'" class="mega-menu-preview-link">
-          {{ __('Explore All Products') }}
+          {{ __('common.mega_explore_all') }}
           <i class="fa-solid fa-arrow-right-long ml-2 text-[10px]"></i>
         </a>
       </aside>

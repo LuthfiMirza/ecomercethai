@@ -1,3 +1,5 @@
+const POLL_INTERVAL_MS = 7000;
+
 function initLiveChat() {
   const log = document.querySelector('[data-livechat-log]');
   const form = document.querySelector('[data-livechat-form]');
@@ -10,15 +12,16 @@ function initLiveChat() {
     return;
   }
 
-  const config = (window.App && window.App.chat) || {};
+  const config = window.App?.chat || {};
   const user = window.App?.user || {};
   const isAuthenticated = Boolean(window.App?.isAuthenticated);
   const emptyTemplate = log.querySelector('[data-livechat-empty]')?.cloneNode(true) || null;
 
-  const realtimeEnabled = Boolean(isAuthenticated && config.channel && window.Echo);
   let hasLoaded = false;
   let loading = false;
   let pollTimer = null;
+  let lastMessageId = null;
+  const renderedIds = new Set();
 
   const escapeHtml = (value = '') => String(value)
     .replace(/&/g, '&amp;')
@@ -42,34 +45,54 @@ function initLiveChat() {
     log.innerHTML = '';
     if (emptyTemplate) {
       const clone = emptyTemplate.cloneNode(true);
-      if (message) clone.textContent = message;
+      if (message) {
+        clone.textContent = message;
+      }
       log.appendChild(clone);
     }
   };
 
+  const normalizeId = (value) => {
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? null : numeric;
+  };
+
+  const registerMessage = (message) => {
+    if (!message || typeof message !== 'object') {
+      return false;
+    }
+    if (message.id == null) {
+      return true;
+    }
+    const id = normalizeId(message.id);
+    if (id == null) {
+      return true;
+    }
+    if (renderedIds.has(id)) {
+      return false;
+    }
+    renderedIds.add(id);
+    lastMessageId = lastMessageId == null ? id : Math.max(lastMessageId, id);
+    return true;
+  };
+
   const appendMessage = (message, { mine = false, scroll = true } = {}) => {
-    const senderName = message.sender?.name || (mine ? 'You' : 'Support');
+    if (!registerMessage(message)) {
+      return;
+    }
+
+    const senderName = message?.sender?.name || (mine ? 'You' : 'Support');
     const initials = senderName.trim().charAt(0).toUpperCase() || '#';
-    const time = timeLabel(message.created_at);
+    const time = timeLabel(message?.created_at);
 
     const wrapper = document.createElement('div');
-    wrapper.className = `flex items-end gap-2 ${mine ? 'justify-end' : ''}`;
-
-    const avatar = document.createElement('div');
-    avatar.className = `h-8 w-8 shrink-0 rounded-full ${mine ? 'bg-indigo-600 text-white' : 'bg-neutral-200 text-neutral-700'} flex items-center justify-center text-xs font-semibold`;
-    avatar.textContent = initials;
+    wrapper.className = `flex items-start gap-2 ${mine ? 'justify-end' : ''}`;
 
     const bubble = document.createElement('div');
-    bubble.className = `max-w-[80%] rounded-2xl px-4 py-2 ${mine ? 'bg-indigo-600 text-white' : 'bg-white border border-neutral-200'}`;
-    bubble.innerHTML = `<div class="text-[11px] opacity-70 mb-0.5">${escapeHtml(senderName)} • ${escapeHtml(time)}</div><div class="leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(message.content)}</div>`;
+    bubble.className = `max-w-[85%] rounded-2xl px-3 py-2 shadow-sm ${mine ? 'bg-indigo-600 text-white' : 'bg-white border border-neutral-200 dark:bg-neutral-800/60 dark:border-neutral-700 text-neutral-800 dark:text-neutral-100'}`;
+    bubble.innerHTML = `<div class="text-[11px] opacity-70 mb-0.5">${escapeHtml(senderName)} • ${escapeHtml(time)}</div><div class="leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(message?.content ?? '')}</div>`;
 
-    if (mine) {
-      wrapper.appendChild(bubble);
-      wrapper.appendChild(avatar);
-    } else {
-      wrapper.appendChild(avatar);
-      wrapper.appendChild(bubble);
-    }
+    wrapper.appendChild(bubble);
 
     const emptyNode = log.querySelector('[data-livechat-empty]');
     if (emptyNode) {
@@ -77,90 +100,101 @@ function initLiveChat() {
     }
 
     log.appendChild(wrapper);
-    if (scroll) scrollToBottom();
+    if (scroll) {
+      scrollToBottom();
+    }
   };
 
-  const renderMessages = (messages) => {
-    if (!messages?.length) {
+  const renderMessages = (messages = []) => {
+    renderedIds.clear();
+    lastMessageId = null;
+
+    if (!messages.length) {
       showEmptyState('How can we help you today?');
       return;
     }
 
     log.innerHTML = '';
-    const fragment = document.createDocumentFragment();
     messages.forEach((message) => {
       const mine = !message.is_from_admin && Number(message.sender?.id) === Number(user?.id);
-      const node = document.createElement('div');
-      const senderName = message.sender?.name || (mine ? 'You' : 'Support');
-      const initials = senderName.trim().charAt(0).toUpperCase() || '#';
-      const time = timeLabel(message.created_at);
-      node.className = `flex items-end gap-2 ${mine ? 'justify-end' : ''}`;
-      const avatar = `<div class="h-8 w-8 shrink-0 rounded-full ${mine ? 'bg-indigo-600 text-white' : 'bg-neutral-200 text-neutral-700'} flex items-center justify-center text-xs font-semibold">${escapeHtml(initials)}</div>`;
-      const bubble = `<div class="max-w-[80%] rounded-2xl px-4 py-2 ${mine ? 'bg-indigo-600 text-white' : 'bg-white border border-neutral-200'}"><div class="text-[11px] opacity-70 mb-0.5">${escapeHtml(senderName)} • ${escapeHtml(time)}</div><div class="leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(message.content)}</div></div>`;
-      node.innerHTML = mine ? `${bubble}${avatar}` : `${avatar}${bubble}`;
-      fragment.appendChild(node);
+      appendMessage(message, { mine, scroll: false });
     });
-    log.appendChild(fragment);
     scrollToBottom();
-  };
-
-  const loadMessages = async () => {
-    if (!config.fetchUrl || loading || !isAuthenticated) return;
-    loading = true;
-    try {
-      const { data } = await window.axios.get(config.fetchUrl);
-      if (!data?.ok) throw new Error('Failed to load chat');
-      renderMessages(data.messages || []);
-      hasLoaded = true;
-    } catch (error) {
-      console.error('Live chat load failed', error);
-      showEmptyState('Unable to load previous messages.');
-    } finally {
-      loading = false;
-    }
   };
 
   const isPanelVisible = () => {
     if (!panel) return false;
     if (panel.hidden) return false;
     const style = window.getComputedStyle(panel);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
       return false;
     }
     return panel.offsetHeight > 0 && panel.offsetWidth > 0;
   };
 
-  const startPolling = () => {
-    if (realtimeEnabled || pollTimer || !config.fetchUrl) return;
-    pollTimer = window.setInterval(() => {
-      if (!isAuthenticated) return;
-      if (!isPanelVisible()) return;
-      loadMessages();
-    }, 10000);
+  const fetchMessages = async ({ append = false } = {}) => {
+    if (!config.fetchUrl || loading || !isAuthenticated) return;
+    loading = true;
+
+    try {
+      const params = {};
+      if (append && lastMessageId != null) {
+        params.after = lastMessageId;
+      }
+
+      const { data } = await window.axios.get(config.fetchUrl, { params });
+      if (!data?.ok) throw new Error('Failed to load chat');
+
+      const messages = data.messages || [];
+      if (append) {
+        messages.forEach((message) => {
+          const mine = !message.is_from_admin && Number(message.sender?.id) === Number(user?.id);
+          appendMessage(message, { mine, scroll: true });
+        });
+      } else {
+        renderMessages(messages);
+      }
+
+      const latest = data.latest_id ?? (messages.length ? messages[messages.length - 1]?.id : null);
+      const normalized = normalizeId(latest);
+      if (normalized != null) {
+        lastMessageId = lastMessageId == null ? normalized : Math.max(lastMessageId, normalized);
+      }
+
+      hasLoaded = true;
+    } catch (error) {
+      console.error('Live chat load failed', error);
+      if (!append) {
+        showEmptyState('Unable to load previous messages.');
+      }
+    } finally {
+      loading = false;
+    }
   };
 
-  if (isAuthenticated && config.channel && window.Echo) {
-    window.Echo.private(config.channel)
-      .listen('.message.sent', (payload) => {
-        if (!payload) return;
-        const fromAdmin = Boolean(payload.is_from_admin);
-        const sameConversation = Number(payload.conversation_id) === Number(user?.id);
-        if (!sameConversation) return;
+  const startPolling = () => {
+    if (pollTimer || !config.fetchUrl) return;
+    pollTimer = window.setInterval(() => {
+      if (!isAuthenticated || !isPanelVisible()) {
+        return;
+      }
+      fetchMessages({ append: true });
+    }, POLL_INTERVAL_MS);
+  };
 
-        // Skip messages we have already rendered from this user
-        if (!fromAdmin && Number(payload.user?.id) === Number(user?.id)) {
-          return;
-        }
+  const handleOpen = () => {
+    if (!isAuthenticated) return;
+    if (!hasLoaded) {
+      fetchMessages();
+    } else {
+      fetchMessages({ append: true });
+    }
+    startPolling();
+  };
 
-        appendMessage({
-          id: payload.id,
-          content: payload.content,
-          is_from_admin: fromAdmin,
-          created_at: payload.created_at,
-          sender: payload.user || null,
-        }, { mine: !fromAdmin });
-      });
-  }
+  openers.forEach((button) => {
+    button.addEventListener('click', handleOpen);
+  });
 
   if (form) {
     form.addEventListener('submit', async (event) => {
@@ -176,37 +210,37 @@ function initLiveChat() {
       if (!text || !config.postUrl) return;
 
       try {
-        sendButton && (sendButton.disabled = true);
+        if (sendButton) sendButton.disabled = true;
         const { data } = await window.axios.post(config.postUrl, { content: text });
         if (!data?.ok) throw new Error('Send failed');
         appendMessage(data.message, { mine: true });
+
+        const latest = data.latest_id ?? data.message?.id ?? null;
+        const normalized = normalizeId(latest);
+        if (normalized != null) {
+          lastMessageId = lastMessageId == null ? normalized : Math.max(lastMessageId, normalized);
+        }
+
         input.value = '';
         input.focus();
       } catch (error) {
         console.error('Failed to send live chat message', error);
         alert('Failed to send message.');
       } finally {
-        sendButton && (sendButton.disabled = false);
+        if (sendButton) sendButton.disabled = false;
       }
     });
   }
 
-  const handleOpen = () => {
-    if (!isAuthenticated) return;
-    if (!hasLoaded) {
-      loadMessages();
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && isPanelVisible()) {
+      fetchMessages({ append: true });
     }
-    startPolling();
-  };
-
-  openers.forEach((button) => {
-    button.addEventListener('click', handleOpen, { once: true });
   });
 
-  // Auto-load if chat is already visible on page load
-  if (document.querySelector('[data-livechat-panel][x-show]')) {
-    loadMessages();
-    startPolling();
+  // Auto-init if chat already open (e.g. due to Alpine state)
+  if (isPanelVisible()) {
+    handleOpen();
   }
 }
 

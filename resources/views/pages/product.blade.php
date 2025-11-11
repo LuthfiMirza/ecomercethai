@@ -62,32 +62,41 @@
                   max="{{ max(1, $stock) }}"
                   value="1"
                   class="w-full rounded-xl border-none bg-transparent px-4 py-2 text-base focus:outline-none"
-                  {{ $canPurchase ? '' : 'disabled' }}
+                  @if(! $canPurchase) disabled @endif
                 >
               </div>
               @error('quantity')
-                <p class="text-sm text-rose-600 mt-1">{{ $message }}</p>
+                <p class="text-sm text-rose-600 mt-1">{{ $messages[0] }}</p>
               @enderror
             </div>
             <div class="flex flex-wrap gap-3">
-              <x-button type="submit" class="flex-1 justify-center" @disabled(! $canPurchase)>
-                {{ $canPurchase ? __('Tambah ke Keranjang') : __('Stok habis') }}
-              </x-button>
+              @if($canPurchase)
+                <x-button type="submit" class="flex-1 justify-center">
+                  {{ __('Tambah ke Keranjang') }}
+                </x-button>
+              @else
+                <x-button type="button" class="flex-1 justify-center" disabled>
+                  {{ __('Stok habis') }}
+                </x-button>
+              @endif
             </div>
           </form>
           
           <div class="flex flex-wrap gap-3">
             @if(auth()->check())
-              <form method="POST" action="{{ localized_route('wishlist.add') }}">
-                @csrf
-                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                <x-button type="submit" variant="outline" class="px-6">
-                  <i class="fa-regular fa-heart mr-2"></i>{{ __('Wishlist') }}
-                </x-button>
-              </form>
+              <button type="button"
+                      data-wishlist
+                      data-product-id="{{ $product->id }}"
+                      data-name="{{ $product->name }}"
+                      data-price="{{ $product->price }}"
+                      data-image="{{ $product->image_url ?? $mainImage }}"
+                      class="inline-flex items-center justify-center font-medium rounded-2xl transition-all focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-200/70 disabled:opacity-50 disabled:cursor-not-allowed px-5 py-2.5 text-sm border border-white/60 bg-white/80 text-neutral-700 shadow-inner hover:border-orange-300 backdrop-blur-xl dark:border-neutral-700 dark:bg-neutral-900/60 dark:text-neutral-100"
+                      aria-label="{{ __('common.wishlist') }}">
+                <i class="fa-regular fa-heart mr-2"></i>{{ __('common.wishlist') }}
+              </button>
             @else
               <a href="{{ localized_route('login') }}" class="inline-flex items-center justify-center rounded-2xl border border-neutral-300 px-6 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50">
-                <i class="fa-regular fa-heart mr-2"></i>{{ __('Masuk untuk wishlist') }}
+                <i class="fa-regular fa-heart mr-2"></i>{{ __('common.wishlist_login_prompt') }}
               </a>
             @endif
           </div>

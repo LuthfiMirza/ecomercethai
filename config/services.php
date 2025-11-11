@@ -41,4 +41,8 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'line' => [
+        'id' => env('LINE_ID', '@jag3901n'),
+    ],
+
 ];

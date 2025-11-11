@@ -11,16 +11,24 @@ class ChatMessageController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $messages = Message::with('user:id,name')
-            ->where(function ($query) use ($request) {
-                $query->where('conversation_id', $request->user()->id)
-                    ->orWhere(function ($inner) use ($request) {
+        $user = $request->user();
+        $afterId = max((int) $request->query('after'), 0);
+
+        $baseQuery = Message::with('user:id,name')
+            ->where(function ($query) use ($user) {
+                $query->where('conversation_id', $user->id)
+                    ->orWhere(function ($inner) use ($user) {
                         $inner->whereNull('conversation_id')
-                            ->where('user_id', $request->user()->id);
+                            ->where('user_id', $user->id);
                     });
-            })
+            });
+
+        $latestId = (clone $baseQuery)->max('id');
+
+        $messages = (clone $baseQuery)
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
             ->orderBy('created_at')
-            ->take(200)
+            ->when($afterId <= 0, fn ($query) => $query->take(200))
             ->get()
             ->map(fn (Message $message) => $this->transformMessage($message))
             ->values();
@@ -28,6 +36,7 @@ class ChatMessageController extends Controller
         return response()->json([
             'ok' => true,
             'messages' => $messages,
+            'latest_id' => $latestId ? (int) $latestId : null,
         ]);
     }
 
@@ -54,6 +63,7 @@ class ChatMessageController extends Controller
         return response()->json([
             'ok' => true,
             'message' => $this->transformMessage($message),
+            'latest_id' => $message->id,
         ], 201);
     }
 

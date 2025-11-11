@@ -184,18 +184,18 @@
   <div class="container mx-auto px-4">
     <div class="flex flex-wrap justify-center gap-6">
       @php
-        $icons = [
-          'CPU' => 'fa-microchip',
-          'GPU' => 'fa-bolt',
-          'RAM' => 'fa-memory',
-          'SSD' => 'fa-sd-card',
+        $iconCategories = [
+          ['slug' => 'CPU', 'icon' => 'fa-microchip', 'label' => __('home.category_cpu')],
+          ['slug' => 'GPU', 'icon' => 'fa-bolt', 'label' => __('home.category_gpu')],
+          ['slug' => 'RAM', 'icon' => 'fa-memory', 'label' => __('home.category_ram')],
+          ['slug' => 'SSD', 'icon' => 'fa-sd-card', 'label' => __('home.category_ssd')],
         ];
       @endphp
-      @foreach($icons as $category => $icon)
-        <a href="{{ route('catalog', ['category' => $category]) }}" class="group w-[150px]">
+      @foreach($iconCategories as $item)
+        <a href="{{ route('catalog', ['category' => $item['slug']]) }}" class="group w-[150px]">
           <div class="h-[120px] rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft flex flex-col items-center justify-center transition-transform group-hover:-translate-y-1">
-            <i class="fa-solid {{ $icon }} text-2xl text-accent-500"></i>
-            <span class="mt-3 text-sm font-semibold text-neutral-800 dark:text-neutral-100">{{ $category }}</span>
+            <i class="fa-solid {{ $item['icon'] }} text-2xl text-accent-500"></i>
+            <span class="mt-3 text-sm font-semibold text-neutral-800 dark:text-neutral-100">{{ $item['label'] }}</span>
           </div>
         </a>
       @endforeach
@@ -208,11 +208,11 @@
     <div class="bg-white dark:bg-neutral-900 p-4 rounded-md text-center border border-neutral-200 dark:border-neutral-800">
         @if($topBanner && ($src = $bannerUrl($topBanner)))
             <img src="{{ $src }}"
-                 alt="{{ optional($topBanner)->title ?? 'Featured promotion' }}"
+                 alt="{{ optional($topBanner)->title ?? __('home.top_banner_alt') }}"
                  class="mx-auto max-w-full h-auto rounded-lg object-cover">
         @else
             <img src="{{ $defaultBannerImages['homepage_top'] }}"
-                 alt="High-end gaming desktop promotion"
+                 alt="{{ __('home.top_banner_fallback') }}"
                  class="mx-auto max-w-full h-auto rounded-lg object-cover">
         @endif
     </div>
@@ -220,49 +220,21 @@
 
 <!-- Rekomendasi Produk Section -->
 <div class="container mx-auto px-6">
-    <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8 text-center">{{ __('Recommended Products') }}</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8 text-center">{{ __('home.recommended_title') }}</h2>
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
         @forelse(($featuredProducts ?? collect()) as $product)
-        @php
-            $formattedPrice = number_format($product->price, 2);
-            $image = $productImageResolver($product);
-        @endphp
-        <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-lg hover:shadow-xl dark:shadow-[0_18px_35px_rgba(0,0,0,0.55)] transition-shadow duration-300 border border-orange-100 dark:border-neutral-800 overflow-hidden relative">
-            <div class="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">New</div>
-            <div class="relative h-48 overflow-hidden">
-                <img src="{{ $image }}" alt="{{ $product->name }}" class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300">
-            </div>
-            <div class="p-4 border-t border-orange-100 dark:border-neutral-800">
-                <h3 class="font-bold text-lg text-gray-800 dark:text-neutral-100 mb-2">{{ $product->name }}</h3>
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-orange-500 dark:text-orange-400 font-bold text-xl">${{ $formattedPrice }}</span>
-                    <div class="flex items-center">
-                        <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
-                        <span class="text-gray-600 dark:text-neutral-400 text-sm ml-1">4.5</span>
-                    </div>
-                </div>
-                <button type="button" data-cart-add data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="{{ $formattedPrice }}" data-image="{{ $image }}" class="w-full bg-orange-500 dark:bg-orange-500 text-white py-2 rounded-lg font-semibold hover:bg-orange-600 dark:hover:bg-orange-400 transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>Buy Now
-                </button>
-                @if(auth()->check())
-                <button type="button" data-wishlist data-product-id="{{ $product->id }}" data-name="{{ $product->name }}" data-price="${{ $formattedPrice }}" data-image="{{ $image }}" class="mt-2 w-full border border-orange-300 dark:border-orange-400/70 text-orange-600 dark:text-orange-300 py-2 rounded-lg font-medium hover:bg-orange-50 dark:hover:bg-orange-500/10 transition-colors">
-                    <i class="fa-regular fa-heart mr-2"></i> Wishlist
-                </button>
-                @else
-                <button type="button" onclick="window.location='{{ localized_route('login') }}'" class="mt-2 w-full border border-orange-300 text-orange-600 py-2 rounded-lg font-medium hover:bg-orange-50 transition-colors">
-                    <i class="fa-regular fa-heart mr-2"></i> {{ __('Login untuk wishlist') }}
-                </button>
-                @endif
-            </div>
-        </div>
+            @php
+                $image = $productImageResolver($product);
+            @endphp
+            @include('components.catalog-product-card', ['product' => $product, 'image' => $image])
         @empty
-        <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-orange-100 dark:border-neutral-800 p-8 col-span-full text-center text-neutral-800 dark:text-neutral-200">
-            <img src="https://images.unsplash.com/photo-1516700675895-4204b3f074bf?auto=format&fit=crop&w=600&q=80"
-                 alt="Empty product showcase illustration"
-                 class="mx-auto mb-5 h-28 w-28 rounded-full object-cover shadow-inner">
-            <h3 class="text-lg font-semibold mb-2">{{ __('No recommended products yet') }}</h3>
-            <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Please add products through the admin panel to populate this section.') }}</p>
-        </div>
+            <div class="col-span-full rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-8 text-center text-neutral-700 dark:text-neutral-300">
+                <img src="https://images.unsplash.com/photo-1516700675895-4204b3f074bf?auto=format&fit=crop&w=600&q=80"
+                     alt="{{ __('home.recommended_empty_alt') }}"
+                     class="mx-auto mb-5 h-28 w-28 rounded-full object-cover shadow-inner">
+                <h3 class="text-lg font-semibold mb-2">{{ __('home.recommended_empty_title') }}</h3>
+                <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('home.recommended_empty_desc') }}</p>
+            </div>
         @endforelse
     </div>
 </div>
@@ -272,7 +244,7 @@
     @php $midBannerSrc = $midBanner ? $bannerUrl($midBanner) : null; @endphp
     <div class="bg-white dark:bg-neutral-900 border-2 border-orange-500/80 dark:border-orange-400/70 p-4 rounded-md text-center">
         <img src="{{ $midBannerSrc ?? $defaultBannerImages['homepage_sidebar'] }}"
-             alt="{{ optional($midBanner)->title ?? 'Gaming accessories promotion' }}"
+             alt="{{ optional($midBanner)->title ?? __('home.mid_banner_alt') }}"
              class="mx-auto max-w-full h-auto rounded-lg object-cover">
     </div>
 </div>
@@ -283,7 +255,7 @@
         @if($bottomBanner && ($src = $bannerUrl($bottomBanner)))
             <img src="{{ $src }}" alt="{{ $bottomBanner->title }}" class="w-full h-40 object-cover">
         @else
-            <img src="{{ $defaultBannerImages['homepage_bottom'] }}" alt="Premium workspace promotion" class="w-full h-40 object-cover">
+            <img src="{{ $defaultBannerImages['homepage_bottom'] }}" alt="{{ __('home.bottom_banner_alt') }}" class="w-full h-40 object-cover">
         @endif
     </div>
 </div>
@@ -291,8 +263,8 @@
 <!-- Product Catalog Section (Redesigned from here downward) -->
 <section class="container mx-auto px-6 py-12">
   <div class="flex flex-wrap items-center justify-between gap-3">
-    <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Our Products</h2>
-    <p class="text-sm text-neutral-600 dark:text-neutral-300">Latest products curated by our team.</p>
+    <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{{ __('home.catalog_title') }}</h2>
+    <p class="text-sm text-neutral-600 dark:text-neutral-300">{{ __('home.catalog_subtitle') }}</p>
   </div>
 
   <div class="mt-6">
@@ -303,7 +275,7 @@
     @endphp
     @if($catalogCollection->isEmpty())
       <div class="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 text-center text-neutral-600 dark:text-neutral-300">
-        {{ __('No products available yet. Please add products through the admin panel.') }}
+        {{ __('home.catalog_empty') }}
       </div>
     @else
       <div class="space-y-10">
@@ -408,17 +380,14 @@
 
 <!-- Value Props (clean) -->
 <section class="container mx-auto px-6 py-10">
+  @php
+    $valueProps = trans('home.value_props');
+  @endphp
   <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-    @foreach([
-      ['Free Shipping','fa-truck-fast'],
-      ['Next-day Delivery','fa-bolt'],
-      ['60‑day Returns','fa-rotate-left'],
-      ['Expert CS','fa-headset'],
-      ['Exclusive Brands','fa-gem'],
-    ] as $vp)
+    @foreach($valueProps as $vp)
       <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 text-center">
-        <i class="fa-solid {{ $vp[1] }} text-accent-600 text-2xl"></i>
-        <div class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $vp[0] }}</div>
+        <i class="fa-solid {{ $vp['icon'] }} text-accent-600 text-2xl"></i>
+        <div class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $vp['label'] }}</div>
       </div>
     @endforeach
   </div>
@@ -440,7 +409,7 @@
 
 <!-- Blog Teasers (clean) -->
 <section class="container mx-auto px-6 pb-16">
-  <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">{{ __('From Our Blog') }}</h2>
+  <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">{{ __('home.blog_title') }}</h2>
   @php
     $blogImages = [
       'https://source.unsplash.com/800x480/?electronics,1',
@@ -451,11 +420,11 @@
   <div class="grid md:grid-cols-3 gap-6">
     @for($i=0;$i<3;$i++)
       <article class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-soft transition">
-        <img loading="lazy" src="{{ $blogImages[$i] ?? $blogImages[0] }}" alt="Blog {{ $i+1 }}" class="w-full h-40 object-cover"/>
+        <img loading="lazy" src="{{ $blogImages[$i] ?? $blogImages[0] }}" alt="{{ __('home.blog_image_alt', ['number' => $i + 1]) }}" class="w-full h-40 object-cover"/>
         <div class="p-4">
-          <h3 class="font-semibold text-neutral-900 dark:text-white">{{ __('Tech Article') }} {{ $i+1 }}</h3>
-          <p class="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{{ __('Tips for choosing components for optimal performance.') }}</p>
-          <a href="#" class="text-sm text-accent-600 hover:text-accent-700">{{ __('Read more') }}</a>
+          <h3 class="font-semibold text-neutral-900 dark:text-white">{{ __('home.blog_card_title') }} {{ $i+1 }}</h3>
+          <p class="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{{ __('home.blog_card_excerpt') }}</p>
+          <a href="#" class="text-sm text-accent-600 hover:text-accent-700">{{ __('home.blog_card_cta') }}</a>
         </div>
       </article>
     @endfor

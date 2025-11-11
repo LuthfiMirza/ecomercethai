@@ -49,6 +49,4 @@ if (typeof pusherKey === 'string' && pusherKey.trim() !== '') {
     }
 
     attachSocketHeader();
-} else {
-    console.warn('[Echo] Pusher key missing; realtime features disabled. Set VITE_PUSHER_APP_KEY in your .env.');
 }

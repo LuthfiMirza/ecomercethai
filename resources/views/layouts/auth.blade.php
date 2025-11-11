@@ -1,6 +1,10 @@
+@php
+    $authLineRawId = config('services.line.id', '@jag3901n');
+    $authLineNormalizedId = ltrim($authLineRawId ?: '@jag3901n', '@');
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-      data-line-id="{{ env('LINE_ID', 'tokothai') }}"
+      data-line-id="{{ $authLineNormalizedId }}"
       data-currency="{{ config('app.currency', 'THB') }}"
       data-locale="{{ app()->getLocale() }}">
 <head>

@@ -8,33 +8,123 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ChatController extends Controller
 {
     public function index(Request $request)
     {
-        $latestConversationId = Message::query()
-            ->where(function ($query) {
-                $query->whereNotNull('conversation_id')
-                    ->orWhere('is_from_admin', false);
-            })
-            ->selectRaw('COALESCE(conversation_id, user_id) as conversation_key')
-            ->orderByDesc('created_at')
-            ->value('conversation_key');
-
+        $initialConversations = $this->conversationItems();
         $initialConversation = null;
+        $initialMessages = collect();
+        $initialConversationLatestId = null;
 
-        if ($latestConversationId) {
-            $initialConversation = User::select('id', 'name')
-                ->find($latestConversationId);
+        $availableConversationIds = $initialConversations
+            ->pluck('user.id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        $requestedConversationId = (int) $request->query('conversation');
+
+        $initialUserId = null;
+        if ($requestedConversationId && $availableConversationIds->contains($requestedConversationId)) {
+            $initialUserId = $requestedConversationId;
+        } elseif ($availableConversationIds->isNotEmpty()) {
+            $initialUserId = $availableConversationIds->first();
         }
+
+        if ($initialUserId) {
+            $initialConversation = User::select('id', 'name')->find($initialUserId);
+            if ($initialConversation) {
+                $payload = $this->buildMessagesPayload($initialConversation);
+                $initialMessages = $payload['messages'];
+                $initialConversationLatestId = $payload['latest_id'];
+            }
+        }
+
+        $customerChoices = User::select('id', 'name', 'email')
+            ->orderBy('name')
+            ->take(200)
+            ->get();
 
         return view('admin.chat.index', [
             'initialConversation' => $initialConversation,
+            'initialConversations' => $initialConversations,
+            'initialMessages' => $initialMessages,
+            'initialConversationLatestId' => $initialConversationLatestId,
+            'customerChoices' => $customerChoices,
         ]);
     }
 
     public function conversations(): JsonResponse
+    {
+        return response()->json([
+            'ok' => true,
+            'conversations' => $this->conversationItems(),
+        ]);
+    }
+
+    public function messages(Request $request, User $user): JsonResponse
+    {
+        $afterId = max((int) $request->query('after'), 0);
+        $payload = $this->buildMessagesPayload($user, $afterId);
+
+        return response()->json([
+            'ok' => true,
+            'conversation' => [
+                'id' => $user->id,
+                'name' => $user->name,
+            ],
+            'messages' => $payload['messages'],
+            'latest_id' => $payload['latest_id'],
+        ]);
+    }
+
+    public function send(Request $request)
+    {
+        $data = $request->validate([
+            'conversation_id' => ['required', 'integer', 'exists:users,id'],
+            'content' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $conversationUser = User::select('id', 'name')->findOrFail($data['conversation_id']);
+
+        $message = Message::create([
+            'user_id' => $request->user()->id,
+            'conversation_id' => $conversationUser->id,
+            'content' => $data['content'],
+            'is_from_admin' => true,
+        ]);
+
+        $message->loadMissing('user:id,name', 'conversation:id,name');
+
+        broadcast(new MessageSent($message))->toOthers();
+
+        $payload = [
+            'ok' => true,
+            'message' => [
+                'id' => $message->id,
+                'content' => $message->content,
+                'is_from_admin' => $message->is_from_admin,
+                'conversation_id' => $message->conversation_id ?: $conversationUser->id,
+                'created_at' => $message->created_at?->toIso8601String(),
+                'sender' => [
+                    'id' => $message->user?->id,
+                    'name' => $message->user?->name,
+                ],
+            ],
+            'latest_id' => $message->id,
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json($payload);
+        }
+
+        return back()->with('success', __('Message sent.'));
+    }
+
+    protected function conversationItems(): Collection
     {
         $conversationMeta = Message::query()
             ->where(function ($query) {
@@ -79,10 +169,11 @@ class ChatController extends Controller
             })
             ->map->first();
 
-        $items = $conversationMeta->map(function ($meta) use ($users, $lastMessages) {
+        return $conversationMeta->map(function ($meta) use ($users, $lastMessages) {
             $conversationId = (int) $meta->conversation_key;
             $conversationUser = $users->get($conversationId);
             $last = $lastMessages->get($conversationId);
+            $isUnread = $last ? ! $last->is_from_admin : false;
 
             return [
                 'user' => $conversationUser ? [
@@ -104,18 +195,15 @@ class ChatController extends Controller
                     ],
                 ] : null,
                 'last_message_at' => $last ? $last->created_at?->toIso8601String() : null,
+                'last_message_id' => $last?->id,
+                'unread' => $isUnread,
             ];
-        });
-
-        return response()->json([
-            'ok' => true,
-            'conversations' => $items->values(),
-        ]);
+        })->values();
     }
 
-    public function messages(User $user): JsonResponse
+    protected function buildMessagesPayload(User $user, int $afterId = 0): array
     {
-        $messages = Message::query()
+        $baseQuery = Message::query()
             ->with('user:id,name')
             ->where(function ($query) use ($user) {
                 $query->where('conversation_id', $user->id)
@@ -123,9 +211,14 @@ class ChatController extends Controller
                         $inner->whereNull('conversation_id')
                             ->where('user_id', $user->id);
                     });
-            })
+            });
+
+        $latestId = (clone $baseQuery)->max('id');
+
+        $messages = (clone $baseQuery)
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
             ->orderBy('created_at')
-            ->take(300)
+            ->when($afterId <= 0, fn ($query) => $query->take(300))
             ->get()
             ->map(fn (Message $message) => [
                 'id' => $message->id,
@@ -140,49 +233,9 @@ class ChatController extends Controller
             ])
             ->values();
 
-        return response()->json([
-            'ok' => true,
-            'conversation' => [
-                'id' => $user->id,
-                'name' => $user->name,
-            ],
+        return [
             'messages' => $messages,
-        ]);
-    }
-
-    public function send(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'conversation_id' => ['required', 'integer', 'exists:users,id'],
-            'content' => ['required', 'string', 'max:2000'],
-        ]);
-
-        $conversationUser = User::select('id', 'name')->findOrFail($data['conversation_id']);
-
-        $message = Message::create([
-            'user_id' => $request->user()->id,
-            'conversation_id' => $conversationUser->id,
-            'content' => $data['content'],
-            'is_from_admin' => true,
-        ]);
-
-        $message->loadMissing('user:id,name', 'conversation:id,name');
-
-        broadcast(new MessageSent($message))->toOthers();
-
-        return response()->json([
-            'ok' => true,
-            'message' => [
-                'id' => $message->id,
-                'content' => $message->content,
-                'is_from_admin' => $message->is_from_admin,
-                'conversation_id' => $message->conversation_id ?: $conversationUser->id,
-                'created_at' => $message->created_at?->toIso8601String(),
-                'sender' => [
-                    'id' => $message->user?->id,
-                    'name' => $message->user?->name,
-                ],
-            ],
-        ]);
+            'latest_id' => $latestId ? (int) $latestId : null,
+        ];
     }
 }
