@@ -104,8 +104,8 @@
   <h1 class="text-2xl font-semibold mb-4">Katalog</h1>
   <form method="get" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
     <!-- Sidebar filter -->
-    <div class="lg:col-span-3">
-      <div class="hidden lg:block sticky top-24">
+    <div class="lg:col-span-3" x-data="catalogFilterPanel()">
+      <fieldset class="hidden lg:block sticky top-24 border-0 p-0 m-0" x-bind:disabled="!isDesktop">
         <x-filter
           :categories="$filterCategories"
           :brands="$filterBrands"
@@ -113,24 +113,26 @@
           :max-price="$maxPrice"
           :in-stock="$inStockOnly"
         />
-      </div>
+      </fieldset>
       <!-- Mobile filter button -->
-      <div x-data="{open:false}" class="lg:hidden">
-        <x-button @click.prevent="open=true" class="w-full">Filter</x-button>
-        <div x-show="open" x-transition.opacity class="fixed inset-0 z-50">
-          <div class="absolute inset-0 bg-black/40" @click="open=false"></div>
+      <div class="lg:hidden">
+        <x-button @click.prevent="mobileOpen = true" class="w-full">Filter</x-button>
+        <div x-show="mobileOpen" x-transition.opacity class="fixed inset-0 z-50" @keydown.escape.window="mobileOpen = false">
+          <div class="absolute inset-0 bg-black/40" @click="mobileOpen = false"></div>
           <div class="absolute right-0 top-0 h-full w-[90vw] max-w-sm bg-white dark:bg-neutral-900 p-4 overflow-y-auto">
             <div class="flex items-center justify-between mb-2">
               <div class="font-medium">Filter</div>
-              <button class="p-2" @click="open=false"><i class="fa-solid fa-xmark"></i></button>
+              <button class="p-2" @click="mobileOpen = false"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <x-filter
-              :categories="$filterCategories"
-              :brands="$filterBrands"
-              :min-price="$minPrice"
-              :max-price="$maxPrice"
-              :in-stock="$inStockOnly"
-            />
+            <fieldset class="border-0 p-0 m-0" x-bind:disabled="isDesktop">
+              <x-filter
+                :categories="$filterCategories"
+                :brands="$filterBrands"
+                :min-price="$minPrice"
+                :max-price="$maxPrice"
+                :in-stock="$inStockOnly"
+              />
+            </fieldset>
           </div>
         </div>
       </div>
@@ -180,3 +182,28 @@
   </form>
 </main>
 @endsection
+
+@push('scripts')
+<script>
+  function catalogFilterPanel() {
+    return {
+      mobileOpen: false,
+      isDesktop: window.matchMedia('(min-width: 1024px)').matches,
+      init() {
+        const mq = window.matchMedia('(min-width: 1024px)');
+        const handler = (event) => {
+          this.isDesktop = event.matches;
+          if (event.matches) {
+            this.mobileOpen = false;
+          }
+        };
+        if (typeof mq.addEventListener === 'function') {
+          mq.addEventListener('change', handler);
+        } else if (typeof mq.addListener === 'function') {
+          mq.addListener(handler);
+        }
+      },
+    };
+  }
+</script>
+@endpush

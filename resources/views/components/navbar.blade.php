@@ -235,7 +235,15 @@
                   </template>
                 </ul>
                 <div class="p-3 pt-0 grid grid-cols-1 gap-2">
-                  <a href="{{ $loginUrl }}" class="btn-accent text-sm text-center">Login</a>
+                  @auth
+                    <a href="{{ route('wishlist') }}" class="btn-accent text-sm text-center">
+                      {{ __('common.view_wishlist') }}
+                    </a>
+                  @else
+                    <a href="{{ $loginUrl }}" class="btn-accent text-sm text-center">
+                      {{ __('common.login') }}
+                    </a>
+                  @endauth
                 </div>
               </div>
             </template>
