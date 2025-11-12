@@ -13,6 +13,39 @@
   @keydown.escape.window="proofOpen = false"
   class="space-y-4"
 >
+  <div
+    class="rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-[0_20px_60px_-35px_rgba(15,23,42,0.45)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/40"
+    data-order-poll
+    data-poll-url="{{ localized_route('admin.orders.poll') }}"
+    data-last-id="{{ $latestOrderId ?? 0 }}"
+    data-interval="15000"
+    data-max-items="5"
+    data-total-label="{{ __('admin.orders.realtime.total_label') }}"
+    data-payment-label="{{ __('admin.orders.realtime.payment_label') }}"
+    data-view-label="{{ __('admin.orders.realtime.view') }}"
+    data-empty-label="{{ __('admin.orders.realtime.empty') }}"
+    data-customer-label="{{ __('Customer') }}"
+  >
+    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ __('admin.orders.realtime.title') }}</p>
+        <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('admin.orders.realtime.subtitle') }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="hidden text-xs font-semibold uppercase tracking-wider text-emerald-500" data-order-pulse>{{ __('admin.orders.realtime.badge') }}</span>
+        <button type="button" data-order-refresh class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:text-slate-200">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M5 19A9 9 0 0119 5"/>
+          </svg>
+          <span>{{ __('admin.orders.realtime.refresh') }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="mt-4 space-y-3" data-order-feed aria-live="polite">
+      <p class="text-sm text-slate-500 dark:text-slate-400" data-order-empty>{{ __('admin.orders.realtime.empty') }}</p>
+    </div>
+  </div>
+
   <x-table 
     title="Orders List"
     :export-items="[
@@ -259,4 +292,227 @@
     </div>
   </div>
 </div>
+
+@push('scripts')
+<script>
+(() => {
+  const panel = document.querySelector('[data-order-poll]');
+  if (!panel || typeof window.axios === 'undefined') {
+    return;
+  }
+
+  const feed = panel.querySelector('[data-order-feed]');
+  const emptyState = panel.querySelector('[data-order-empty]');
+  const refreshBtn = panel.querySelector('[data-order-refresh]');
+  const badge = panel.querySelector('[data-order-pulse]');
+
+  const pollUrl = panel.dataset.pollUrl;
+  const interval = Number(panel.dataset.interval || 15000);
+  const maxItems = Number(panel.dataset.maxItems || 5);
+
+  let cursor = Number(panel.dataset.lastId || 0) || 0;
+  let loading = false;
+  let timer = null;
+
+  const labels = {
+    total: panel.dataset.totalLabel || 'Total',
+    payment: panel.dataset.paymentLabel || 'Payment',
+    view: panel.dataset.viewLabel || 'View',
+    empty: panel.dataset.emptyLabel || '',
+    customer: panel.dataset.customerLabel || 'Customer',
+  };
+
+  const escapeHtml = (value = '') => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const timeLabel = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const statusBadge = (status = '') => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'badge-warn';
+      case 'processing':
+      case 'shipped':
+        return 'badge-info';
+      case 'completed':
+        return 'badge-success';
+      case 'cancelled':
+      case 'canceled':
+        return 'badge-danger';
+      default:
+        return 'badge-neutral';
+    }
+  };
+
+  const paymentBadge = (status = '') => {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return 'badge-success';
+      case 'processing':
+        return 'badge-info';
+      case 'pending':
+        return 'badge-warn';
+      default:
+        return 'badge-neutral';
+    }
+  };
+
+  const entryNodes = () => (feed ? Array.from(feed.querySelectorAll('[data-order-id]')) : []);
+
+  const setEmptyState = (visible) => {
+    if (!emptyState) return;
+    emptyState.classList.toggle('hidden', !visible);
+  };
+
+  const pruneFeed = () => {
+    if (!feed) return;
+    const nodes = entryNodes();
+    while (nodes.length > maxItems) {
+      const last = nodes.pop();
+      last?.remove();
+    }
+  };
+
+  const pulsePanel = () => {
+    if (!badge) return;
+    badge.classList.remove('hidden');
+    if (badge.dataset.timeout) {
+      window.clearTimeout(Number(badge.dataset.timeout));
+    }
+    const handle = window.setTimeout(() => {
+      badge.classList.add('hidden');
+      badge.dataset.timeout = '';
+    }, 2000);
+    badge.dataset.timeout = String(handle);
+
+    panel.animate(
+      [
+        { boxShadow: '0 0 0 rgba(79,70,229,0)' },
+        { boxShadow: '0 0 0 18px rgba(79,70,229,0.15)' },
+        { boxShadow: '0 0 0 rgba(79,70,229,0)' },
+      ],
+      { duration: 600, easing: 'ease-out' }
+    );
+  };
+
+  const renderOrder = (order) => {
+    const node = document.createElement('article');
+    node.dataset.orderId = String(order?.id ?? '');
+    node.className = 'rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/40';
+    const customerName = order?.customer?.name || labels.customer;
+    const created = order?.created_label || timeLabel(order?.created_at);
+    node.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(order?.code || '')}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(customerName)} • ${escapeHtml(created)}</p>
+        </div>
+        <span class="badge ${statusBadge(order?.status)}">${escapeHtml(order?.status_label || order?.status || '')}</span>
+      </div>
+      <div class="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
+        <span>${escapeHtml(labels.total)}: <strong class="text-slate-900 dark:text-white">${escapeHtml(order?.total_formatted || order?.total_amount || '')}</strong></span>
+        <span>${escapeHtml(labels.payment)}: <span class="badge ${paymentBadge(order?.payment_status)}">${escapeHtml(order?.payment_status_label || order?.payment_status || '')}</span></span>
+      </div>
+      <div class="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+        <span>${escapeHtml(created)}</span>
+        <a href="${escapeHtml(order?.url || '#')}" class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700">
+          ${escapeHtml(labels.view)}
+          <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 5h8v8M5 15l10-10"/>
+          </svg>
+        </a>
+      </div>
+    `;
+    return node;
+  };
+
+  const handleOrders = (list) => {
+    if (!feed) return;
+    if (!Array.isArray(list) || !list.length) {
+      setEmptyState(entryNodes().length === 0);
+      return;
+    }
+    pulsePanel();
+    setEmptyState(false);
+    const ordered = [...list].sort((a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0));
+    ordered.forEach((order) => {
+      const node = renderOrder(order);
+      feed.prepend(node);
+    });
+    pruneFeed();
+  };
+
+  const fetchOrders = async () => {
+    if (!pollUrl || loading) return;
+    loading = true;
+    try {
+      const params = {};
+      if (cursor > 0) {
+        params.after = cursor;
+      }
+      const { data } = await window.axios.get(pollUrl, { params });
+      if (!data?.ok) {
+        throw new Error('Unable to poll orders');
+      }
+      const incoming = Array.isArray(data.orders) ? data.orders : [];
+      if (incoming.length) {
+        const nextCursor = incoming.reduce((acc, order) => {
+          const id = Number(order?.id) || 0;
+          return id > acc ? id : acc;
+        }, cursor);
+        cursor = nextCursor;
+      }
+      if (data.latest_id) {
+        const latest = Number(data.latest_id);
+        if (!Number.isNaN(latest) && latest > cursor) {
+          cursor = latest;
+        }
+      }
+      panel.dataset.lastId = String(cursor);
+      handleOrders(incoming);
+    } catch (error) {
+      console.debug('Order poll skipped', error);
+    } finally {
+      loading = false;
+    }
+  };
+
+  const start = () => {
+    if (timer || !pollUrl) return;
+    timer = window.setInterval(fetchOrders, interval);
+  };
+
+  const stop = () => {
+    if (!timer) return;
+    window.clearInterval(timer);
+    timer = null;
+  };
+
+  refreshBtn?.addEventListener('click', () => {
+    fetchOrders();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stop();
+      return;
+    }
+    start();
+    fetchOrders();
+  });
+
+  start();
+  fetchOrders();
+})();
+</script>
+@endpush
 @endsection

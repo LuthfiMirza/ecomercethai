@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Facades\Storage;
@@ -57,8 +58,65 @@ class OrderController extends Controller
         $orders = $query->paginate(10)->appends(request()->query());
         $statusOptions = self::STATUS_OPTIONS;
         $paymentStatusOptions = self::PAYMENT_STATUS_OPTIONS;
+        $latestOrderId = (int) (Order::max('id') ?? 0);
 
-        return view('admin.orders.index', compact('orders', 'q', 'status', 'from', 'to', 'statusOptions', 'paymentStatusOptions'));
+        return view('admin.orders.index', compact('orders', 'q', 'status', 'from', 'to', 'statusOptions', 'paymentStatusOptions', 'latestOrderId'));
+    }
+
+    public function poll(Request $request): JsonResponse
+    {
+        $lastId = max((int) $request->query('after', 0), 0);
+        $limit = (int) $request->query('limit', 5);
+        $limit = max(1, min($limit, 25));
+
+        $query = Order::with('user:id,name,email');
+
+        if ($lastId > 0) {
+            $query->where('id', '>', $lastId)->orderBy('id');
+        } else {
+            $query->orderByDesc('created_at');
+        }
+
+        $orders = $query->take($limit)->get();
+        $latestId = Order::max('id') ?? null;
+
+        $payload = $orders->map(function (Order $order) {
+            $status = (string) ($order->status ?? 'pending');
+            $paymentStatus = (string) ($order->payment_status ?? 'pending');
+
+            return [
+                'id' => $order->id,
+                'code' => sprintf('#ORD%d', $order->id),
+                'customer' => [
+                    'id' => $order->user->id ?? null,
+                    'name' => $order->user->name ?? __('Customer'),
+                ],
+                'total_amount' => $order->total_amount,
+                'total_formatted' => format_price($order->total_amount),
+                'status' => $status,
+                'status_label' => ucfirst(str_replace('_', ' ', $status)),
+                'payment_status' => $paymentStatus,
+                'payment_status_label' => ucfirst(str_replace('_', ' ', $paymentStatus)),
+                'created_at' => $order->created_at?->toIso8601String(),
+                'created_label' => $order->created_at?->timezone(config('app.timezone'))->format('d M Y H:i'),
+                'url' => localized_route('admin.orders.show', ['id' => $order->id]),
+            ];
+        })->values();
+
+        $cursor = $payload->max('id');
+        $candidates = array_filter([
+            $latestId,
+            $cursor,
+            $lastId > 0 ? $lastId : null,
+        ], static fn ($value) => $value !== null);
+
+        $latest = ! empty($candidates) ? max($candidates) : null;
+
+        return response()->json([
+            'ok' => true,
+            'orders' => $payload,
+            'latest_id' => $latest,
+        ]);
     }
 
     /**

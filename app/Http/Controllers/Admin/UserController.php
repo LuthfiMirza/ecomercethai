@@ -54,7 +54,9 @@ class UserController extends Controller
             'is_admin' => (bool) $request->is_admin,
         ]);
         
-        return redirect()->route('admin.users.index', ['locale' => $locale])->with('success', 'User created successfully.');
+        return redirect()
+            ->route('admin.users.index', ['locale' => $locale])
+            ->with('success', __('admin.users.quick_admin.success'));
     }
 
     /**

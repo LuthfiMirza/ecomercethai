@@ -45,59 +45,19 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/faqs', function () {
-    $faqs = [
-        [
-            'category' => __('Pesanan & Pengiriman'),
-            'items' => [
-                [
-                    'question' => __('Berapa lama proses pengiriman pesanan?'),
-                    'answer' => __('Pesanan diproses dalam 1-2 hari kerja. Pengiriman Jabodetabek memerlukan 2-4 hari, sedangkan luar kota 3-7 hari tergantung jasa ekspedisi yang dipilih.'),
-                ],
-                [
-                    'question' => __('Bagaimana cara melacak status pesanan?'),
-                    'answer' => __('Setelah pesanan dikirim, kami mengirimkan email berisi nomor resi. Anda dapat melacaknya melalui halaman akun atau situs resmi jasa ekspedisi.'),
-                ],
-                [
-                    'question' => __('Apakah bisa mengambil pesanan secara langsung?'),
-                    'answer' => __('Saat ini kami fokus pada pengiriman online. Namun, Anda dapat mengunjungi showroom kami di Jakarta untuk demo produk sebelum membeli.'),
-                ],
-            ],
-        ],
-        [
-            'category' => __('Pembayaran'),
-            'items' => [
-                [
-                    'question' => __('Metode pembayaran apa yang tersedia?'),
-                    'answer' => __('Kami menerima pembayaran melalui transfer bank, virtual account, e-wallet, kartu kredit, dan cicilan 0% untuk bank tertentu.'),
-                ],
-                [
-                    'question' => __('Apakah transaksi saya aman?'),
-                    'answer' => __('Tentu. Seluruh pembayaran diproses melalui mitra gateway bersertifikasi PCI-DSS dengan enkripsi penuh.'),
-                ],
-                [
-                    'question' => __('Bisakah mengubah metode pembayaran setelah checkout?'),
-                    'answer' => __('Untuk menjaga keamanan, perubahan metode pembayaran hanya bisa dilakukan dengan membuat pesanan baru. Silakan hubungi tim support jika membutuhkan bantuan.'),
-                ],
-            ],
-        ],
-        [
-            'category' => __('Produk & Garansi'),
-            'items' => [
-                [
-                    'question' => __('Apakah produk yang dijual bergaransi resmi?'),
-                    'answer' => __('Semua produk hardware kami bergaransi resmi distributor Indonesia minimal 1 tahun. Detail garansi tertera pada deskripsi produk.'),
-                ],
-                [
-                    'question' => __('Bagaimana prosedur klaim garansi?'),
-                    'answer' => __('Hubungi support kami dengan menyertakan bukti pembelian dan video/ foto kendala. Kami akan membantu proses klaim ke service center resmi.'),
-                ],
-                [
-                    'question' => __('Bisakah melakukan retur jika barang tidak sesuai?'),
-                    'answer' => __('Anda dapat mengajukan retur maksimal 7 hari setelah barang diterima selama segel belum dibuka dan kelengkapan lengkap. Kami siap membantu prosesnya.'),
-                ],
-            ],
-        ],
-    ];
+    $faqs = collect(trans('faq.groups', []))
+        ->map(function ($group) {
+            return [
+                'category' => $group['category'] ?? '',
+                'items' => collect($group['items'] ?? [])->map(function ($item) {
+                    return [
+                        'question' => $item['question'] ?? '',
+                        'answer' => $item['answer'] ?? '',
+                    ];
+                })->all(),
+            ];
+        })
+        ->all();
 
     return view('pages.faqs', compact('faqs'));
 })->name('faqs');
@@ -224,6 +184,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('/banners/{id}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/poll', [OrderController::class, 'poll'])->name('orders.poll');
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
         Route::get('/orders/{id}/edit', [OrderController::class, 'edit'])->name('orders.edit');
         Route::put('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');

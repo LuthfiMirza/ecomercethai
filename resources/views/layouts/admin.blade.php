@@ -193,7 +193,7 @@
                     <div class="icon-circle bg-gradient-to-tr from-orange-400 to-amber-500 text-white font-semibold shadow-[0_18px_35px_-18px_rgba(255,120,70,0.75)]">TT</div>
                     <div>
                         <p class="text-base font-semibold text-slate-700 dark:text-white">{{ config('app.name', 'Lungpaeit') }}</p>
-                        <p class="text-xs text-slate-400 dark:text-slate-400/80">Admin Workspace</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-400/80">{{ __('admin.brand_tagline') }}</p>
                     </div>
                 </div>
                 <button 
@@ -211,49 +211,49 @@
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     </span>
-                    <span class="font-medium">Dashboard</span>
+                    <span class="font-medium">{{ __('admin.nav.dashboard') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.products.index') }}" class="admin-nav-link {{ request()->routeIs('admin.products.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                     </span>
-                    <span class="font-medium">Products</span>
+                    <span class="font-medium">{{ __('admin.nav.products') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.categories.index') }}" class="admin-nav-link {{ request()->routeIs('admin.categories.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
                     </span>
-                    <span class="font-medium">Categories</span>
+                    <span class="font-medium">{{ __('admin.nav.categories') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.orders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                     </span>
-                    <span class="font-medium">Orders</span>
+                    <span class="font-medium">{{ __('admin.nav.orders') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.users.index') }}" class="admin-nav-link {{ request()->routeIs('admin.users.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </span>
-                    <span class="font-medium">Users</span>
+                    <span class="font-medium">{{ __('admin.nav.users') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.promos.index') }}" class="admin-nav-link {{ request()->routeIs('admin.promos.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4m0-8V4m0 12v4m8-8h4M4 12H0"></path></svg>
                     </span>
-                    <span class="font-medium">Promos</span>
+                    <span class="font-medium">{{ __('admin.nav.promos') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.reports.index') }}" class="admin-nav-link {{ request()->routeIs('admin.reports.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18m-7-7h18"></path></svg>
                     </span>
-                    <span class="font-medium">Reports</span>
+                    <span class="font-medium">{{ __('admin.nav.reports') }}</span>
                 </a>
 
                 <a href="{{ localized_route('admin.chat.index') }}" class="admin-nav-link {{ request()->routeIs('admin.chat.*') ? 'admin-nav-link-active text-white' : '' }}">
@@ -263,9 +263,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8M8 15h5" />
                         </svg>
                     </span>
-                    <span class="font-medium">Live Chat</span>
+                    <span class="font-medium">{{ __('admin.nav.chat') }}</span>
                 </a>
             </nav>
+
+            <div class="mt-8 rounded-2xl border border-white/40 bg-white/40 p-4 shadow-inner backdrop-blur dark:border-slate-700 dark:bg-slate-900/60">
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">{{ __('admin.language.label') }}</p>
+                <div class="mt-3">
+                    <x-language-switcher />
+                </div>
+            </div>
         </aside>
         
         <!-- Main Content -->
@@ -291,7 +298,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
                                     </span>
-                                    <input type="text" name="q" placeholder="Search..." class="block w-72 rounded-2xl border border-white/60 bg-white/80 py-2.5 pl-11 pr-4 text-sm placeholder-slate-400 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/60">
+                                    <input type="text" name="q" placeholder="{{ __('admin.header.search_placeholder') }}" class="block w-72 rounded-2xl border border-white/60 bg-white/80 py-2.5 pl-11 pr-4 text-sm placeholder-slate-400 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/60">
                                 </div>
                             </form>
                         </div>
@@ -322,7 +329,7 @@
                             <button
                                 type="button"
                                 class="relative icon-circle text-slate-500 hover:text-slate-900 dark:text-slate-200"
-                                aria-label="Notifications"
+                                aria-label="{{ __('admin.header.notifications') }}"
                                 @click="open = !open"
                             >
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -341,8 +348,8 @@
                             >
                                 <div class="border-b border-white/60 px-5 py-4 dark:border-slate-700">
                                     <div class="flex items-center justify-between">
-                                        <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-200">{{ __('Notifications') }}</h3>
-                                        <button class="text-xs font-medium text-sky-500 hover:text-sky-600" @click="open = false">{{ __('Close') }}</button>
+                                        <h3 class="text-sm font-semibold text-slate-600 dark:text-slate-200">{{ __('admin.header.notifications') }}</h3>
+                                        <button class="text-xs font-medium text-sky-500 hover:text-sky-600" @click="open = false">{{ __('admin.header.close') }}</button>
                                     </div>
                                 </div>
                                 <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
@@ -379,13 +386,13 @@
                                         </div>
                                     @empty
                                         <div class="px-5 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
-                                            {{ __('You are all caught up!') }}
+                                            {{ __('admin.header.empty') }}
                                         </div>
                                     @endforelse
                                 </div>
                                 @if($inlineNotifications->isNotEmpty())
                                     <div class="border-t border-white/60 bg-slate-50/80 px-5 py-3 text-center text-xs font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
-                                        {{ __('Keep up the great work!') }}
+                                        {{ __('admin.header.footer') }}
                                     </div>
                                 @endif
                             </div>
@@ -401,13 +408,13 @@
                             </button>
                             
                             <div x-show="dropdownOpen" x-cloak @click.outside="dropdownOpen = false" class="absolute right-0 mt-3 w-52 soft-card rounded-2xl overflow-hidden z-20" x-transition.origin.top.right>
-                                <a href="{{ localized_route('admin.profile.show') }}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Your Profile</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Settings</a>
+                                <a href="{{ localized_route('admin.profile.show') }}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">{{ __('admin.header.profile') }}</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">{{ __('admin.header.settings') }}</a>
                                 <div class="border-t border-slate-200 dark:border-slate-700"></div>
                                 <form action="{{ localized_route('admin.logout') }}" method="POST">
                                     @csrf
                                     <button type="submit" class="w-full text-left block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">
-                                        Logout
+                                        {{ __('admin.header.logout') }}
                                     </button>
                                 </form>
                             </div>

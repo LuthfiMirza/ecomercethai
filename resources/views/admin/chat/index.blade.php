@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', __('Live Chat'))
+@section('title', __('admin.chat.title'))
 @section('content')
 
 @php
@@ -26,11 +26,11 @@
   }
 </style>
 
-<x-admin.header :title="__('Live Chat')" :breadcrumbs="[['label' => 'Admin', 'href' => localized_route('admin.dashboard')], ['label' => __('Live Chat')]]">
+<x-admin.header :title="__('admin.chat.title')" :breadcrumbs="[['label' => 'Admin', 'href' => localized_route('admin.dashboard')], ['label' => __('admin.chat.title')]]">
   <div class="flex items-center gap-3 text-sm">
     <span class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 px-3 py-1">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span>
-      <span>{{ __('Admins online') }}: <span id="onlineCount">0</span></span>
+      <span>{{ __('admin.chat.admins_online') }}: <span id="onlineCount">0</span></span>
     </span>
   </div>
 </x-admin.header>
@@ -87,14 +87,14 @@
       </div>
     </div>
     <div class="border-t border-gray-200 dark:border-gray-700 p-4">
-      <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">{{ __('Online admins') }}</div>
+      <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">{{ __('admin.chat.online_list_label') }}</div>
       <ul id="onlineList" class="space-y-1 text-sm text-gray-700 dark:text-gray-300 max-h-28 overflow-y-auto"></ul>
     </div>
     <div class="border-t border-gray-200 dark:border-gray-700 p-4 space-y-3">
       <div>
-        <label for="newConversationSelect" class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('Start a new conversation') }}</label>
+        <label for="newConversationSelect" class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('admin.chat.new_conversation') }}</label>
         <select id="newConversationSelect" class="mt-1 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-100 px-3 py-2">
-          <option value="">{{ __('Select customer') }}</option>
+          <option value="">{{ __('admin.chat.select_customer') }}</option>
           @foreach(($customerChoices ?? []) as $customer)
             <option value="{{ $customer->id }}">
               {{ $customer->name ?? __('Customer') }} — {{ $customer->email }}
@@ -104,7 +104,7 @@
       </div>
       <button type="button" id="newConversationButton" class="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 text-white text-sm font-medium py-2 hover:bg-primary-700 disabled:opacity-60">
         <i class="fa-solid fa-comments"></i>
-        <span>{{ __('Open Chat') }}</span>
+        <span>{{ __('admin.chat.open_chat') }}</span>
       </button>
     </div>
   </div>
@@ -919,6 +919,20 @@ function startMsgPolling(force = false) {
       els.newConversationButton.disabled = false;
     });
   });
+
+  const handleVisibility = () => {
+    if (document.hidden) {
+      return;
+    }
+    if (!state.activeConversationId) {
+      return;
+    }
+    pollMessages(state.activeConversationId).catch(() => {});
+    startMsgPolling(true);
+  };
+
+  document.addEventListener('visibilitychange', handleVisibility);
+  window.addEventListener('focus', handleVisibility);
 
   (async function bootstrap() {
     try {
