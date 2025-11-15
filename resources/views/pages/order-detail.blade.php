@@ -81,11 +81,14 @@
         <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Produk dalam Pesanan') }}</h2>
         <div class="divide-y divide-white/60 dark:divide-neutral-800">
           @foreach($items as $item)
-            <div class="py-4 flex flex-wrap items-center justify-between gap-4 first:pt-0">
+              <div class="py-4 flex flex-wrap items-center justify-between gap-4 first:pt-0">
               <div class="flex-1 min-w-[200px]">
                 <div class="text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $item->product?->name ?? __('Produk') }}</div>
                 @if($item->product?->brand)
                   <div class="text-xs text-neutral-500">{{ $item->product->brand }}</div>
+                @endif
+                @if($item->color)
+                  <div class="text-xs text-neutral-500">{{ __('product.color') }}: {{ $item->color }}</div>
                 @endif
                 <div class="text-xs text-neutral-500">{{ __('Qty: :qty', ['qty' => $item->quantity]) }}</div>
               </div>

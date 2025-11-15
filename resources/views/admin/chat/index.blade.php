@@ -35,12 +35,19 @@
   </div>
 </x-admin.header>
 
-<div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6"
+     data-chat-auto-refresh="true"
+     data-conversation-interval="10000"
+     data-message-interval="6000"
+     data-unread-interval="7000">
   <!-- Conversations -->
   <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-[70vh]">
     <div class="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
       <div>
-        <h3 class="font-semibold text-gray-800 dark:text-gray-100">{{ __('Conversations') }}</h3>
+        <h3 class="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {{ __('Conversations') }}
+          <span id="chatUnreadBadge" class="hidden rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600 dark:bg-rose-500/20 dark:text-rose-100"></span>
+        </h3>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('Select a customer to view messages.') }}</p>
       </div>
       <div class="flex items-center gap-2">
@@ -116,7 +123,7 @@
         <div class="font-medium text-gray-800 dark:text-gray-100" id="chatTitle">{{ optional($initialConversation)->name ?? __('Select a conversation') }}</div>
         <div class="text-xs text-gray-500 dark:text-gray-400" id="chatSubtitle">
           @if($initialConversation && $lastMessageLabel)
-            {{ __('Last message at') }} {{ $lastMessageLabel }}
+            {{ __('admin.chat.last_message_prefix') }} {{ $lastMessageLabel }}
           @elseif($initialConversation)
             {{ __('No messages yet.') }}
           @else
@@ -125,6 +132,19 @@
         </div>
       </div>
       <button id="scrollBottom" type="button" class="hidden lg:inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/60">{{ __('Jump to latest') }}</button>
+    </div>
+    <div id="chatInlineAlert" class="mx-4 mt-3 hidden rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 shadow-sm dark:border-amber-500/40 dark:bg-amber-900/30 dark:text-amber-100">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p id="chatInlineAlertText" class="font-semibold">{{ __('admin.chat.new_message_from', ['name' => __('Customer')]) }}</p>
+        <div class="flex flex-wrap gap-2 text-xs font-semibold">
+          <button type="button" id="chatInlineAlertView" class="inline-flex items-center justify-center rounded-lg bg-amber-600 px-3 py-1.5 text-white shadow hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400">
+            {{ __('View') }}
+          </button>
+          <button type="button" id="chatInlineAlertDismiss" class="inline-flex items-center justify-center rounded-lg border border-transparent px-3 py-1.5 text-amber-700 hover:border-amber-500/70 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 dark:text-amber-200 dark:hover:bg-amber-800/30">
+            {{ __('Dismiss') }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div id="chatWindow" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-900/20">
@@ -172,19 +192,151 @@
   </div>
 </div>
 
+<div id="chatToast" class="fixed bottom-6 right-6 z-40 w-full max-w-xs rounded-2xl border border-amber-200 bg-white p-4 shadow-2xl shadow-amber-500/20 transition duration-300 ease-out opacity-0 translate-y-4 pointer-events-none dark:bg-gray-900 dark:border-amber-400/40">
+  <div class="flex items-start gap-3">
+    <div class="mt-1 h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse"></div>
+    <div class="flex-1">
+      <p class="text-sm font-semibold text-gray-800 dark:text-gray-100" id="chatToastText">{{ __('admin.chat.new_message_from', ['name' => __('Customer')]) }}</p>
+      <p class="text-xs text-gray-500 dark:text-gray-300 mt-1">{{ __('Stay on this tab to reply instantly.') }}</p>
+    </div>
+    <button type="button" id="chatToastClose" class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300">
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l8 8M6 14l8-8" />
+      </svg>
+    </button>
+  </div>
+</div>
+
 @push('scripts')
 <script>
 (function () {
+  const root = document.querySelector('[data-chat-auto-refresh]');
+  const hasHttpClient = typeof window.axios !== 'undefined'
+    || typeof window.fetch !== 'undefined'
+    || typeof window.XMLHttpRequest !== 'undefined';
+  if (!root || !hasHttpClient) {
+    return;
+  }
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+
+  const http = (() => {
+    const baseHeaders = {
+      'X-Requested-With': 'XMLHttpRequest',
+      Accept: 'application/json',
+    };
+
+    if (csrfToken) {
+      baseHeaders['X-CSRF-TOKEN'] = csrfToken;
+    }
+
+    const requestWithXHR = (method, url, options = {}) => {
+      const target = buildUrl(url, options.params || {});
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open(method, target, true);
+        xhr.withCredentials = true;
+
+        const headers = { ...baseHeaders, ...(options.headers || {}) };
+        Object.keys(headers).forEach((key) => {
+          const value = headers[key];
+          if (value !== undefined && value !== null) {
+            xhr.setRequestHeader(key, value);
+          }
+        });
+
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState !== XMLHttpRequest.DONE) {
+            return;
+          }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+              resolve({ data });
+            } catch (error) {
+              reject(error);
+            }
+          } else {
+            reject(new Error(`Request failed with status ${xhr.status}`));
+          }
+        };
+
+        const payload = method === 'POST' ? JSON.stringify(options.data || {}) : null;
+        xhr.send(payload);
+      });
+    };
+
+    if (typeof window.axios !== 'undefined') {
+      return {
+        get: (url, config = {}) => window.axios.get(url, config),
+        post: (url, data = {}, config = {}) => window.axios.post(url, data, config),
+      };
+    }
+
+    const buildUrl = (url, params = {}) => {
+      const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+      if (!entries.length) {
+        return url;
+      }
+      const search = new URLSearchParams(entries).toString();
+      return url.includes('?') ? `${url}&${search}` : `${url}?${search}`;
+    };
+
+    return {
+      async get(url, config = {}) {
+        if (typeof window.fetch !== 'undefined') {
+          const target = buildUrl(url, config.params || {});
+          const response = await fetch(target, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: { ...baseHeaders, ...(config.headers || {}) },
+          });
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+          const data = await response.json();
+          return { data };
+        }
+
+        return requestWithXHR('GET', url, { params: config.params, headers: config.headers });
+      },
+      async post(url, data = {}, config = {}) {
+        const headers = { 'Content-Type': 'application/json', ...baseHeaders, ...(config.headers || {}) };
+        if (typeof window.fetch !== 'undefined') {
+          const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers,
+            body: JSON.stringify(data),
+          });
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+          const json = await response.json();
+          return { data: json };
+        }
+
+        return requestWithXHR('POST', url, { headers, data });
+      },
+    };
+  })();
   const config = {
     adminId: @json(auth()->id()),
     conversationsUrl: @json(localized_route('admin.chat.conversations')),
     messagesUrlTemplate: @json(localized_route('admin.chat.conversations.show', ['user' => '__USER__'])),
+    unreadUrl: @json(localized_route('admin.chat.unread')),
     sendUrl: @json(localized_route('admin.chat.send')),
     indexUrlTemplate: @json(localized_route('admin.chat.index', ['conversation' => '__CONV__'])),
     initialConversation: @json(optional($initialConversation)?->only(['id', 'name'])),
     initialConversations: @json($conversationSeed),
     initialMessages: @json($messageSeed),
     initialConversationLatestId: @json($initialConversationLatestId),
+  };
+  const labels = {
+    you: @json(__('admin.chat.you_label')),
+    adminFallback: @json(__('admin.chat.admin_fallback')),
+    lastMessage: @json(__('admin.chat.last_message_prefix')),
+    toastTemplate: @json(__('admin.chat.new_message_from')),
+    openChat: @json(__('admin.chat.open_chat')),
   };
 
   const els = {
@@ -205,6 +357,20 @@
     newConversationSelect: document.getElementById('newConversationSelect'),
     newConversationButton: document.getElementById('newConversationButton'),
     convoHidden: document.getElementById('chatConversationId'),
+    unreadBadge: document.getElementById('chatUnreadBadge'),
+    bellIndicator: document.getElementById('chatBellIndicator'),
+    bellList: document.getElementById('chatNotificationDynamic'),
+  };
+  const alertEls = {
+    root: document.getElementById('chatInlineAlert'),
+    text: document.getElementById('chatInlineAlertText'),
+    view: document.getElementById('chatInlineAlertView'),
+    dismiss: document.getElementById('chatInlineAlertDismiss'),
+  };
+  const toastEls = {
+    root: document.getElementById('chatToast'),
+    text: document.getElementById('chatToastText'),
+    close: document.getElementById('chatToastClose'),
   };
 
   const state = {
@@ -212,14 +378,17 @@
     activeConversationId: config.initialConversation?.id || null,
     filter: 'all',
     loadingMessages: false,
+    unreadCursor: 0,
+    unreadTotal: 0,
   };
 
-  const POLL_CONV_MS = 10000;
-  const POLL_MSG_MS = 7000;
+  const conversationInterval = Number(root.dataset.conversationInterval || 10000);
+  const messageInterval = Number(root.dataset.messageInterval || 7000);
+  const unreadInterval = Number(root.dataset.unreadInterval || 8000);
 
-  let realtimeActive = false;
   let convTimer = null;
   let msgTimer = null;
+  let unreadTimer = null;
   let lastConvJson = '';
   let lastMsgJson = '';
   const messageCursor = new Map();
@@ -227,13 +396,102 @@
   const api = {
     list: config.conversationsUrl,
     messages: (id) => config.messagesUrlTemplate.replace('__USER__', encodeURIComponent(id)),
+    unread: config.unreadUrl,
   };
 
   const onlineAdmins = new Map();
+  let toastTimer = null;
+  const alertState = {
+    conversationId: null,
+  };
+  const bellNotifications = new Map();
+  const BELL_NOTIFICATION_LIMIT = 5;
+
+  function updateBellIndicator(count = 0) {
+    if (!els.bellIndicator) {
+      return;
+    }
+    const total = Number(count) || 0;
+    if (total > 0 || bellNotifications.size > 0) {
+      els.bellIndicator.classList.remove('hidden');
+    } else {
+      els.bellIndicator.classList.add('hidden');
+    }
+  }
+
+  function updateGlobalCursor(id) {
+    const numericId = Number(id);
+    if (Number.isNaN(numericId) || numericId <= 0) {
+      return;
+    }
+    if (!state.unreadCursor || numericId > state.unreadCursor) {
+      state.unreadCursor = numericId;
+    }
+  }
+
+  function seedOnlineAdmins() {
+    onlineAdmins.clear();
+    if (config.adminId) {
+      const id = Number(config.adminId);
+      onlineAdmins.set(id, {
+        id,
+        name: labels.you,
+      });
+    }
+    renderOnlineAdmins();
+  }
+
+  function hideToast() {
+    if (!toastEls.root) return;
+    toastEls.root.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+    toastEls.root.classList.remove('opacity-100', 'translate-y-0');
+  }
+
+  function showToast(message) {
+    if (!toastEls.root || !toastEls.text) return;
+    toastEls.text.textContent = message;
+    toastEls.root.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+    toastEls.root.classList.add('opacity-100', 'translate-y-0');
+    window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      hideToast();
+    }, 4000);
+  }
+
+  function showInlineAlert(message, conversationId) {
+    if (!alertEls.root || !alertEls.text) return;
+    alertState.conversationId = conversationId || null;
+    alertEls.text.textContent = message;
+    alertEls.root.classList.remove('hidden');
+  }
+
+  function hideInlineAlert() {
+    alertState.conversationId = null;
+    alertEls.root?.classList.add('hidden');
+  }
 
   const seededConversations = Array.isArray(config.initialConversations) ? config.initialConversations : [];
   const seededMessages = Array.isArray(config.initialMessages) ? config.initialMessages : [];
   const lastSeedMessage = seededMessages.length ? seededMessages[seededMessages.length - 1] : null;
+
+  let globalCursorSeed = 0;
+  seededConversations.forEach((item) => {
+    const id = Number(item?.last_message?.id ?? 0);
+    if (!Number.isNaN(id) && id > globalCursorSeed) {
+      globalCursorSeed = id;
+    }
+  });
+  const initialLatest = Number(config.initialConversationLatestId ?? 0);
+  if (!Number.isNaN(initialLatest) && initialLatest > globalCursorSeed) {
+    globalCursorSeed = initialLatest;
+  }
+  if (lastSeedMessage?.id) {
+    const lastId = Number(lastSeedMessage.id);
+    if (!Number.isNaN(lastId) && lastId > globalCursorSeed) {
+      globalCursorSeed = lastId;
+    }
+  }
+  updateGlobalCursor(globalCursorSeed);
 
   if (els.convoHidden && state.activeConversationId) {
     els.convoHidden.value = state.activeConversationId;
@@ -243,6 +501,9 @@
     seededConversations.forEach((item) => {
       if (item?.user?.id) {
         upsertConversation(item);
+        if (item?.last_message?.id) {
+          updateGlobalCursor(item.last_message.id);
+        }
       }
     });
     renderConversationList();
@@ -252,7 +513,7 @@
   if (config.initialConversation?.id && seededMessages.length) {
     renderMessages(seededMessages, config.initialConversation.id);
     if (lastSeedMessage?.created_at) {
-      els.chatSubtitle.textContent = '{{ __('Last message at') }} ' + timeLabel(lastSeedMessage.created_at);
+      els.chatSubtitle.textContent = `${labels.lastMessage} ${timeLabel(lastSeedMessage.created_at)}`;
     }
     updateFormState(true);
   } else if (config.initialConversation && !seededMessages.length) {
@@ -329,6 +590,24 @@
     }
   }
 
+  function renderUnreadBadge(count) {
+    if (!els.unreadBadge) {
+      return;
+    }
+    const value = Number(count) || 0;
+    state.unreadTotal = value;
+    if (value <= 0) {
+      els.unreadBadge.classList.add('hidden');
+      els.unreadBadge.textContent = '';
+      updateBellIndicator(value);
+      return;
+    }
+    const label = value > 99 ? '99+' : value.toString();
+    els.unreadBadge.textContent = label;
+    els.unreadBadge.classList.remove('hidden');
+    updateBellIndicator(value);
+  }
+
   function detectNewMessages(previous) {
     const updated = [];
     let shouldNotify = false;
@@ -343,7 +622,17 @@
       }
       updated.push(conversationId);
       if (!last.is_from_admin) {
+        const userName = entry?.user?.name || labels.adminFallback;
+        const message = labels.toastTemplate.replace(':name', userName);
         const isActive = Number(state.activeConversationId) === conversationId;
+        if (!isActive) {
+          showToast(message);
+          showInlineAlert(message, conversationId);
+          queueBellNotification(conversationId, last);
+        } else {
+          hideInlineAlert();
+          clearBellNotification(conversationId);
+        }
         if (!isActive || !document.hasFocus()) {
           shouldNotify = true;
         }
@@ -357,13 +646,19 @@
     return updated;
   }
 
-function startConvPolling(force = false) {
-  if ((!force && realtimeActive) || convTimer || !api.list) {
-    return;
-  }
+  function startConvPolling(force = false) {
+    if (!api.list) {
+      return;
+    }
+    if (convTimer && !force) {
+      return;
+    }
+    if (convTimer) {
+      window.clearInterval(convTimer);
+    }
     convTimer = window.setInterval(() => {
       refreshConversations({ silent: true, trackChanges: true }).catch(() => {});
-    }, POLL_CONV_MS);
+    }, conversationInterval);
   }
 
   function stopConvPolling() {
@@ -372,27 +667,54 @@ function startConvPolling(force = false) {
     convTimer = null;
   }
 
-function startMsgPolling(force = false) {
-  if (!state.activeConversationId) {
-    stopMsgPolling();
-    return;
-  }
-  if (!force && realtimeActive) {
-    stopMsgPolling();
-    return;
-  }
+  function startMsgPolling(force = false) {
+    if (!state.activeConversationId) {
+      stopMsgPolling();
+      return;
+    }
+
+    if (msgTimer && !force) {
+      return;
+    }
+
     if (msgTimer) {
       window.clearInterval(msgTimer);
     }
+
     msgTimer = window.setInterval(() => {
+      if (!state.activeConversationId) {
+        stopMsgPolling();
+        return;
+      }
       pollMessages(state.activeConversationId).catch(() => {});
-    }, POLL_MSG_MS);
+    }, messageInterval);
   }
 
   function stopMsgPolling() {
     if (!msgTimer) return;
     window.clearInterval(msgTimer);
     msgTimer = null;
+  }
+
+  function startUnreadPolling(force = false) {
+    if (!api.unread) {
+      return;
+    }
+    if (unreadTimer && !force) {
+      return;
+    }
+    if (unreadTimer) {
+      window.clearInterval(unreadTimer);
+    }
+    unreadTimer = window.setInterval(() => {
+      pollUnreadMessages().catch(() => {});
+    }, unreadInterval);
+  }
+
+  function stopUnreadPolling() {
+    if (!unreadTimer) return;
+    window.clearInterval(unreadTimer);
+    unreadTimer = null;
   }
 
   function upsertConversation(payload) {
@@ -445,6 +767,9 @@ function startMsgPolling(force = false) {
         return bTime - aTime;
       });
 
+    const unreadTotal = items.reduce((sum, entry) => sum + (entry.unread ? 1 : 0), 0);
+    renderUnreadBadge(unreadTotal);
+
     const filteredItems = items.filter((item) => {
       if (state.filter === 'unread') {
         return Boolean(item.unread);
@@ -492,6 +817,121 @@ function startMsgPolling(force = false) {
     }).join('');
 
     els.conversationItems.innerHTML = markup;
+  }
+
+  function renderBellNotifications() {
+    if (!els.bellList) {
+      updateBellIndicator(state.unreadTotal);
+      return;
+    }
+
+    els.bellList.innerHTML = '';
+    if (!bellNotifications.size) {
+      updateBellIndicator(state.unreadTotal);
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    const entries = Array.from(bellNotifications.values()).reverse();
+    entries.forEach((entry) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex items-start gap-3 px-5 py-4 bg-amber-50/80 dark:bg-amber-900/30';
+      wrapper.dataset.chatNotifyTarget = entry.id;
+      const title = labels.toastTemplate.replace(':name', entry.name || labels.adminFallback);
+      const safeTitle = escapeHtml(title);
+      const previewText = escapeHtml(entry.preview || '');
+      const timestamp = escapeHtml(timeLabel(entry.time));
+      const buttonLabel = escapeHtml(labels.openChat || '');
+      wrapper.innerHTML = `
+        <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 5h12M6 10h8m-6 5h4" />
+          </svg>
+        </span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-slate-700 dark:text-slate-100">${safeTitle}</p>
+          <p class="text-xs text-slate-500 dark:text-slate-300 break-words">${previewText}</p>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">${timestamp}</p>
+        </div>
+        <button type="button" class="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-200 dark:hover:text-amber-50" data-chat-notify-target="${entry.id}">
+          ${buttonLabel}
+        </button>
+      `;
+      fragment.appendChild(wrapper);
+    });
+
+    els.bellList.appendChild(fragment);
+    updateBellIndicator(state.unreadTotal);
+  }
+
+  function queueBellNotification(conversationId, message) {
+    const id = Number(conversationId);
+    if (!id || Number.isNaN(id)) {
+      return;
+    }
+
+    const entry = {
+      id,
+      name: message?.sender?.name || message?.conversation?.name || labels.adminFallback,
+      preview: message?.content || '',
+      time: message?.created_at || new Date().toISOString(),
+    };
+
+    if (bellNotifications.has(id)) {
+      bellNotifications.delete(id);
+    }
+
+    bellNotifications.set(id, entry);
+    while (bellNotifications.size > BELL_NOTIFICATION_LIMIT) {
+      const iterator = bellNotifications.keys().next();
+      if (iterator.done) {
+        break;
+      }
+      bellNotifications.delete(iterator.value);
+    }
+
+    renderBellNotifications();
+  }
+
+  function clearBellNotification(conversationId) {
+    if (!conversationId || !bellNotifications.size) {
+      updateBellIndicator(state.unreadTotal);
+      return;
+    }
+    const id = Number(conversationId);
+    if (Number.isNaN(id)) {
+      return;
+    }
+    if (bellNotifications.delete(id)) {
+      renderBellNotifications();
+    }
+  }
+
+  async function switchConversation(conversationId, options = {}) {
+    const targetId = Number(conversationId);
+    if (!targetId) {
+      return;
+    }
+    if (
+      Number(state.activeConversationId) === targetId &&
+      !state.loadingMessages &&
+      !options.force
+    ) {
+      hideInlineAlert();
+      return;
+    }
+    ensureAudioContext();
+    stopMsgPolling();
+    state.activeConversationId = targetId;
+    clearBellNotification(targetId);
+    lastMsgJson = '';
+    hideInlineAlert();
+    try {
+      await refreshMessages(targetId);
+      startMsgPolling(true);
+    } catch (error) {
+      console.error('Failed to load conversation', error);
+    }
   }
 
   function buildMessageNode(message, mine = false) {
@@ -560,6 +1000,9 @@ function startMsgPolling(force = false) {
     els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
 
     const latest = messages[messages.length - 1];
+    if (latest?.id) {
+      updateGlobalCursor(latest.id);
+    }
     const convKey = Number(conversationId);
     if (!Number.isNaN(convKey) && convKey > 0) {
       if (latest?.id) {
@@ -579,6 +1022,9 @@ function startMsgPolling(force = false) {
     els.chatWindow.appendChild(buildMessageNode(message, mine));
     els.chatWindow.scrollTop = els.chatWindow.scrollHeight;
     lastMsgJson = '';
+    if (message?.id) {
+      updateGlobalCursor(message.id);
+    }
 
     const convKey = Number(message?.conversation_id ?? state.activeConversationId ?? 0);
     if (!Number.isNaN(convKey) && convKey > 0 && message?.id) {
@@ -606,7 +1052,7 @@ function startMsgPolling(force = false) {
     }
 
     try {
-      const { data } = await window.axios.get(api.list);
+      const { data } = await http.get(api.list);
       if (!data?.ok) throw new Error('Unable to load conversations');
 
       const payload = data.conversations || [];
@@ -617,6 +1063,9 @@ function startMsgPolling(force = false) {
       state.conversations.clear();
       payload.forEach((item) => {
         upsertConversation(item);
+        if (item?.last_message?.id) {
+          updateGlobalCursor(item.last_message.id);
+        }
       });
 
       if (changed) {
@@ -634,8 +1083,7 @@ function startMsgPolling(force = false) {
         if (state.activeConversationId) {
           lastMsgJson = '';
           await refreshMessages(state.activeConversationId, { silent: true });
-          const forcePolling = !realtimeActive || convTimer !== null;
-          startMsgPolling(forcePolling);
+          startMsgPolling(true);
         }
       }
 
@@ -648,8 +1096,7 @@ function startMsgPolling(force = false) {
           !state.loadingMessages
         ) {
           await refreshMessages(activeId, { silent: true });
-          const forcePolling = !realtimeActive || convTimer !== null;
-          startMsgPolling(forcePolling);
+          startMsgPolling(true);
         }
       }
 
@@ -685,11 +1132,12 @@ function startMsgPolling(force = false) {
     }
 
     try {
-      const { data } = await window.axios.get(conversationUrl(conversationId));
+      const { data } = await http.get(conversationUrl(conversationId));
       if (!data?.ok) throw new Error('Unable to load messages');
 
       const conversation = data.conversation || { id: conversationId, name: '{{ __('Customer') }}' };
       state.activeConversationId = conversation.id;
+      clearBellNotification(conversation.id);
       if (els.convoHidden) {
         els.convoHidden.value = conversation.id;
       }
@@ -714,7 +1162,7 @@ function startMsgPolling(force = false) {
 
       els.chatTitle.textContent = conversation.name || `{{ __('Customer') }} #${conversation.id}`;
       if (messages.length) {
-        els.chatSubtitle.textContent = '{{ __('Last message at') }} ' + timeLabel(messages[messages.length - 1].created_at);
+        els.chatSubtitle.textContent = `${labels.lastMessage} ${timeLabel(messages[messages.length - 1].created_at)}`;
       } else {
         els.chatSubtitle.textContent = '{{ __('No messages yet.') }}';
       }
@@ -749,7 +1197,7 @@ function startMsgPolling(force = false) {
     }
 
     try {
-      const { data } = await window.axios.get(conversationUrl(conversationId), {
+      const { data } = await http.get(conversationUrl(conversationId), {
         params: { after: cursor },
       });
       if (!data?.ok) throw new Error('Unable to load new messages');
@@ -796,27 +1244,165 @@ function startMsgPolling(force = false) {
     }
   }
 
+  function processUnreadMessages(messages) {
+    if (!Array.isArray(messages) || !messages.length) {
+      return;
+    }
+
+    let pendingAlert = null;
+    let shouldPlaySound = false;
+
+    messages.forEach((message) => {
+      const conversationId = Number(message?.conversation_id || message?.conversation?.id || message?.sender?.id || 0);
+      if (!conversationId) {
+        return;
+      }
+
+      const mine = Boolean(message.is_from_admin && Number(message.sender?.id) === Number(config.adminId));
+      const cursor = messageCursor.get(conversationId);
+      if (cursor && message?.id && Number(message.id) <= Number(cursor)) {
+        return;
+      }
+
+      const user = message.conversation?.id
+        ? message.conversation
+        : (message.sender?.id
+          ? { id: message.sender.id, name: message.sender.name || labels.adminFallback }
+          : { id: conversationId, name: labels.adminFallback });
+
+      const isActive = Number(state.activeConversationId) === conversationId;
+      upsertConversation({
+        user,
+        last_message: message,
+        unread: !isActive,
+      });
+
+      if (isActive) {
+        clearBellNotification(conversationId);
+        appendMessage(message, mine);
+        hideInlineAlert();
+        if (document.hidden || !document.hasFocus()) {
+          shouldPlaySound = true;
+        }
+      } else {
+        pendingAlert = {
+          text: labels.toastTemplate.replace(':name', user.name || labels.adminFallback),
+          conversationId,
+        };
+        shouldPlaySound = true;
+        queueBellNotification(conversationId, message);
+      }
+
+      if (message?.id) {
+        updateGlobalCursor(message.id);
+      }
+    });
+
+    renderConversationList();
+
+    if (pendingAlert) {
+      showToast(pendingAlert.text);
+      showInlineAlert(pendingAlert.text, pendingAlert.conversationId);
+    }
+
+    if (shouldPlaySound) {
+      playNotification();
+    }
+  }
+
+  async function pollUnreadMessages() {
+    if (!api.unread) {
+      return;
+    }
+    const params = {};
+    if (state.unreadCursor && state.unreadCursor > 0) {
+      params.after = state.unreadCursor;
+    }
+    try {
+      const { data } = await http.get(api.unread, { params });
+      if (!data?.ok) {
+        return;
+      }
+      const latestId = Number(data.latest_id ?? 0);
+      if (!Number.isNaN(latestId) && latestId > 0) {
+        updateGlobalCursor(latestId);
+      }
+      const messages = Array.isArray(data.messages) ? data.messages : [];
+      if (!messages.length) {
+        return;
+      }
+      processUnreadMessages(messages);
+    } catch (error) {
+      console.debug('Unread polling skipped', error);
+    }
+  }
+
+
   function renderOnlineAdmins() {
     if (!els.onlineList) return;
     const values = Array.from(onlineAdmins.values());
     els.onlineList.innerHTML = values.map((admin) => `<li class="flex items-center gap-2">
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block"></span>
-      <span>${escapeHtml(admin.name || 'Admin')}</span>
+      <span>${escapeHtml(admin.name || labels.adminFallback)}</span>
     </li>`).join('');
     if (els.onlineCount) {
       els.onlineCount.textContent = values.length.toString();
     }
   }
 
-  if (config.adminId) {
-    onlineAdmins.set(Number(config.adminId), {
-      id: Number(config.adminId),
-      name: '{{ __('You') }}',
-    });
-    renderOnlineAdmins();
-  }
+  seedOnlineAdmins();
+  toastEls.close?.addEventListener('click', (event) => {
+    event.preventDefault();
+    hideToast();
+  });
+  alertEls.dismiss?.addEventListener('click', (event) => {
+    event.preventDefault();
+    hideInlineAlert();
+  });
+  alertEls.view?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    if (!alertState.conversationId) {
+      hideInlineAlert();
+      return;
+    }
+    await switchConversation(alertState.conversationId);
+    hideInlineAlert();
+  });
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      stopConvPolling();
+      stopMsgPolling();
+      stopUnreadPolling();
+      return;
+    }
+    startConvPolling(true);
+    if (state.activeConversationId) {
+      startMsgPolling(true);
+      pollMessages(state.activeConversationId).catch(() => {});
+    }
+    startUnreadPolling(true);
+    pollUnreadMessages().catch(() => {});
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  window.addEventListener('focus', () => {
+    refreshConversations({ silent: true }).catch(() => {});
+    if (state.activeConversationId) {
+      pollMessages(state.activeConversationId).catch(() => {});
+    }
+    pollUnreadMessages().catch(() => {});
+  });
 
   startConvPolling(true);
+  startUnreadPolling(true);
+  refreshConversations({ silent: true, trackChanges: true }).catch(() => {});
+  if (state.activeConversationId) {
+    startMsgPolling(true);
+    pollMessages(state.activeConversationId).catch(() => {});
+  }
+  pollUnreadMessages().catch(() => {});
 
   if (els.conversationItems) {
     els.conversationItems.addEventListener('click', (event) => {
@@ -833,14 +1419,7 @@ function startMsgPolling(force = false) {
       if (Number(state.activeConversationId) === id && !state.loadingMessages) {
         return;
       }
-      ensureAudioContext();
-      stopMsgPolling();
-      state.activeConversationId = id;
-      lastMsgJson = '';
-      refreshMessages(id).then(() => {
-        const forcePolling = !realtimeActive || convTimer !== null;
-        startMsgPolling(forcePolling);
-      }).catch(() => {});
+      switchConversation(id).catch(() => {});
     });
   }
 
@@ -857,7 +1436,7 @@ function startMsgPolling(force = false) {
 
     try {
       els.chatSend.disabled = true;
-      const { data } = await window.axios.post(config.sendUrl, {
+      const { data } = await http.post(config.sendUrl, {
         conversation_id: conversationId,
         content: text,
       });
@@ -908,22 +1487,38 @@ function startMsgPolling(force = false) {
     }
 
     els.newConversationButton.disabled = true;
-    stopMsgPolling();
-    state.activeConversationId = value;
-    lastMsgJson = '';
     messageCursor.delete(value);
-    refreshMessages(value).then(() => {
-      const forcePolling = !realtimeActive || convTimer !== null;
-      startMsgPolling(forcePolling);
-    }).finally(() => {
-      els.newConversationButton.disabled = false;
-    });
+    switchConversation(value)
+      .catch(() => {})
+      .finally(() => {
+        els.newConversationButton.disabled = false;
+      });
+  });
+
+  els.bellList?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-chat-notify-target]');
+    if (!target) {
+      return;
+    }
+    const conversationId = Number(target.dataset.chatNotifyTarget);
+    if (!conversationId) {
+      return;
+    }
+    ensureAudioContext();
+    switchConversation(conversationId)
+      .then(() => {
+        clearBellNotification(conversationId);
+      })
+      .catch(() => {});
   });
 
   const handleVisibility = () => {
     if (document.hidden) {
+      stopUnreadPolling();
       return;
     }
+    startUnreadPolling(true);
+    pollUnreadMessages().catch(() => {});
     if (!state.activeConversationId) {
       return;
     }
@@ -940,8 +1535,7 @@ function startMsgPolling(force = false) {
       if (state.activeConversationId) {
         lastMsgJson = '';
         await refreshMessages(state.activeConversationId);
-        const forcePolling = !realtimeActive || convTimer !== null;
-        startMsgPolling(forcePolling);
+        startMsgPolling(true);
       }
     } catch (error) {
       console.error('Initial chat load failed', error);

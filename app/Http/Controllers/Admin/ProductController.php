@@ -13,6 +13,8 @@ use App\Imports\ProductsImport;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\ProductImage;
+use Illuminate\Http\UploadedFile;
 
 class ProductController extends Controller
 {
@@ -66,6 +68,9 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
             'image' => 'nullable|image|max:4096',
+            'gallery_images' => 'nullable|array',
+            'gallery_images.*' => 'image|max:4096',
+            'colors' => 'nullable|string',
         ]);
         
         $payload = $request->only([
@@ -78,12 +83,16 @@ class ProductController extends Controller
         ]);
 
         $payload['is_active'] = $request->status === 'active';
+        $colors = $this->normalizeColors($request->input('colors'));
+        $payload['colors'] = $colors ?: null;
 
         if ($request->hasFile('image')) {
             $payload['image'] = $request->file('image')->store('products', 'public');
         }
 
-        Product::create($payload);
+        $product = Product::create($payload);
+        $this->storeGalleryImages($product, $request->file('gallery_images', []));
+        $this->ensurePrimaryGalleryImage($product);
         
         return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product created successfully.');
     }
@@ -107,7 +116,7 @@ class ProductController extends Controller
      */
     public function edit(string $locale, $id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('images')->findOrFail($id);
         $categories = Category::all();
         return view('admin.products.edit', compact('product', 'categories'));
     }
@@ -129,6 +138,11 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
             'image' => 'nullable|image|max:4096',
+            'gallery_images' => 'nullable|array',
+            'gallery_images.*' => 'image|max:4096',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'integer',
+            'colors' => 'nullable|string',
         ]);
         
         $product = Product::findOrFail($id);
@@ -143,6 +157,8 @@ class ProductController extends Controller
         ]);
 
         $payload['is_active'] = $request->status === 'active';
+        $colors = $this->normalizeColors($request->input('colors'));
+        $payload['colors'] = $colors ?: null;
 
         if ($request->hasFile('image')) {
             if ($product->image && ! Str::startsWith($product->image, ['http://', 'https://'])) {
@@ -153,6 +169,9 @@ class ProductController extends Controller
         }
 
         $product->update($payload);
+        $this->removeGalleryImages($product, $request->input('remove_images', []));
+        $this->storeGalleryImages($product, $request->file('gallery_images', []));
+        $this->ensurePrimaryGalleryImage($product);
         
         return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product updated successfully.');
     }
@@ -165,13 +184,102 @@ class ProductController extends Controller
      */
     public function destroy(string $locale, $id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with('images')->findOrFail($id);
         if ($product->image && ! Str::startsWith($product->image, ['http://', 'https://'])) {
             Storage::disk('public')->delete($product->image);
         }
+
+        foreach ($product->images as $image) {
+            if ($image->path && ! Str::startsWith($image->path, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($image->path);
+            }
+        }
+
         $product->delete();
         
         return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product deleted successfully.');
+    }
+
+    private function normalizeColors(?string $input): array
+    {
+        if (! $input) {
+            return [];
+        }
+
+        return collect(preg_split('/[,\\n]+/', $input))
+            ->map(fn ($color) => trim((string) $color))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function storeGalleryImages(Product $product, array $files): void
+    {
+        $files = array_filter($files);
+
+        if (empty($files)) {
+            return;
+        }
+
+        $sortOrder = (int) ($product->images()->max('sort_order') ?? 0);
+        $hasPrimary = $product->images()->where('is_primary', true)->exists();
+
+        foreach ($files as $index => $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $path = $file->store('products/gallery', 'public');
+            $isPrimary = ! $hasPrimary && $index === 0 && ! $product->image;
+
+            $product->images()->create([
+                'path' => $path,
+                'is_primary' => $isPrimary,
+                'sort_order' => $sortOrder + $index + 1,
+            ]);
+
+            if ($isPrimary) {
+                $hasPrimary = true;
+            }
+        }
+    }
+
+    private function removeGalleryImages(Product $product, array $imageIds): void
+    {
+        $ids = collect($imageIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return;
+        }
+
+        $images = $product->images()->whereIn('id', $ids)->get();
+
+        foreach ($images as $image) {
+            if ($image->path && ! Str::startsWith($image->path, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($image->path);
+            }
+
+            $image->delete();
+        }
+    }
+
+    private function ensurePrimaryGalleryImage(Product $product): void
+    {
+        $hasPrimary = $product->images()->where('is_primary', true)->exists();
+
+        if ($hasPrimary) {
+            return;
+        }
+
+        $firstImage = $product->images()->orderBy('sort_order')->orderBy('id')->first();
+
+        if ($firstImage) {
+            $firstImage->update(['is_primary' => true]);
+        }
     }
 
     /**

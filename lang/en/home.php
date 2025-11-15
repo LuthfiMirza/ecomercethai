@@ -23,9 +23,4 @@ return [
         ['icon' => 'fa-headset', 'label' => 'Expert CS'],
         ['icon' => 'fa-gem', 'label' => 'Exclusive Brands'],
     ],
-    'blog_title' => 'From Our Blog',
-    'blog_card_title' => 'Tech Article',
-    'blog_card_excerpt' => 'Tips for choosing components for optimal performance.',
-    'blog_card_cta' => 'Read more',
-    'blog_image_alt' => 'Blog :number',
 ];

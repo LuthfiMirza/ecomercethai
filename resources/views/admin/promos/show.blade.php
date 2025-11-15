@@ -29,7 +29,7 @@
               @if($coupon->discount_type === 'percent')
                 {{ $coupon->discount_value }}%
               @else
-                Rp {{ number_format($coupon->discount_value, 0, ',', '.') }}
+                {{ format_price($coupon->discount_value ?? 0) }}
               @endif
             </dd>
           </div>
@@ -54,11 +54,11 @@
         <dl class="space-y-3 text-sm text-slate-600 dark:text-slate-300">
           <div>
             <dt class="font-medium text-slate-500 dark:text-slate-400">Minimum Purchase</dt>
-            <dd>{{ $coupon->min_purchase ? 'Rp '.number_format($coupon->min_purchase, 0, ',', '.') : 'Not set' }}</dd>
+            <dd>{{ $coupon->min_purchase ? format_price($coupon->min_purchase) : 'Not set' }}</dd>
           </div>
           <div>
             <dt class="font-medium text-slate-500 dark:text-slate-400">Maximum Discount</dt>
-            <dd>{{ $coupon->max_discount ? 'Rp '.number_format($coupon->max_discount, 0, ',', '.') : 'Unlimited' }}</dd>
+            <dd>{{ $coupon->max_discount ? format_price($coupon->max_discount) : 'Unlimited' }}</dd>
           </div>
           <div>
             <dt class="font-medium text-slate-500 dark:text-slate-400">Notes</dt>

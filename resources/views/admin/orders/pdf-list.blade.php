@@ -39,7 +39,7 @@
                 <tr>
                     <td>{{ $order->id }}</td>
                     <td>{{ $order->user->name ?? '-' }}</td>
-                    <td>Rp {{ number_format($order->total_amount,0,',','.') }}</td>
+                    <td>{{ format_price($order->total_amount ?? 0) }}</td>
                     <td>
                         @php($s = $order->status)
                         <span class="badge {{ $s==='completed'?'badge-green':($s==='processing'?'badge-blue':($s==='pending'?'badge-yellow':($s==='shipped'?'badge-indigo':($s==='cancelled'?'badge-red':'badge-gray')))) }}">

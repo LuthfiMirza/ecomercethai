@@ -32,7 +32,7 @@ class CheckoutController extends Controller
         }
 
         $shippingAddresses = ShippingAddress::where('user_id', Auth::id())->get();
-        $subtotal = $cartItems->sum('subtotal');
+        $subtotal = (float) $cartItems->sum('subtotal');
         $shippingCost = $this->shippingCost();
 
         return view('pages.checkout', [
@@ -75,29 +75,37 @@ class CheckoutController extends Controller
         }
 
         // Calculate totals
-        $subtotal = $cartItems->sum('subtotal');
-        $discountAmount = 0;
+        $subtotal = (float) $cartItems->sum('subtotal');
+        $discountAmount = 0.0;
         $couponCode = null;
+        $appliedCoupon = null;
 
-        // Apply coupon if provided
-        if ($request->coupon_code) {
+        if ($request->filled('coupon_code')) {
             $coupon = Coupon::where('code', $request->coupon_code)
                 ->where('is_active', true)
                 ->where('valid_from', '<=', now())
                 ->where('valid_until', '>=', now())
                 ->first();
 
-            if ($coupon && $subtotal >= $coupon->min_purchase) {
-                if ($coupon->discount_type === 'percentage') {
-                    $discountAmount = ($subtotal * $coupon->discount_value) / 100;
-                    if ($coupon->max_discount) {
-                        $discountAmount = min($discountAmount, $coupon->max_discount);
-                    }
-                } else {
-                    $discountAmount = $coupon->discount_value;
-                }
-                $couponCode = $coupon->code;
+            if (! $coupon) {
+                return $this->respondCouponError($request, __('checkout.invalid_coupon'));
             }
+
+            if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
+                return $this->respondCouponError($request, __('checkout.coupon_usage_exceeded'));
+            }
+
+            $minPurchase = (float) $coupon->min_purchase;
+            if ($minPurchase > 0 && $subtotal < $minPurchase) {
+                return $this->respondCouponError(
+                    $request,
+                    __('checkout.min_purchase_not_met', ['amount' => format_price($coupon->min_purchase)])
+                );
+            }
+
+            $discountAmount = $this->calculateDiscountAmount($coupon, $subtotal);
+            $couponCode = $coupon->code;
+            $appliedCoupon = $coupon;
         }
 
         // Calculate shipping (simple flat rate for now)
@@ -147,8 +155,13 @@ class CheckoutController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $cartItem->product_id,
                     'quantity' => $cartItem->quantity,
-                    'price' => $cartItem->price
+                    'price' => $cartItem->price,
+                    'color' => $cartItem->color,
                 ]);
+            }
+
+            if ($appliedCoupon) {
+                $appliedCoupon->increment('used_count');
             }
 
             // Clear cart
@@ -337,6 +350,17 @@ class CheckoutController extends Controller
             'coupon_code' => 'required|string'
         ]);
 
+        $cartItems = Cart::where('user_id', Auth::id())->get();
+
+        if ($cartItems->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => __('checkout.empty_cart')
+            ], 422);
+        }
+
+        $subtotal = (float) $cartItems->sum('subtotal');
+
         $coupon = Coupon::where('code', $request->coupon_code)
             ->where('is_active', true)
             ->where('valid_from', '<=', now())
@@ -347,33 +371,68 @@ class CheckoutController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => __('checkout.invalid_coupon')
-            ]);
+            ], 422);
         }
 
-        $cartItems = Cart::where('user_id', Auth::id())->get();
-        $subtotal = $cartItems->sum('subtotal');
-
-        if ($subtotal < $coupon->min_purchase) {
+        if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
             return response()->json([
                 'success' => false,
-                'message' => __('checkout.min_purchase_not_met', ['amount' => $coupon->min_purchase])
-            ]);
+                'message' => __('checkout.coupon_usage_exceeded')
+            ], 422);
         }
 
-        $discountAmount = 0;
-        if ($coupon->discount_type === 'percentage') {
-            $discountAmount = ($subtotal * $coupon->discount_value) / 100;
-            if ($coupon->max_discount) {
-                $discountAmount = min($discountAmount, $coupon->max_discount);
-            }
-        } else {
-            $discountAmount = $coupon->discount_value;
+        $minPurchase = (float) $coupon->min_purchase;
+
+        if ($minPurchase > 0 && $subtotal < $minPurchase) {
+            return response()->json([
+                'success' => false,
+                'message' => __('checkout.min_purchase_not_met', ['amount' => format_price($coupon->min_purchase)])
+            ], 422);
         }
+
+        $discountAmount = $this->calculateDiscountAmount($coupon, $subtotal);
 
         return response()->json([
             'success' => true,
             'discount_amount' => $discountAmount,
+            'coupon_code' => $coupon->code,
             'message' => __('checkout.coupon_applied')
         ]);
+    }
+
+    private function respondCouponError(Request $request, string $message, int $status = 422)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'errors' => [
+                    'coupon_code' => [$message],
+                ],
+            ], $status);
+        }
+
+        return redirect()
+            ->back()
+            ->withErrors(['coupon_code' => $message])
+            ->withInput();
+    }
+
+    private function calculateDiscountAmount(Coupon $coupon, float $subtotal): float
+    {
+        $discountAmount = 0.0;
+
+        if ($coupon->discount_type === 'percentage') {
+            $discountAmount = ($subtotal * (float) $coupon->discount_value) / 100;
+            if ($coupon->max_discount) {
+                $discountAmount = min($discountAmount, (float) $coupon->max_discount);
+            }
+        } else {
+            $discountAmount = (float) $coupon->discount_value;
+        }
+
+        $discountAmount = min($discountAmount, $subtotal);
+
+        return max(0, round($discountAmount, 2));
     }
 }

@@ -53,6 +53,16 @@
                       class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white">{{ old('description') }}</textarea>
         </div>
 
+        <!-- Color Options -->
+        <div class="mb-6">
+            <label for="colors" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Available Colors (optional)</label>
+            <textarea id="colors" name="colors" rows="2"
+                      placeholder="Example: Black, White, Silver"
+                      class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white @error('colors') border-red-500 @enderror">{{ old('colors') }}</textarea>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Separate multiple colors with commas or new lines.</p>
+            @error('colors') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+        </div>
+
         <!-- Status -->
         <div class="mb-6">
             <label for="status" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
@@ -65,10 +75,20 @@
 
         <!-- Image Upload -->
         <div class="mb-6">
-            <label for="image" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Product Image</label>
+            <label for="image" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Primary Product Image</label>
             <input type="file" id="image" name="image"
                    class="w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300 dark:hover:file:bg-slate-600">
             @error('image') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Used as the cover image across listings.</p>
+        </div>
+
+        <!-- Gallery Upload -->
+        <div class="mb-6">
+            <label for="gallery_images" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Gallery Images</label>
+            <input type="file" id="gallery_images" name="gallery_images[]" multiple
+                   class="w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300 dark:hover:file:bg-slate-600">
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">You can select multiple files at once (max 4 MB each).</p>
+            @error('gallery_images.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
         <!-- Action Buttons -->

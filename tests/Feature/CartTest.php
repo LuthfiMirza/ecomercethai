@@ -32,6 +32,54 @@ class CartTest extends TestCase
         ]);
     }
 
+    public function test_user_can_add_product_with_color_option(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'price' => 150,
+            'is_active' => true,
+            'colors' => ['Black', 'White'],
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('cart.add', ['locale' => 'en']), [
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'color' => 'Black',
+        ]);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('carts', [
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'color' => 'Black',
+        ]);
+    }
+
+    public function test_invalid_color_selection_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'price' => 200,
+            'is_active' => true,
+            'colors' => ['Red'],
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('cart.add', ['locale' => 'en']), [
+            'product_id' => $product->id,
+            'quantity' => 1,
+            'color' => 'Blue',
+        ]);
+
+        $response->assertStatus(422);
+
+        $this->assertDatabaseMissing('carts', [
+            'user_id' => $user->id,
+            'product_id' => $product->id,
+            'color' => 'Blue',
+        ]);
+    }
+
     public function test_user_can_update_cart_quantity(): void
     {
         $user = User::factory()->create();

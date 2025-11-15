@@ -35,7 +35,7 @@ function initWishlistCart(){
     try {
       return new Intl.NumberFormat(localeAttr || 'en', { style: 'currency', currency });
     } catch (error) {
-      return new Intl.NumberFormat('en', { style: 'currency', currency: 'USD' });
+      return new Intl.NumberFormat('en', { style: 'currency', currency: 'THB' });
     }
   })();
   const fmt = (value) => numberFormatter.format(Number(value) || 0);
@@ -47,6 +47,7 @@ function initWishlistCart(){
       productFallback: 'Product',
       cartEmpty: 'Your cart is empty.',
       qty: 'Qty: :qty',
+      colorLabel: 'Color: :color',
       wishlistAdded: 'Already in wishlist',
     },
     th: {
@@ -55,6 +56,7 @@ function initWishlistCart(){
       productFallback: 'สินค้า',
       cartEmpty: 'ตะกร้าของคุณยังว่างอยู่',
       qty: 'จำนวน: :qty',
+      colorLabel: 'สี: :color',
       wishlistAdded: 'อยู่ในรายการโปรดแล้ว',
     },
     id: {
@@ -63,6 +65,7 @@ function initWishlistCart(){
       productFallback: 'Produk',
       cartEmpty: 'Keranjang Anda masih kosong.',
       qty: 'Qty: :qty',
+      colorLabel: 'Warna: :color',
       wishlistAdded: 'Sudah ada di wishlist',
     },
   };
@@ -277,6 +280,7 @@ function initWishlistCart(){
       price: Number(item.price) || 0,
       subtotal: Number(item.subtotal ?? ((Number(item.price) || 0) * (Number(item.quantity) || 0))),
       image: item.image || '',
+      color: item.color || null,
     })) : [];
 
     const subtotal = Number(payload.subtotal ?? items.reduce((total, item) => total + (item.subtotal || 0), 0));
@@ -432,6 +436,7 @@ function initWishlistCart(){
         <img src="${item.image || ''}" onerror="this.style.display='none'" class="w-12 h-12 object-cover rounded" alt=""/>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">${item.name || translate('productFallback')}</div>
+          ${item.color ? `<div class="text-xs text-neutral-500 dark:text-neutral-400">${translate('colorLabel', { color: item.color })}</div>` : ''}
           <div class="text-xs text-neutral-500">${translate('qty', { qty: item.quantity })}</div>
           <div class="text-xs text-neutral-500">${fmt(item.price)}</div>
         </div>
@@ -456,6 +461,7 @@ function initWishlistCart(){
       price: data.price,
       image: data.image,
       product_id: data.product_id ?? null,
+      href: data.href || '',
     };
     const items = read(WKEY, []);
     const index = items.findIndex((item) => isMatchingWishlistItem(item, normalized));
@@ -475,7 +481,7 @@ function initWishlistCart(){
     return { added: true };
   };
 
-  const postCartAdd = async (productId, quantity = 1) => {
+  const postCartAdd = async (productId, quantity = 1, color = '') => {
     if (!productId) {
       console.warn('Missing product id for cart add');
       return false;
@@ -486,6 +492,9 @@ function initWishlistCart(){
         product_id: String(productId),
         quantity: String(quantity || 1),
       });
+      if (color) {
+        body.append('color', color);
+      }
 
       const response = await fetch(`${basePath}/cart/add`, {
         method: 'POST',
@@ -591,6 +600,7 @@ function initWishlistCart(){
         price: priceValue,
         image: d.image,
         product_id: d.productId || null,
+        href: d.url || wishlistBtn.getAttribute('data-url') || '',
       }, wishlistBtn);
       return;
     }
@@ -607,6 +617,7 @@ function initWishlistCart(){
         image: d.image || '',
         price: priceValue,
         quantity,
+        color: d.color || '',
       };
 
       let added = true;
@@ -622,6 +633,7 @@ function initWishlistCart(){
           price: priceValue,
           subtotal: priceValue * quantity,
           image: payload.image,
+          color: payload.color || null,
         });
         cartState.count += quantity;
         cartState.subtotal += priceValue * quantity;

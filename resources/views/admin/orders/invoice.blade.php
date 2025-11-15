@@ -109,9 +109,9 @@
             <td>{{ $idx+1 }}</td>
             <td class="font-medium text-slate-900 dark:text-slate-100">{{ $item->product->name ?? 'Product' }}</td>
             <td class="cell-right">{{ $item->quantity }}</td>
-            <td class="cell-right">Rp {{ number_format($item->price,0,',','.') }}</td>
+            <td class="cell-right">{{ format_price($item->price ?? 0) }}</td>
             <td class="cell-right">0%</td>
-            <td class="cell-right">Rp {{ number_format($line,0,',','.') }}</td>
+            <td class="cell-right">{{ format_price($line ?? 0) }}</td>
           </tr>
         @endforeach
       </tbody>
@@ -132,14 +132,14 @@
           <span class="text-slate-500">Payment Status</span>
           <span class="badge {{ $paymentBadge }}">{{ $paymentLabel }}</span>
         </div>
-        <div class="flex justify-between"><span class="text-slate-500">Sub Total</span><span>Rp {{ number_format($subtotal,0,',','.') }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Sub Total</span><span>{{ format_price($subtotal ?? 0) }}</span></div>
         @if($shipping>0)
-        <div class="flex justify-between"><span class="text-slate-500">Shipping</span><span>Rp {{ number_format($shipping,0,',','.') }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Shipping</span><span>{{ format_price($shipping ?? 0) }}</span></div>
         @endif
         @if($discount>0)
-        <div class="flex justify-between"><span class="text-slate-500">Discount</span><span>- Rp {{ number_format($discount,0,',','.') }}</span></div>
+        <div class="flex justify-between"><span class="text-slate-500">Discount</span><span>- {{ format_price($discount ?? 0) }}</span></div>
         @endif
-        <div class="flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700/60"><span class="font-medium">Total</span><span class="text-lg font-bold">Rp {{ number_format($total,0,',','.') }}</span></div>
+        <div class="flex justify-between border-t border-slate-200 pt-2 dark:border-slate-700/60"><span class="font-medium">Total</span><span class="text-lg font-bold">{{ format_price($total ?? 0) }}</span></div>
       </div>
     </div>
   </div>
@@ -154,5 +154,4 @@
 </div>
 </div>
 @endsection
-
 

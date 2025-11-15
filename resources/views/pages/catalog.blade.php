@@ -100,28 +100,30 @@
         ->all();
 @endphp
 
-<main id="main" class="container py-8 md:py-10" role="main">
-  <h1 class="text-2xl font-semibold mb-4">Katalog</h1>
+<main id="main" class="container pt-4 pb-10 md:pt-6 md:pb-12" role="main">
+  <h1 class="text-2xl font-semibold mb-4">{{ __('catalog.title') }}</h1>
   <form method="get" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
     <!-- Sidebar filter -->
     <div class="lg:col-span-3" x-data="catalogFilterPanel()">
-      <fieldset class="hidden lg:block sticky top-24 border-0 p-0 m-0" x-bind:disabled="!isDesktop">
-        <x-filter
-          :categories="$filterCategories"
-          :brands="$filterBrands"
-          :min-price="$minPrice"
-          :max-price="$maxPrice"
-          :in-stock="$inStockOnly"
-        />
-      </fieldset>
+      <div class="hidden lg:block sticky top-[120px]">
+        <fieldset class="border-0 p-0 m-0" x-bind:disabled="!isDesktop">
+          <x-filter
+            :categories="$filterCategories"
+            :brands="$filterBrands"
+            :min-price="$minPrice"
+            :max-price="$maxPrice"
+            :in-stock="$inStockOnly"
+          />
+        </fieldset>
+      </div>
       <!-- Mobile filter button -->
       <div class="lg:hidden">
-        <x-button @click.prevent="mobileOpen = true" class="w-full">Filter</x-button>
-        <div x-show="mobileOpen" x-transition.opacity class="fixed inset-0 z-50" @keydown.escape.window="mobileOpen = false">
+        <x-button @click.prevent="mobileOpen = true" class="w-full">{{ __('catalog.filter.button') }}</x-button>
+        <div x-show="mobileOpen" x-transition.opacity class="fixed inset-0 z-[260]" @keydown.escape.window="mobileOpen = false">
           <div class="absolute inset-0 bg-black/40" @click="mobileOpen = false"></div>
           <div class="absolute right-0 top-0 h-full w-[90vw] max-w-sm bg-white dark:bg-neutral-900 p-4 overflow-y-auto">
             <div class="flex items-center justify-between mb-2">
-              <div class="font-medium">Filter</div>
+              <div class="font-medium">{{ __('catalog.filter.panel_title') }}</div>
               <button class="p-2" @click="mobileOpen = false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <fieldset class="border-0 p-0 m-0" x-bind:disabled="isDesktop">
@@ -142,7 +144,7 @@
     <div class="lg:col-span-9">
       <div class="flex items-center justify-between mb-4">
         <x-sort :value="$currentSort" />
-        <div class="text-xs text-neutral-500">{{ __(':count results', ['count' => number_format($products->total())]) }}</div>
+        <div class="text-xs text-neutral-500">{{ __('catalog.results_count', ['count' => number_format($products->total())]) }}</div>
       </div>
       @if($products->count())
         <!-- Grid -->
@@ -173,9 +175,9 @@
         </div>
       @else
         <div class="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-8 text-center">
-          <img src="https://source.unsplash.com/800x480/?electronics,empty" alt="No products illustration" class="mx-auto mb-5 h-32 w-full max-w-md rounded-xl object-cover">
-          <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">{{ __('No products found') }}</h2>
-          <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('Try adjusting your filters or search keywords to find what you need.') }}</p>
+          <img src="https://source.unsplash.com/800x480/?electronics,empty" alt="{{ __('catalog.empty_image_alt') }}" class="mx-auto mb-5 h-32 w-full max-w-md rounded-xl object-cover">
+          <h2 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2">{{ __('catalog.empty_title') }}</h2>
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">{{ __('catalog.empty_text') }}</p>
         </div>
       @endif
     </div>
@@ -184,26 +186,62 @@
 @endsection
 
 @push('scripts')
-<script>
-  function catalogFilterPanel() {
-    return {
-      mobileOpen: false,
-      isDesktop: window.matchMedia('(min-width: 1024px)').matches,
-      init() {
-        const mq = window.matchMedia('(min-width: 1024px)');
-        const handler = (event) => {
-          this.isDesktop = event.matches;
-          if (event.matches) {
+  <script>
+    function catalogFilterPanel() {
+      return {
+        mobileOpen: false,
+        isDesktop: window.matchMedia('(min-width: 1024px)').matches,
+        scrollY: 0,
+        locked: false,
+        init() {
+          const mq = window.matchMedia('(min-width: 1024px)');
+          const handler = (event) => {
+            this.isDesktop = event.matches;
+            if (event.matches) {
             this.mobileOpen = false;
           }
         };
-        if (typeof mq.addEventListener === 'function') {
-          mq.addEventListener('change', handler);
-        } else if (typeof mq.addListener === 'function') {
-          mq.addListener(handler);
-        }
-      },
-    };
-  }
-</script>
+          if (typeof mq.addEventListener === 'function') {
+            mq.addEventListener('change', handler);
+          } else if (typeof mq.addListener === 'function') {
+            mq.addListener(handler);
+          }
+
+          this.$watch('mobileOpen', (open) => {
+            if (open && !this.isDesktop) {
+              this.lockScroll();
+            } else {
+              this.unlockScroll();
+            }
+          });
+
+          this.$watch('isDesktop', (isDesktop) => {
+            if (isDesktop) {
+              this.unlockScroll();
+            } else if (this.mobileOpen) {
+              this.lockScroll();
+            }
+          });
+        },
+        lockScroll() {
+          if (this.locked || typeof document === 'undefined') {
+            return;
+          }
+          this.prevBodyOverflow = document.body.style.overflow;
+          this.prevHtmlOverflow = document.documentElement.style.overflow;
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
+          this.locked = true;
+        },
+        unlockScroll() {
+          if (!this.locked || typeof document === 'undefined') {
+            return;
+          }
+          document.body.style.overflow = this.prevBodyOverflow || '';
+          document.documentElement.style.overflow = this.prevHtmlOverflow || '';
+          this.locked = false;
+        },
+      };
+    }
+  </script>
 @endpush

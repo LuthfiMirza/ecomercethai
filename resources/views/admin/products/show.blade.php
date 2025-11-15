@@ -35,7 +35,7 @@
         <dl class="mt-6 space-y-3 text-sm text-slate-600 dark:text-slate-300">
           <div class="flex justify-between">
             <dt class="font-medium text-slate-500 dark:text-slate-400">Price</dt>
-            <dd>Rp {{ number_format($product->price, 0, ',', '.') }}</dd>
+            <dd>{{ format_price($product->price ?? 0) }}</dd>
           </div>
           <div class="flex justify-between">
             <dt class="font-medium text-slate-500 dark:text-slate-400">Stock</dt>

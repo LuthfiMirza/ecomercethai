@@ -92,7 +92,7 @@ class MegaMenuBuilder
                     'name' => $item['name'],
                     'slug' => $item['slug'],
                     'price' => $price,
-                    'price_formatted' => function_exists('format_price') ? format_price($price) : 'Rp ' . number_format($price, 0, ',', '.'),
+                    'price_formatted' => function_exists('format_price') ? format_price($price) : '฿' . number_format($price, 2),
                     'url' => function_exists('localized_route')
                         ? localized_route('catalog', ['q' => $item['query'] ?? $item['name']])
                         : route('catalog', ['q' => $item['query'] ?? $item['name']]),

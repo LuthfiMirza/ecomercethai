@@ -12,10 +12,10 @@ const createFormatter = (locale, currency) => {
   try {
     return new Intl.NumberFormat(locale || 'en', {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: currency || 'THB',
     });
   } catch (error) {
-    return new Intl.NumberFormat('en', { style: 'currency', currency: 'USD' });
+    return new Intl.NumberFormat('en', { style: 'currency', currency: 'THB' });
   }
 };
 
@@ -47,7 +47,7 @@ const CheckoutApp = ({ initialData = {} }) => {
     processUrl,
     csrf,
     locale = 'en',
-    currency = 'USD',
+    currency = 'THB',
     addressDeleteUrl,
   } = initialData;
 
@@ -714,29 +714,6 @@ const CheckoutApp = ({ initialData = {} }) => {
                       <p className="text-xs text-rose-600">{firstError(addressErrors, 'address_line1')}</p>
                     )}
                   </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      <span>{t('fieldAddress2', 'Additional Details (Optional)')}</span>
-                      <span className={badgeClass(true)}>{t('fieldOptionalLabel', 'Optional')}</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="address_line2"
-                      value={addressForm.address_line2}
-                      onChange={handleAddressFieldChange}
-                      className={inputBaseClass}
-                      placeholder={t('fieldAddress2Placeholder', 'Apartment or delivery details')}
-                      autoComplete="address-line2"
-                      aria-required="false"
-                      aria-invalid={Boolean(firstError(addressErrors, 'address_line2'))}
-                    />
-                    <p className={helperTextClass}>
-                      {t('fieldAddress2Hint', 'Apartment, floor, or delivery notes (optional).')}
-                    </p>
-                    {firstError(addressErrors, 'address_line2') && (
-                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'address_line2')}</p>
-                    )}
-                  </div>
                   <div className="space-y-2">
                     <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                       <span>{t('fieldCity', 'City')}</span>
@@ -780,6 +757,30 @@ const CheckoutApp = ({ initialData = {} }) => {
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                      <span>{t('fieldCountry', 'Country')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="country"
+                      required
+                      value={addressForm.country}
+                      onChange={handleAddressFieldChange}
+                      className={inputBaseClass}
+                      placeholder={t('fieldCountryPlaceholder', 'e.g., Thailand')}
+                      autoComplete="country-name"
+                      aria-required="true"
+                      aria-invalid={Boolean(firstError(addressErrors, 'country'))}
+                    />
+                    <p className={helperTextClass}>
+                      {t('fieldCountryHint', 'Use the full country name.')}
+                    </p>
+                    {firstError(addressErrors, 'country') && (
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'country')}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
                       <span>{t('fieldPostal', 'Postal Code')}</span>
                       <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
@@ -803,28 +804,27 @@ const CheckoutApp = ({ initialData = {} }) => {
                       <p className="text-xs text-rose-600">{firstError(addressErrors, 'postal_code')}</p>
                     )}
                   </div>
-                  <div className="space-y-2">
+                  <div className="md:col-span-2 space-y-2">
                     <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      <span>{t('fieldCountry', 'Country')}</span>
-                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
+                      <span>{t('fieldAddress2', 'Additional Details (Optional)')}</span>
+                      <span className={badgeClass(true)}>{t('fieldOptionalLabel', 'Optional')}</span>
                     </label>
                     <input
                       type="text"
-                      name="country"
-                      required
-                      value={addressForm.country}
+                      name="address_line2"
                       onChange={handleAddressFieldChange}
+                      value={addressForm.address_line2}
                       className={inputBaseClass}
-                      placeholder={t('fieldCountryPlaceholder', 'e.g., Thailand')}
-                      autoComplete="country-name"
-                      aria-required="true"
-                      aria-invalid={Boolean(firstError(addressErrors, 'country'))}
+                      placeholder={t('fieldAddress2Placeholder', 'Apartment or delivery details')}
+                      autoComplete="address-line2"
+                      aria-required="false"
+                      aria-invalid={Boolean(firstError(addressErrors, 'address_line2'))}
                     />
                     <p className={helperTextClass}>
-                      {t('fieldCountryHint', 'Use the full country name.')}
+                      {t('fieldAddress2Hint', 'Apartment, floor, or delivery notes (optional).')}
                     </p>
-                    {firstError(addressErrors, 'country') && (
-                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'country')}</p>
+                    {firstError(addressErrors, 'address_line2') && (
+                      <p className="text-xs text-rose-600">{firstError(addressErrors, 'address_line2')}</p>
                     )}
                   </div>
                   <div className="md:col-span-2 rounded-2xl border border-neutral-100 bg-neutral-50/80 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/60">
@@ -866,7 +866,7 @@ const CheckoutApp = ({ initialData = {} }) => {
                     className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
                     disabled={savingAddress}
                   >
-                    {savingAddress ? t('couponApplying', 'Saving...') : t('saveAddress', 'Save Address')}
+                    {savingAddress ? t('savingAddress', 'Saving...') : t('saveAddress', 'Save Address')}
                   </button>
                 </div>
               ) : (
@@ -1121,7 +1121,7 @@ const CheckoutApp = ({ initialData = {} }) => {
                   className="btn-primary w-full rounded-xl px-6 py-4 text-base font-semibold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-2xl active:translate-y-0.5 sm:flex-1"
                   disabled={submitting}
                 >
-                  {submitting ? t('couponApplying', 'Processing...') : t('placeOrder', 'Place Order')}
+                  {submitting ? t('processingOrder', 'Processing...') : t('placeOrder', 'Place Order')}
                 </button>
               </div>
               <div className="text-center">
@@ -1160,6 +1160,11 @@ const CheckoutApp = ({ initialData = {} }) => {
                   <p className="font-semibold text-neutral-900 dark:text-neutral-100">{item.name}</p>
                   {item.brand && (
                     <p className="text-xs uppercase tracking-wide text-neutral-400 dark:text-neutral-400">{item.brand}</p>
+                  )}
+                  {item.color && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {t('summaryColor', 'Color')}: {item.color}
+                    </p>
                   )}
                   <p className="text-sm text-neutral-600 dark:text-neutral-300">
                     {item.quantity} × {formatCurrency(item.price)}

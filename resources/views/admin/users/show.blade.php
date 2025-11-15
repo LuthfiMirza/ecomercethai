@@ -51,7 +51,7 @@
                             <p class="text-xs text-slate-500">{{ $o->created_at->format('d M Y') }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm">Rp {{ number_format($o->total_amount,0,',','.') }}</p>
+                            <p class="text-sm">{{ format_price($o->total_amount ?? 0) }}</p>
                                     @php $cls = match($o->status){
                                         'pending' => 'badge-warn',
                                         'processing' => 'badge-info',
@@ -105,7 +105,7 @@
                             @forelse($orders as $order)
                             <tr>
                                 <td class="px-4 py-2">#ORD{{ $order->id }}</td>
-                                <td class="px-4 py-2">Rp {{ number_format($order->total_amount,0,',','.') }}</td>
+                                <td class="px-4 py-2">{{ format_price($order->total_amount ?? 0) }}</td>
                                 <td class="px-4 py-2">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                         @switch($order->status)

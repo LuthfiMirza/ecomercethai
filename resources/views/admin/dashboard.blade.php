@@ -60,20 +60,20 @@
       </div>
       <div class="mt-4 text-center hidden">
         <p class="text-xs text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1"><svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 10l5-5 5 5H5z"/></svg> +{{ max(0, round($gaugePercent,2)) }}%</p>
-        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">You earn Rp {{ number_format($todayRevenue,0,',','.') }} today, it’s higher than last month.</p>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">You earn {{ format_price($todayRevenue ?? 0) }} today, it’s higher than last month.</p>
       </div>
       <div class="mt-6 grid grid-cols-3 divide-x divide-slate-200 rounded-xl bg-slate-50 p-4 text-center dark:divide-slate-700 dark:bg-slate-800/50 hidden">
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Target</p>
-          <p class="text-base font-semibold text-slate-900 dark:text-white">Rp {{ number_format($target,0,',','.') }}</p>
+          <p class="text-base font-semibold text-slate-900 dark:text-white">{{ format_price($target ?? 0) }}</p>
         </div>
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Revenue</p>
-          <p class="text-base font-semibold text-slate-900 dark:text-white">Rp {{ number_format($currentMonthRevenue,0,',','.') }}</p>
+          <p class="text-base font-semibold text-slate-900 dark:text-white">{{ format_price($currentMonthRevenue ?? 0) }}</p>
         </div>
         <div>
           <p class="text-xs text-slate-500 dark:text-slate-400">Today</p>
-          <p class="text-base font-semibold text-slate-900 dark:text-white">Rp {{ number_format($todayRevenue,0,',','.') }}</p>
+          <p class="text-base font-semibold text-slate-900 dark:text-white">{{ format_price($todayRevenue ?? 0) }}</p>
         </div>
       </div>
     </div>
@@ -166,7 +166,7 @@
               <td class="py-3 pr-3">
                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold {{ $badge }}">{{ ucfirst($order->status ?? 'Unknown') }}</span>
               </td>
-              <td class="py-3 pr-3 text-right text-slate-900 dark:text-white">Rp {{ number_format((float)$order->total_amount,0,',','.') }}</td>
+              <td class="py-3 pr-3 text-right text-slate-900 dark:text-white">{{ format_price((float) ($order->total_amount ?? 0)) }}</td>
               <td class="py-3 pr-3 text-slate-600 dark:text-slate-400">{{ optional($order->created_at)->format('d M Y, H:i') }}</td>
               <td class="py-3 pr-3 text-right">
                 <a href="{{ route('admin.orders.show', $order->id) }}" class="btn-ghost">Details</a>

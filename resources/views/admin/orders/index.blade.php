@@ -46,6 +46,11 @@
     </div>
   </div>
 
+  <div
+    data-order-table
+    data-refresh-url="{{ request()->fullUrl() }}"
+    data-refresh-interval="60000"
+  >
   <x-table 
     title="Orders List"
     :export-items="[
@@ -117,7 +122,7 @@
             <p class="font-medium">{{ $order->user->name ?? 'Guest' }}</p>
             <p class="text-xs text-slate-500">{{ $order->user->email ?? '-' }}</p>
           </td>
-          <td>Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
+          <td>{{ format_price($order->total_amount ?? 0) }}</td>
           <td><span class="badge {{ $statusBadge }}">{{ ucfirst($order->status) }}</span></td>
           <td>
             <div class="space-y-1">
@@ -256,6 +261,7 @@
       @endforelse
     </x-slot:body>
   </x-table>
+  </div>
 
   <div
     x-cloak
@@ -297,9 +303,80 @@
 <script>
 (() => {
   const panel = document.querySelector('[data-order-poll]');
-  if (!panel || typeof window.axios === 'undefined') {
+  const hasHttpClient = typeof window.axios !== 'undefined'
+    || typeof window.fetch !== 'undefined'
+    || typeof window.XMLHttpRequest !== 'undefined';
+  if (!panel || !hasHttpClient) {
     return;
   }
+
+  const buildUrl = (url, params = {}) => {
+    const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+    if (!entries.length) {
+      return url;
+    }
+    const search = new URLSearchParams(entries).toString();
+    return url.includes('?') ? `${url}&${search}` : `${url}?${search}`;
+  };
+
+  const baseHeaders = {
+    'X-Requested-With': 'XMLHttpRequest',
+    Accept: 'application/json',
+  };
+
+  const requestWithXHR = (url, options = {}) => {
+    const target = buildUrl(url, options.params || {});
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', target, true);
+      xhr.withCredentials = true;
+      const headers = { ...baseHeaders, ...(options.headers || {}) };
+      Object.keys(headers).forEach((key) => {
+        const value = headers[key];
+        if (value !== undefined && value !== null) {
+          xhr.setRequestHeader(key, value);
+        }
+      });
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState !== XMLHttpRequest.DONE) {
+          return;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+            resolve({ data });
+          } catch (error) {
+            reject(error);
+          }
+        } else {
+          reject(new Error(`Request failed with status ${xhr.status}`));
+        }
+      };
+      xhr.send();
+    });
+  };
+
+  const httpGet = (url, options = {}) => {
+    if (typeof window.axios !== 'undefined') {
+      return window.axios.get(url, options);
+    }
+    if (typeof window.fetch !== 'undefined') {
+      const target = buildUrl(url, options.params || {});
+      const headers = { ...baseHeaders, ...(options.headers || {}) };
+      return fetch(target, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers,
+      }).then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return { data: await response.json() };
+      });
+    }
+
+    return requestWithXHR(url, options);
+  };
 
   const feed = panel.querySelector('[data-order-feed]');
   const emptyState = panel.querySelector('[data-order-empty]');
@@ -459,7 +536,7 @@
       if (cursor > 0) {
         params.after = cursor;
       }
-      const { data } = await window.axios.get(pollUrl, { params });
+      const { data } = await httpGet(pollUrl, { params });
       if (!data?.ok) {
         throw new Error('Unable to poll orders');
       }
@@ -512,6 +589,48 @@
 
   start();
   fetchOrders();
+})();
+</script>
+
+<script>
+(() => {
+  const container = document.querySelector('[data-order-table]');
+  if (!container || typeof window.fetch === 'undefined') {
+    return;
+  }
+
+  const refreshUrl = container.dataset.refreshUrl || window.location.href;
+  const interval = Number(container.dataset.refreshInterval || 60000);
+  let loading = false;
+
+  const refreshTable = async () => {
+    if (loading || document.hidden) {
+      return;
+    }
+    loading = true;
+    try {
+      const response = await fetch(refreshUrl, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to refresh orders (${response.status})`);
+      }
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const next = doc.querySelector('[data-order-table]');
+      if (next) {
+        container.innerHTML = next.innerHTML;
+      }
+    } catch (error) {
+      console.debug('Order table refresh skipped', error);
+    } finally {
+      loading = false;
+    }
+  };
+
+  window.setInterval(refreshTable, interval);
 })();
 </script>
 @endpush

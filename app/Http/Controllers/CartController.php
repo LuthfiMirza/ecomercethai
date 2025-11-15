@@ -23,22 +23,45 @@ class CartController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1',
+            'color' => 'nullable|string|max:80',
         ]);
 
         $product = Product::findOrFail($request->product_id);
+        $selectedColor = $this->normalizeColor($request->input('color'));
+        $availableColors = $product->available_colors;
+
+        if ($selectedColor && ! empty($availableColors) && ! in_array($selectedColor, $availableColors, true)) {
+            $message = __('product.color_invalid');
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $message,
+                ], 422);
+            }
+
+            return back()
+                ->withErrors(['color' => $message])
+                ->withInput();
+        }
+
+        if (empty($availableColors)) {
+            $selectedColor = null;
+        }
         
         $cartData = [
             'product_id' => $product->id,
             'quantity' => $request->quantity,
             'price' => $product->price,
+            'color' => $selectedColor,
         ];
 
         if (Auth::check()) {
             $cartData['user_id'] = Auth::id();
             
-            $cart = Cart::where('user_id', Auth::id())
-                ->where('product_id', $product->id)
-                ->first();
+            $cart = $this->applyColorScope(
+                Cart::where('user_id', Auth::id())->where('product_id', $product->id),
+                $selectedColor
+            )->first();
                 
             if ($cart) {
                 $cart->quantity += $request->quantity;
@@ -49,9 +72,10 @@ class CartController extends Controller
         } else {
             $cartData['session_id'] = session()->getId();
             
-            $cart = Cart::where('session_id', session()->getId())
-                ->where('product_id', $product->id)
-                ->first();
+            $cart = $this->applyColorScope(
+                Cart::where('session_id', session()->getId())->where('product_id', $product->id),
+                $selectedColor
+            )->first();
                 
             if ($cart) {
                 $cart->quantity += $request->quantity;
@@ -184,6 +208,7 @@ class CartController extends Controller
                 'price' => (float) $cart->price,
                 'subtotal' => (float) $cart->subtotal,
                 'image' => $image,
+                'color' => $cart->color,
             ];
         });
 
@@ -224,9 +249,10 @@ class CartController extends Controller
             $guestCarts = Cart::where('session_id', $sessionId)->get();
 
             foreach ($guestCarts as $guestCart) {
-                $userCart = Cart::where('user_id', Auth::id())
-                    ->where('product_id', $guestCart->product_id)
-                    ->first();
+                $userCart = $this->applyColorScope(
+                    Cart::where('user_id', Auth::id())->where('product_id', $guestCart->product_id),
+                    $guestCart->color
+                )->first();
 
                 if ($userCart) {
                     $userCart->quantity += $guestCart->quantity;
@@ -239,5 +265,21 @@ class CartController extends Controller
                 }
             }
         }
+    }
+
+    private function normalizeColor(?string $color): ?string
+    {
+        $value = trim((string) $color);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function applyColorScope($query, ?string $color)
+    {
+        $normalized = $this->normalizeColor($color);
+
+        return $normalized === null
+            ? $query->whereNull('color')
+            : $query->where('color', $normalized);
     }
 }

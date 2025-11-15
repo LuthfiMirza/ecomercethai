@@ -4,8 +4,8 @@
 <main id="faqs" class="container max-w-5xl py-12 space-y-10" role="main">
   <header class="text-center space-y-4">
     <p class="text-xs font-semibold uppercase tracking-[0.3em] text-accent-500">{{ __('common.faqs') }}</p>
-    <h1 class="text-3xl font-bold text-neutral-800 dark:text-neutral-100">{{ __('Need help?') }}</h1>
-    <p class="mx-auto max-w-3xl text-sm text-neutral-600 dark:text-neutral-300">{{ __('Here are the most common questions about orders, payments, and warranties. Choose a category below or contact our support team if you need more assistance.') }}</p>
+    <h1 class="text-3xl font-bold text-neutral-800 dark:text-neutral-100">{{ __('faq.intro_title') }}</h1>
+    <p class="mx-auto max-w-3xl text-sm text-neutral-600 dark:text-neutral-300">{{ __('faq.intro_text') }}</p>
   </header>
 
   <section class="grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] lg:gap-10">
@@ -20,8 +20,8 @@
         @endforeach
       </nav>
       <div class="rounded-2xl border border-neutral-200 bg-white p-4 text-sm shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200">
-        <p class="font-medium text-neutral-800 dark:text-neutral-100">{{ __('Still need help?') }}</p>
-        <p class="mt-1 text-neutral-500 dark:text-neutral-300">{{ __('Our support team is ready to help via live chat, email, or the contact page.') }}</p>
+        <p class="font-medium text-neutral-800 dark:text-neutral-100">{{ __('faq.support_title') }}</p>
+        <p class="mt-1 text-neutral-500 dark:text-neutral-300">{{ __('faq.support_text') }}</p>
         <div class="mt-3 flex flex-wrap gap-2">
           <a href="mailto:support@tokothailand.com" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-accent-600">{{ __('common.email_support') }}</a>
           <a href="{{ route('contact') }}" class="inline-flex items-center gap-2 rounded-full border border-accent-400 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-accent-500 transition hover:bg-accent-50 dark:hover:bg-neutral-800">{{ __('common.contact_us') }}</a>

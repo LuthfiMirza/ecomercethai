@@ -69,6 +69,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Currency
+    |--------------------------------------------------------------------------
+    |
+    | Central place to control the default currency the storefront/admin
+    | should display. Defaulting to Thai Baht keeps every formatter in sync.
+    |
+    */
+
+    'currency' => env('APP_CURRENCY', 'THB'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |
@@ -78,7 +90,7 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'th'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 

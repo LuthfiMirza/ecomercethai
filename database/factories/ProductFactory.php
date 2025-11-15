@@ -19,6 +19,10 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $name = fake()->words(3, true);
+        $colorOptions = ['Black', 'White', 'Silver', 'Blue', 'Red', 'Green'];
+        $colors = fake()->boolean(40)
+            ? fake()->randomElements($colorOptions, fake()->numberBetween(1, 3))
+            : null;
         
         return [
             'name' => ucfirst($name),
@@ -30,6 +34,7 @@ class ProductFactory extends Factory
             'brand' => fake()->company(),
             'image' => 'products/default.jpg',
             'is_active' => true,
+            'colors' => $colors,
         ];
     }
 

@@ -14,7 +14,7 @@
                 <span class="inline-flex h-9 items-center rounded-full bg-white/80 px-4 text-orange-500" data-i18n="login.badge_secure">Secure login</span>
             </div>
             <div class="flex-1 flex items-center justify-center">
-                <img src="{{ asset('images/auth-illustration.svg') }}" alt="Login illustration" class="max-w-full drop-shadow-xl" loading="lazy">
+                <img src="{{ asset('image/logo.jpg') }}" alt="Store logo" class="max-w-full drop-shadow-xl" loading="lazy">
             </div>
             <ul class="mt-6 flex flex-col gap-2 text-sm text-orange-500/80">
                 <li class="inline-flex items-center gap-3"><span class="h-1.5 w-1.5 rounded-full bg-orange-400"></span><span data-i18n="login.highlights.fast_checkout">Save your favorites and check out faster.</span></li>
@@ -29,7 +29,7 @@
             </a>
             <div class="p-8 sm:p-10 lg:p-12">
                 <div class="mb-6 md:hidden overflow-hidden rounded-3xl border border-orange-100 bg-gradient-to-br from-[#fff4ec] to-[#ffe3cf] p-6">
-                    <img src="{{ asset('images/auth-illustration.svg') }}" alt="Login illustration" class="mx-auto h-48" loading="lazy">
+                    <img src="{{ asset('image/logo.jpg') }}" alt="Store logo" class="mx-auto h-48" loading="lazy">
                 </div>
                 <div class="mb-8 space-y-3 text-center md:text-left">
                     <h1 class="text-3xl font-semibold text-neutral-900" data-i18n="login.heading">Welcome back</h1>

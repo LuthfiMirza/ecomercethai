@@ -42,8 +42,8 @@
 <body class="bg-gray-900 flex items-center justify-center min-h-screen">
     <div class="login-card p-8 rounded-xl shadow-lg w-full max-w-md">
         <div class="flex justify-center mb-6">
-            <!-- Placeholder for shop logo -->
-            <img src="/image/monkeyHack.png" alt="Shop Logo" class="h-20 w-20 object-contain">
+            <!-- Shop logo -->
+            <img src="{{ asset('image/logo.jpg') }}" alt="Shop Logo" class="h-20 w-20 object-contain rounded-full shadow">
         </div>
         <h2 class="text-3xl font-bold text-white text-center mb-8">Admin Login</h2>
         <form action="{{ route('admin.login.post') }}" method="POST">

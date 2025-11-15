@@ -85,7 +85,7 @@
                 <strong>Created At:</strong><br>
                 {{ $order->created_at?->format('d M Y H:i') }}<br>
                 <strong>Order Total:</strong><br>
-                Rp {{ number_format($total,0,',','.') }}
+                {{ format_price($total ?? 0) }}
             </td>
         </tr>
     </table>
@@ -96,10 +96,14 @@
         <tbody>
             @foreach($order->orderItems as $item)
             <tr>
-                <td>{{ $item->product->name ?? 'Product' }}</td>
+                <td>
+                    {{ $item->product->name ?? 'Product' }}@if($item->color)
+                        <div class="muted">{{ __('product.color') }}: {{ $item->color }}</div>
+                    @endif
+                </td>
                 <td class="right">{{ $item->quantity }}</td>
-                <td class="right">Rp {{ number_format($item->price,0,',','.') }}</td>
-                <td class="right">Rp {{ number_format(($item->price ?? 0) * ($item->quantity ?? 0),0,',','.') }}</td>
+                <td class="right">{{ format_price($item->price ?? 0) }}</td>
+                <td class="right">{{ format_price(($item->price ?? 0) * ($item->quantity ?? 0)) }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -108,23 +112,23 @@
     <table style="margin-top:10px;">
         <tr>
             <td class="right"><strong>Subtotal</strong></td>
-            <td class="right" style="width:160px;">Rp {{ number_format($subtotal,0,',','.') }}</td>
+            <td class="right" style="width:160px;">{{ format_price($subtotal ?? 0) }}</td>
         </tr>
         @if($shipping>0)
         <tr>
             <td class="right"><strong>Shipping</strong></td>
-            <td class="right">Rp {{ number_format($shipping,0,',','.') }}</td>
+            <td class="right">{{ format_price($shipping ?? 0) }}</td>
         </tr>
         @endif
         @if($discount>0)
         <tr>
             <td class="right"><strong>Discount</strong></td>
-            <td class="right">- Rp {{ number_format($discount,0,',','.') }}</td>
+            <td class="right">- {{ format_price($discount ?? 0) }}</td>
         </tr>
         @endif
         <tr>
             <td class="right"><strong>Total</strong></td>
-            <td class="right"><strong>Rp {{ number_format($total,0,',','.') }}</strong></td>
+            <td class="right"><strong>{{ format_price($total ?? 0) }}</strong></td>
         </tr>
     </table>
 </body>

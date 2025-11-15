@@ -401,7 +401,7 @@
               currency: this.currency
             });
           } catch (error) {
-            this.formatter = new Intl.NumberFormat('en', { style: 'currency', currency: 'USD' });
+            this.formatter = new Intl.NumberFormat('en', { style: 'currency', currency: 'THB' });
           }
           // hydrate wishlist/cart counters
           const w=document.getElementById('wishlist-count');

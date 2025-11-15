@@ -43,7 +43,7 @@
               <tr>
                 <td class="font-medium text-slate-900 dark:text-slate-200">{{ $c->code }}</td>
                 <td>{{ ucfirst($c->discount_type) }}</td>
-                <td>{{ $c->discount_type==='percent' ? $c->discount_value.'%' : 'Rp '.number_format($c->discount_value,0,',','.') }}</td>
+                <td>{{ $c->discount_type === 'percent' ? $c->discount_value.'%' : format_price($c->discount_value ?? 0) }}</td>
                 <td>{{ optional($c->starts_at)->format('d M Y') }} - {{ optional($c->ends_at)->format('d M Y') }}</td>
                 <td>{{ $c->used_count }}/{{ $c->usage_limit ?? '∞' }}</td>
                 <td><span class="badge {{ $c->status==='active' ? 'badge-success' : 'badge-neutral' }}">{{ ucfirst($c->status) }}</span></td>

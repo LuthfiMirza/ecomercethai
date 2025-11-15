@@ -75,7 +75,7 @@
         <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-5">
             <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p class="text-xs text-slate-500">Revenue ({{ $period }})</p>
-                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Rp {{ number_format($totalRevenue,0,',','.') }}</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ format_price($totalRevenue ?? 0) }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p class="text-xs text-slate-500">Orders ({{ $period }})</p>
@@ -83,11 +83,11 @@
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p class="text-xs text-slate-500">AOV</p>
-                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Rp {{ number_format($aov,0,',','.') }}</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ format_price($aov ?? 0) }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p class="text-xs text-slate-500">CLV (approx)</p>
-                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Rp {{ number_format($clv,0,',','.') }}</p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ format_price($clv ?? 0) }}</p>
             </div>
             <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
                 <p class="text-xs text-slate-500">MoM Revenue</p>
@@ -125,7 +125,7 @@
                                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ $row->sold }} Sold</p>
                                 </div>
                             </div>
-                            <p class="font-medium text-meta-3">Rp {{ number_format($row->product->price ?? 0,0,',','.') }}</p>
+                            <p class="font-medium text-meta-3">{{ format_price($row->product->price ?? 0) }}</p>
                         </div>
                         @empty
                         <p class="text-sm text-slate-500">No data</p>
@@ -166,9 +166,9 @@
                         <canvas id="gaugeReports" class="absolute inset-0 w-full h-full max-h-[140px]"></canvas>
                     </div>
                     <div class="mt-4 grid grid-cols-3 divide-x divide-slate-200 rounded-xl bg-slate-50 p-4 text-center dark:divide-slate-700 dark:bg-slate-800/50">
-                        <div><p class="text-xs text-slate-500">Target</p><p class="text-base font-semibold">Rp {{ number_format($target,0,',','.') }}</p></div>
-                        <div><p class="text-xs text-slate-500">Revenue</p><p class="text-base font-semibold">Rp {{ number_format($currentMonthRevenue,0,',','.') }}</p></div>
-                        <div><p class="text-xs text-slate-500">Today</p><p class="text-base font-semibold">Rp {{ number_format($todayRevenue,0,',','.') }}</p></div>
+                        <div><p class="text-xs text-slate-500">Target</p><p class="text-base font-semibold">{{ format_price($target ?? 0) }}</p></div>
+                        <div><p class="text-xs text-slate-500">Revenue</p><p class="text-base font-semibold">{{ format_price($currentMonthRevenue ?? 0) }}</p></div>
+                        <div><p class="text-xs text-slate-500">Today</p><p class="text-base font-semibold">{{ format_price($todayRevenue ?? 0) }}</p></div>
                     </div>
                 </div>
             </div>
@@ -177,7 +177,7 @@
                     <div class="mb-4 flex items-center gap-4">
                         <div class="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700">
                             <p class="text-xs text-slate-500">Revenue</p>
-                            <p class="text-lg font-semibold">Rp {{ number_format($totalRevenue,0,',','.') }}</p>
+                            <p class="text-lg font-semibold">{{ format_price($totalRevenue ?? 0) }}</p>
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700">
                             <p class="text-xs text-slate-500">Orders</p>
@@ -185,7 +185,7 @@
                         </div>
                         <div class="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700">
                             <p class="text-xs text-slate-500">AOV</p>
-                            <p class="text-lg font-semibold">Rp {{ number_format($aov,0,',','.') }}</p>
+                            <p class="text-lg font-semibold">{{ format_price($aov ?? 0) }}</p>
                         </div>
                     </div>
                     <p class="text-sm text-slate-500">Snapshot of total KPIs</p>

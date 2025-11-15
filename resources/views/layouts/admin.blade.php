@@ -182,7 +182,7 @@
     @yield('head')
 </head>
 <body class="bg-admin-gradient min-h-screen text-slate-800 dark:text-slate-100 font-sans">
-    <div class="flex min-h-screen bg-transparent" x-data="{ sidebarOpen: true }">
+    <div class="flex min-h-screen bg-transparent" x-data="{ sidebarOpen: true }" data-admin-i18n-root>
         <!-- Sidebar -->
         <aside 
             class="w-72 soft-glass text-slate-600 fixed inset-y-6 left-6 rounded-3xl px-5 py-6 transform md:translate-x-0 transition-transform duration-300 ease-in-out z-30 shadow-[0_30px_60px_-35px_rgba(15,23,42,0.4)] dark:text-slate-100"
@@ -278,8 +278,8 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden md:ml-[22rem] lg:ml-[23rem] px-6 pb-10">
             <!-- Header -->
-            <header class="soft-glass rounded-3xl mt-6 shadow-[0_30px_55px_-35px_rgba(15,23,42,0.4)]">
-                <div class="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between">
+            <header class="soft-glass rounded-3xl mt-6 shadow-[0_30px_55px_-35px_rgba(15,23,42,0.4)] relative z-40 overflow-visible">
+                <div class="relative z-40 flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between">
                     <div class="flex items-center gap-4">
                         <button 
                             @click="sidebarOpen = !sidebarOpen" 
@@ -332,6 +332,7 @@
                                 aria-label="{{ __('admin.header.notifications') }}"
                                 @click="open = !open"
                             >
+                                <span id="chatBellIndicator" class="hidden absolute -top-1.5 -left-1.5 h-3 w-3 rounded-full bg-emerald-400 shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                                 @if($inlineNotifications->isNotEmpty())
                                     <span class="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white shadow-[0_8px_16px_-8px_rgba(225,29,72,0.8)]">{{ $inlineNotifications->count() }}</span>
@@ -353,6 +354,7 @@
                                     </div>
                                 </div>
                                 <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                                    <div id="chatNotificationDynamic" class="contents"></div>
                                     @forelse($inlineNotifications as $item)
                                         <div class="flex items-start gap-3 px-5 py-4">
                                             <span @class([
@@ -447,5 +449,74 @@
     </div>
     
     @yield('scripts')
+    @if(app()->getLocale() === 'th')
+        @php($adminAutoTranslate = trans('admin.auto_translate', []))
+        @if(!empty($adminAutoTranslate))
+            <script>
+                (function () {
+                    const dictionary = @json($adminAutoTranslate);
+                    if (!dictionary || Object.keys(dictionary).length === 0) {
+                        return;
+                    }
+
+                    const root = document.querySelector('[data-admin-i18n-root]');
+                    if (!root) {
+                        return;
+                    }
+
+                    const translateAttributes = (attr) => {
+                        root.querySelectorAll(`[${attr}]`).forEach((node) => {
+                            const raw = node.getAttribute(attr);
+                            if (!raw) {
+                                return;
+                            }
+                            const trimmed = raw.trim();
+                            const translation = dictionary[trimmed];
+                            if (translation) {
+                                node.setAttribute(attr, translation);
+                            }
+                        });
+                    };
+
+                    const walker = document.createTreeWalker(
+                        root,
+                        NodeFilter.SHOW_TEXT,
+                        {
+                            acceptNode(node) {
+                                if (!node.nodeValue) {
+                                    return NodeFilter.FILTER_SKIP;
+                                }
+                                const key = node.nodeValue.trim();
+                                if (!key || !dictionary[key]) {
+                                    return NodeFilter.FILTER_SKIP;
+                                }
+                                return NodeFilter.FILTER_ACCEPT;
+                            },
+                        }
+                    );
+
+                    const nodes = [];
+                    while (walker.nextNode()) {
+                        nodes.push(walker.currentNode);
+                    }
+
+                    nodes.forEach((node) => {
+                        const trimmed = node.nodeValue.trim();
+                        const translation = dictionary[trimmed];
+                        if (!translation) {
+                            return;
+                        }
+
+                        const leading = node.nodeValue.match(/^\s*/)?.[0] ?? '';
+                        const trailing = node.nodeValue.match(/\s*$/)?.[0] ?? '';
+                        node.nodeValue = `${leading}${translation}${trailing}`;
+                    });
+
+                    ['placeholder', 'title', 'aria-label'].forEach(translateAttributes);
+                })();
+            </script>
+        @endif
+    @endif
+    @stack('scripts')
 </body>
 </html>

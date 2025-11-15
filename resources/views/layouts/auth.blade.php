@@ -36,7 +36,7 @@
 
     <x-navbar />
 
-    <main class="pt-28 pb-12">
+    <main class="pt-12 md:pt-14 lg:pt-16 pb-12">
         <div class="container mx-auto px-4">
             <div class="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
                 <div class="absolute inset-0 -z-10 rounded-[36px] bg-gradient-to-br from-orange-50 via-white to-amber-50 shadow-[0_40px_120px_-60px_rgba(255,112,67,0.8)]"></div>

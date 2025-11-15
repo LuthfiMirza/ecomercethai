@@ -127,7 +127,7 @@ class CatalogController extends Controller
 
     public function show(string $locale, $slug)
     {
-        $product = Product::with('category')
+        $product = Product::with(['category', 'images'])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();

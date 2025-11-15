@@ -23,9 +23,4 @@ return [
         ['icon' => 'fa-headset', 'label' => 'บริการลูกค้าโดยผู้เชี่ยวชาญ'],
         ['icon' => 'fa-gem', 'label' => 'แบรนด์พิเศษเฉพาะเรา'],
     ],
-    'blog_title' => 'จากบล็อกของเรา',
-    'blog_card_title' => 'บทความเทคโนโลยี',
-    'blog_card_excerpt' => 'เคล็ดลับเลือกอุปกรณ์ให้ได้ประสิทธิภาพสูงสุด',
-    'blog_card_cta' => 'อ่านเพิ่มเติม',
-    'blog_image_alt' => 'บทความ :number',
 ];

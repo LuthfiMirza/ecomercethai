@@ -62,7 +62,7 @@
                 @foreach($category->products as $product)
                   <tr>
                     <td class="font-medium text-slate-900 dark:text-slate-200">{{ $product->name }}</td>
-                    <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
+                    <td>{{ format_price($product->price ?? 0) }}</td>
                     <td>{{ $product->stock }}</td>
                     <td class="cell-actions">
                       <a href="{{ localized_route('admin.products.show', ['id' => $product->id]) }}" class="btn-ghost text-xs">View</a>

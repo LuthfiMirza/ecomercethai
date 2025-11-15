@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<main class="container max-w-6xl py-10 space-y-6" role="main">
+<main class="container max-w-6xl pt-4 pb-10 space-y-6 md:pt-6 md:pb-12" role="main">
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <div>
       <h1 class="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">{{ __('Keranjang Belanja') }}</h1>
@@ -59,6 +59,12 @@
                 <h3 class="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{{ $product?->name ?? __('Produk tidak tersedia') }}</h3>
                 @if($product?->brand)
                   <p class="text-xs uppercase tracking-wide text-neutral-400">{{ $product->brand }}</p>
+                @endif
+                @if($item->color)
+                  <p class="text-xs text-neutral-500 dark:text-neutral-300 mt-1">
+                    {{ __('product.color') }}:
+                    <span class="font-medium text-neutral-800 dark:text-neutral-100">{{ $item->color }}</span>
+                  </p>
                 @endif
               </div>
               <div class="flex flex-wrap items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">

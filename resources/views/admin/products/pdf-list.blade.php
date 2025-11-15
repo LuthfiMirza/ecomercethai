@@ -37,7 +37,7 @@
                 <td>{{ $p->id }}</td>
                 <td>{{ $p->name }}</td>
                 <td>{{ $p->category->name ?? '-' }}</td>
-                <td>Rp {{ number_format($p->price,0,',','.') }}</td>
+                <td>{{ format_price($p->price ?? 0) }}</td>
                 <td>{{ $p->stock }}</td>
                 <td>
                     @if(($p->status ?? 'active') === 'active')

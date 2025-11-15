@@ -25,7 +25,7 @@
             @foreach(($months ?? []) as $i=>$m)
             <tr>
                 <td>{{ $m }}</td>
-                <td>Rp {{ number_format(($revenue[$i] ?? 0),0,',','.') }}</td>
+                <td>{{ format_price($revenue[$i] ?? 0) }}</td>
                 <td>{{ $orders[$i] ?? 0 }}</td>
             </tr>
             @endforeach
@@ -41,7 +41,7 @@
                 <td>{{ $i+1 }}</td>
                 <td>{{ $row->product->name ?? 'Product' }}</td>
                 <td>{{ $row->sold }}</td>
-                <td>Rp {{ number_format($row->product->price ?? 0,0,',','.') }}</td>
+                <td>{{ format_price($row->product->price ?? 0) }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -54,7 +54,7 @@
             @foreach(($categoryLabels ?? []) as $i=>$label)
             <tr>
                 <td>{{ $label }}</td>
-                <td>Rp {{ number_format(($categoryData[$i] ?? 0),0,',','.') }}</td>
+                <td>{{ format_price($categoryData[$i] ?? 0) }}</td>
             </tr>
             @endforeach
         </tbody>

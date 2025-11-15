@@ -236,6 +236,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
         Route::get('/chat/conversations', [ChatController::class, 'conversations'])->name('chat.conversations');
         Route::get('/chat/conversations/{user}', [ChatController::class, 'messages'])->name('chat.conversations.show');
+        Route::get('/chat/unread', [ChatController::class, 'unread'])->name('chat.unread');
         Route::post('/chat/messages', [ChatController::class, 'send'])->name('chat.send');
     });
 });

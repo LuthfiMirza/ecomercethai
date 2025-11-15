@@ -34,6 +34,12 @@ return [
         'select_customer' => 'Select customer',
         'open_chat' => 'Open chat',
         'online_list_label' => 'Online admins',
+        'you_label' => 'You',
+        'admin_fallback' => 'Admin',
+        'customer_fallback' => 'Customer',
+        'last_message_prefix' => 'Last message at',
+        'realtime_error' => 'Admin chat realtime unavailable',
+        'new_message_from' => 'New message from :name',
     ],
     'orders' => [
         'realtime' => [
@@ -60,4 +66,5 @@ return [
             'success' => 'Admin account created successfully.',
         ],
     ],
+    'auto_translate' => [],
 ];

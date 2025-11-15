@@ -407,30 +407,6 @@
   </div>
 </section>
 
-<!-- Blog Teasers (clean) -->
-<section class="container mx-auto px-6 pb-16">
-  <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">{{ __('home.blog_title') }}</h2>
-  @php
-    $blogImages = [
-      'https://source.unsplash.com/800x480/?electronics,1',
-      'https://source.unsplash.com/800x480/?electronics,2',
-      'https://source.unsplash.com/800x480/?electronics,3',
-    ];
-  @endphp
-  <div class="grid md:grid-cols-3 gap-6">
-    @for($i=0;$i<3;$i++)
-      <article class="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden hover:shadow-soft transition">
-        <img loading="lazy" src="{{ $blogImages[$i] ?? $blogImages[0] }}" alt="{{ __('home.blog_image_alt', ['number' => $i + 1]) }}" class="w-full h-40 object-cover"/>
-        <div class="p-4">
-          <h3 class="font-semibold text-neutral-900 dark:text-white">{{ __('home.blog_card_title') }} {{ $i+1 }}</h3>
-          <p class="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{{ __('home.blog_card_excerpt') }}</p>
-          <a href="#" class="text-sm text-accent-600 hover:text-accent-700">{{ __('home.blog_card_cta') }}</a>
-        </div>
-      </article>
-    @endfor
-  </div>
-</section>
-
 @push('scripts')
 <script>
   document.addEventListener('DOMContentLoaded', function () {

@@ -2,7 +2,7 @@
     $lineRawId = config('services.line.id', '@jag3901n');
     $lineNormalizedId = ltrim($lineRawId ?: '@jag3901n', '@');
     $lineDisplayId = '@' . $lineNormalizedId;
-    $lineShareUrl = 'https://line.me/ti/p/~' . $lineNormalizedId;
+    $lineShareUrl = 'https://line.me/ti/p/@' . $lineNormalizedId;
     $lineQrUrl = asset('image/addline.jpg');
 @endphp
 <!DOCTYPE html>
@@ -71,9 +71,9 @@
 <body class="bg-white text-neutral-800">
     <x-navbar />
 
-    <!-- Add padding to body to prevent content from hiding behind fixed header -->
     @php
-        $contentPaddingClass = $shouldOffsetHeader ? 'pt-[72px]' : 'pt-16 md:pt-0';
+        // Keep a small breathing room below the navbar (sticky, not fixed) so pages don't look detached.
+        $contentPaddingClass = $shouldOffsetHeader ? 'pt-6 md:pt-8' : 'pt-4 md:pt-0';
     @endphp
     <div class="{{ $contentPaddingClass }}">
         @yield('content')
@@ -202,7 +202,7 @@
           <p data-wishlist-popup-name class="text-sm font-semibold text-neutral-900 truncate">Product</p>
           <p data-wishlist-popup-meta class="text-xs text-neutral-500 mt-0.5">฿0.00</p>
           <div class="mt-3 flex flex-wrap gap-2">
-            <a href="{{ auth()->check() ? localized_route('wishlist') : localized_route('login') }}" class="inline-flex flex-1 min-w-[120px] items-center justify-center rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow {{ auth()->check() ? 'bg-secondary-500 text-white hover:bg-secondary-500/90' : 'bg-neutral-200 text-neutral-600' }}">
+            <a href="{{ auth()->check() ? localized_route('wishlist') : localized_route('login') }}" class="inline-flex flex-1 min-w-[120px] items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide shadow {{ auth()->check() ? 'border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50' : 'border-neutral-200 bg-neutral-200 text-neutral-600' }}">
               {{ auth()->check() ? __('common.wishlist_popup_view') : __('common.login') }}
             </a>
             <button type="button" data-wishlist-popup-close class="text-xs font-semibold text-neutral-500 hover:text-neutral-700">
@@ -290,7 +290,7 @@
   </div>
 
   <!-- LINE QR Modal -->
-  <div class="fixed inset-0 z-[70] hidden items-center justify-center px-4" data-line-modal aria-hidden="true">
+  <div class="fixed inset-0 z-[320] hidden items-center justify-center px-4" data-line-modal aria-hidden="true">
     <div class="absolute inset-0 bg-black/50" data-line-modal-close></div>
     <aside class="relative w-full max-w-md rounded-3xl bg-white dark:bg-neutral-900 shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
       <header class="px-6 py-4 flex items-center justify-between bg-gradient-to-r from-emerald-500 to-green-500 text-white">

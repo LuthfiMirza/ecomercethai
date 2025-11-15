@@ -26,17 +26,19 @@ if (!function_exists('format_price')) {
      * @param float $amount
      * @return string
      */
-    function format_price($amount)
+    function format_price($amount, ?string $currency = null)
     {
-        $currency = config('app.currency', 'THB');
+        $currency = $currency ?? config('app.currency', 'THB');
         
         if ($currency === 'THB') {
             return '฿' . number_format($amount, 2);
-        } elseif ($currency === 'IDR') {
-            return 'Rp ' . number_format($amount, 0, ',', '.');
-        } else {
-            return '$' . number_format($amount, 2);
         }
+
+        if (function_exists('money')) {
+            return money($amount, $currency);
+        }
+
+        return $currency . ' ' . number_format($amount, 2);
     }
 }
 

@@ -82,7 +82,7 @@
           <i class="fa-regular fa-eye"></i>
         </a>
         @if(auth()->check())
-        <button type="button" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" aria-label="Add to wishlist" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
+        <button type="button" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" data-url="{{ $href }}" aria-label="Add to wishlist" class="p-2 rounded-md bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
         @else
         <button type="button" onclick="window.location='{{ $loginUrl }}'" aria-label="Login to save" class="p-2 rounded-md bg-white/90 border border-neutral-200 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent-500"><i class="fa-regular fa-heart"></i></button>
         @endif
@@ -113,9 +113,21 @@
     </div>
   </a>
   <div class="px-4 pb-4 flex items-center gap-2">
-    <x-button class="flex-1" aria-label="Tambah {{ $title }} ke keranjang" data-cart-add data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}">Tambah ke Keranjang</x-button>
+    <button
+      type="button"
+      class="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
+      aria-label="Tambah {{ $title }} ke keranjang"
+      data-cart-add
+      data-product-id="{{ $productId }}"
+      data-name="{{ $title }}"
+      data-price="{{ $price }}"
+      data-image="{{ $image }}"
+    >
+      <i class="fa-solid fa-cart-shopping text-[13px] md:text-sm"></i>
+      <span>{{ __('Tambah ke Keranjang') }}</span>
+    </button>
     @if(auth()->check())
-    <button type="button" aria-label="Wishlist" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" class="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+    <button type="button" aria-label="Wishlist" data-wishlist data-product-id="{{ $productId }}" data-name="{{ $title }}" data-price="{{ $price }}" data-image="{{ $image }}" data-url="{{ $href }}" class="p-2 rounded-md border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800">
       <i class="fa-regular fa-heart"></i>
     </button>
     @else

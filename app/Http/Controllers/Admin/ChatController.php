@@ -124,6 +124,63 @@ class ChatController extends Controller
         return back()->with('success', __('Message sent.'));
     }
 
+    public function unread(Request $request): JsonResponse
+    {
+        $afterId = max((int) $request->query('after'), 0);
+
+        $messages = Message::query()
+            ->with(['user:id,name', 'conversation:id,name'])
+            ->where('is_from_admin', false)
+            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
+            ->orderBy('id')
+            ->limit(200)
+            ->get()
+            ->map(function (Message $message) {
+                $conversationUser = $message->conversation ?: $message->user;
+                $conversationId = $message->conversation_id ?: optional($conversationUser)->id;
+
+                return [
+                    'id' => $message->id,
+                    'content' => $message->content,
+                    'is_from_admin' => $message->is_from_admin,
+                    'conversation_id' => $conversationId,
+                    'created_at' => $message->created_at?->toIso8601String(),
+                    'sender' => [
+                        'id' => $message->user?->id,
+                        'name' => $message->user?->name,
+                    ],
+                    'conversation' => $conversationUser ? [
+                        'id' => $conversationUser->id,
+                        'name' => $conversationUser->name,
+                    ] : null,
+                ];
+            })
+            ->values();
+
+        $latestMessage = $messages->last();
+        $latestId = $latestMessage['id'] ?? $afterId;
+
+        $perConversation = $messages
+            ->groupBy(fn ($message) => $message['conversation_id'] ?: 0)
+            ->map(function ($items, $conversationId) {
+                return [
+                    'conversation_id' => (int) $conversationId,
+                    'count' => $items->count(),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'ok' => true,
+            'messages' => $messages,
+            'latest_id' => $latestId,
+            'unread' => [
+                'total' => $messages->count(),
+                'conversations' => $perConversation,
+            ],
+        ]);
+    }
+
     protected function conversationItems(): Collection
     {
         $conversationMeta = Message::query()
