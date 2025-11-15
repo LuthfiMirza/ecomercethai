@@ -98,7 +98,7 @@ return [
     'field_address1_label' => 'Address',
     'field_address2_label' => 'Additional Details (Optional)',
     'field_city_label' => 'City',
-    'field_state_label' => 'Province / State (Optional)',
+    'field_state_label' => 'Province / State',
     'field_postal_label' => 'Postal Code',
     'field_country_label' => 'Country',
     'payment_not_selected' => 'Not selected',

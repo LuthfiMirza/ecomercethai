@@ -102,13 +102,63 @@ class Product extends Model
             ->all();
     }
 
+    public function getColorImageMapAttribute(): array
+    {
+        $images = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+
+        return $images
+            ->groupBy(fn (ProductImage $image) => $image->color_key ?: '__default')
+            ->map(fn ($group) => $group
+                ->sortBy([
+                    ['is_primary', 'desc'],
+                    ['sort_order', 'asc'],
+                    ['id', 'asc'],
+                ])
+                ->values())
+            ->all();
+    }
+
+    public function resolveImageForColor(?string $colorKey): ?ProductImage
+    {
+        $colorKey = $this->normalizeColorKey($colorKey);
+        $images = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+
+        $filtered = $images->filter(function (ProductImage $image) use ($colorKey) {
+            return $colorKey === null ? $image->color_key === null : $image->color_key === $colorKey;
+        });
+
+        if ($filtered->isEmpty()) {
+            $filtered = $images;
+        }
+
+        return $filtered
+            ->sortBy([
+                ['is_primary', 'desc'],
+                ['sort_order', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->first();
+    }
+
     public function getAvailableColorsAttribute(): array
     {
+        $imageColors = $this->relationLoaded('images')
+            ? $this->images->pluck('color_key')
+            : $this->images()->select('color_key')->pluck('color_key');
+
         return collect($this->colors ?? [])
+            ->merge($imageColors)
             ->map(fn ($color) => trim((string) $color))
             ->filter()
             ->unique()
             ->values()
             ->all();
+    }
+
+    protected function normalizeColorKey(?string $color): ?string
+    {
+        $value = trim((string) $color);
+
+        return $value === '' ? null : $value;
     }
 }

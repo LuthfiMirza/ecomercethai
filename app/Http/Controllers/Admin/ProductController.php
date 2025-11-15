@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
 use App\Imports\ProductsImport;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Models\ProductImage;
@@ -71,6 +72,10 @@ class ProductController extends Controller
             'gallery_images' => 'nullable|array',
             'gallery_images.*' => 'image|max:4096',
             'colors' => 'nullable|string',
+            'color_galleries' => 'nullable|array',
+            'color_galleries.*.color_key' => 'required_with:color_galleries.*.images|string|max:80',
+            'color_galleries.*.images' => 'nullable|array',
+            'color_galleries.*.images.*' => 'image|max:4096',
         ]);
         
         $payload = $request->only([
@@ -92,7 +97,8 @@ class ProductController extends Controller
 
         $product = Product::create($payload);
         $this->storeGalleryImages($product, $request->file('gallery_images', []));
-        $this->ensurePrimaryGalleryImage($product);
+        $this->storeColorGalleries($product, $request->input('color_galleries', []), $request->file('color_galleries', []));
+        $this->ensurePrimaryForEachColor($product);
         
         return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product created successfully.');
     }
@@ -143,6 +149,15 @@ class ProductController extends Controller
             'remove_images' => 'nullable|array',
             'remove_images.*' => 'integer',
             'colors' => 'nullable|string',
+            'color_galleries' => 'nullable|array',
+            'color_galleries.*.color_key' => 'required_with:color_galleries.*.images|string|max:80',
+            'color_galleries.*.images' => 'nullable|array',
+            'color_galleries.*.images.*' => 'image|max:4096',
+            'existing_images' => 'nullable|array',
+            'existing_images.*.color_key' => 'nullable|string|max:80',
+            'color_primary' => 'nullable|array',
+            'color_primary.*' => 'integer',
+            'color_primary_lookup' => 'nullable|array',
         ]);
         
         $product = Product::findOrFail($id);
@@ -171,7 +186,14 @@ class ProductController extends Controller
         $product->update($payload);
         $this->removeGalleryImages($product, $request->input('remove_images', []));
         $this->storeGalleryImages($product, $request->file('gallery_images', []));
-        $this->ensurePrimaryGalleryImage($product);
+        $this->storeColorGalleries($product, $request->input('color_galleries', []), $request->file('color_galleries', []));
+        $this->syncExistingImages(
+            $product,
+            $request->input('existing_images', []),
+            $request->input('color_primary', []),
+            $request->input('color_primary_lookup', [])
+        );
+        $this->ensurePrimaryForEachColor($product);
         
         return redirect()->route('admin.products.index', ['locale' => $locale])->with('success', 'Product updated successfully.');
     }
@@ -190,8 +212,9 @@ class ProductController extends Controller
         }
 
         foreach ($product->images as $image) {
-            if ($image->path && ! Str::startsWith($image->path, ['http://', 'https://'])) {
-                Storage::disk('public')->delete($image->path);
+            $filePath = $image->file_path ?: $image->path;
+            if ($filePath && ! Str::startsWith($filePath, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($filePath);
             }
         }
 
@@ -214,7 +237,48 @@ class ProductController extends Controller
             ->all();
     }
 
-    private function storeGalleryImages(Product $product, array $files): void
+    private function normalizeColorKey(?string $color): ?string
+    {
+        $value = trim((string) $color);
+
+        return $value === '' ? null : $value;
+    }
+
+    private function storeColorGalleries(Product $product, array $colorGalleries, array $filePayload = []): void
+    {
+        foreach ($colorGalleries as $index => $gallery) {
+            $colorKey = $this->normalizeColorKey($gallery['color_key'] ?? null);
+            $files = data_get($filePayload, "{$index}.images", []);
+
+            if (! is_array($files)) {
+                $files = [$files];
+            }
+
+            $this->storeGalleryImages($product, $files, $colorKey);
+        }
+    }
+
+    private function syncExistingImages(Product $product, array $imagesData, array $primarySelections, array $primaryLookup): void
+    {
+        if (! empty($imagesData)) {
+            foreach ($imagesData as $imageId => $payload) {
+                $colorKey = array_key_exists('color_key', (array) $payload)
+                    ? $this->normalizeColorKey($payload['color_key'] ?? null)
+                    : null;
+
+                if ($colorKey !== null || array_key_exists('color_key', (array) $payload)) {
+                    $product->images()->where('id', (int) $imageId)->update(['color_key' => $colorKey]);
+                }
+            }
+        }
+
+        foreach ($primarySelections as $hash => $imageId) {
+            $colorKey = $primaryLookup[$hash] ?? null;
+            $this->setPrimaryImage($product, (int) $imageId, $colorKey);
+        }
+    }
+
+    private function storeGalleryImages(Product $product, array $files, ?string $colorKey = null): void
     {
         $files = array_filter($files);
 
@@ -223,7 +287,8 @@ class ProductController extends Controller
         }
 
         $sortOrder = (int) ($product->images()->max('sort_order') ?? 0);
-        $hasPrimary = $product->images()->where('is_primary', true)->exists();
+        $colorKey = $this->normalizeColorKey($colorKey);
+        $hasPrimary = $this->colorHasPrimary($product, $colorKey);
 
         foreach ($files as $index => $file) {
             if (! $file instanceof UploadedFile) {
@@ -231,13 +296,20 @@ class ProductController extends Controller
             }
 
             $path = $file->store('products/gallery', 'public');
-            $isPrimary = ! $hasPrimary && $index === 0 && ! $product->image;
+            $isPrimary = ! $hasPrimary && $index === 0;
 
-            $product->images()->create([
-                'path' => $path,
+            $attributes = [
+                'color_key' => $colorKey,
+                'file_path' => $path,
                 'is_primary' => $isPrimary,
                 'sort_order' => $sortOrder + $index + 1,
-            ]);
+            ];
+
+            if (Schema::hasColumn('product_images', 'path')) {
+                $attributes['path'] = $path;
+            }
+
+            $product->images()->create($attributes);
 
             if ($isPrimary) {
                 $hasPrimary = true;
@@ -259,23 +331,77 @@ class ProductController extends Controller
         $images = $product->images()->whereIn('id', $ids)->get();
 
         foreach ($images as $image) {
-            if ($image->path && ! Str::startsWith($image->path, ['http://', 'https://'])) {
-                Storage::disk('public')->delete($image->path);
+            $filePath = $image->file_path ?: $image->path;
+            if ($filePath && ! Str::startsWith($filePath, ['http://', 'https://'])) {
+                Storage::disk('public')->delete($filePath);
             }
 
             $image->delete();
         }
     }
 
-    private function ensurePrimaryGalleryImage(Product $product): void
+    private function setPrimaryImage(Product $product, int $imageId, ?string $colorKey = null): void
     {
-        $hasPrimary = $product->images()->where('is_primary', true)->exists();
-
-        if ($hasPrimary) {
+        $image = $product->images()->where('id', $imageId)->first();
+        if (! $image) {
             return;
         }
 
-        $firstImage = $product->images()->orderBy('sort_order')->orderBy('id')->first();
+        $colorKey = $this->normalizeColorKey($colorKey ?? $image->color_key);
+
+        $product->images()
+            ->when(
+                $colorKey === null,
+                fn ($query) => $query->whereNull('color_key'),
+                fn ($query) => $query->where('color_key', $colorKey)
+            )
+            ->update(['is_primary' => false]);
+
+        $image->update([
+            'color_key' => $colorKey,
+            'is_primary' => true,
+        ]);
+    }
+
+    private function colorHasPrimary(Product $product, ?string $colorKey): bool
+    {
+        return $product->images()
+            ->when(
+                $colorKey === null,
+                fn ($query) => $query->whereNull('color_key'),
+                fn ($query) => $query->where('color_key', $colorKey)
+            )
+            ->where('is_primary', true)
+            ->exists();
+    }
+
+    private function ensurePrimaryForEachColor(Product $product): void
+    {
+        $colors = $product->images()->select('color_key')->distinct()->pluck('color_key');
+
+        foreach ($colors as $color) {
+            $this->ensurePrimaryForColor($product, $color);
+        }
+    }
+
+    private function ensurePrimaryForColor(Product $product, ?string $colorKey): void
+    {
+        $colorKey = $this->normalizeColorKey($colorKey);
+
+        $query = $product->images()
+            ->when(
+                $colorKey === null,
+                fn ($builder) => $builder->whereNull('color_key'),
+                fn ($builder) => $builder->where('color_key', $colorKey)
+            );
+
+        $checkQuery = clone $query;
+
+        if ($checkQuery->where('is_primary', true)->exists()) {
+            return;
+        }
+
+        $firstImage = $query->orderBy('sort_order')->orderBy('id')->first();
 
         if ($firstImage) {
             $firstImage->update(['is_primary' => true]);

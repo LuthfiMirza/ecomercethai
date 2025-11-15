@@ -4,25 +4,91 @@
 @php
     $currency = config('app.currency', 'THB');
     $fallbackMain = 'https://source.unsplash.com/900x900/?product,' . urlencode($product->slug);
-    $galleryImages = collect($product->gallery_image_urls ?? []);
+    $fallbackGallery = collect($product->gallery_image_urls ?? []);
     if ($product->image_url) {
-        $galleryImages->prepend($product->image_url);
+        $fallbackGallery->prepend($product->image_url);
     }
-    $galleryImages = $galleryImages->filter()->unique()->values();
-    if ($galleryImages->isEmpty()) {
-        $galleryImages = collect([
+    $fallbackGallery = $fallbackGallery->filter()->unique()->values();
+    if ($fallbackGallery->isEmpty()) {
+        $fallbackGallery = collect([
             $fallbackMain,
             'https://source.unsplash.com/600x600/?electronics,' . urlencode($product->slug . '1'),
             'https://source.unsplash.com/600x600/?electronics,' . urlencode($product->slug . '2'),
             'https://source.unsplash.com/600x600/?electronics,' . urlencode($product->slug . '3'),
         ])->filter();
     }
-    $mainImage = $galleryImages->first() ?? $fallbackMain;
+
+    $colorImageGroups = collect($product->color_image_map ?? [])->map(function ($group) {
+        return collect($group)->map(function ($image) {
+            return [
+                'id' => $image->id,
+                'url' => $image->url,
+                'is_primary' => (bool) $image->is_primary,
+                'color' => $image->color_key,
+            ];
+        })->filter(fn ($image) => filled($image['url']))->values();
+    });
+
+    if ($colorImageGroups->isEmpty()) {
+        $colorImageGroups['__default'] = $fallbackGallery->map(function ($url, $index) {
+            return [
+                'id' => 'fallback-' . $index,
+                'url' => $url,
+                'is_primary' => $index === 0,
+                'color' => null,
+            ];
+        });
+    } else {
+        if ($fallbackGallery->isNotEmpty()) {
+            $colorImageGroups['__default'] = $fallbackGallery->map(function ($url, $index) {
+                return [
+                    'id' => 'fallback-' . $index,
+                    'url' => $url,
+                    'is_primary' => $index === 0,
+                    'color' => null,
+                ];
+            });
+        } elseif (! $colorImageGroups->has('__default')) {
+            $colorImageGroups['__default'] = collect();
+        }
+    }
+
+    $colorOptions = collect($product->available_colors ?? [])
+        ->merge($colorImageGroups->keys()->reject(fn ($key) => $key === '__default'))
+        ->map(fn ($color) => trim((string) $color))
+        ->filter()
+        ->unique()
+        ->values();
+
+    $selectedColor = old('color');
+    if (! $selectedColor && $colorOptions->isNotEmpty()) {
+        $selectedColor = $colorOptions->first();
+    }
+
+    $initialColorKey = $selectedColor ?? $colorImageGroups->keys()->first(fn ($key) => $key !== '__default');
+    if (! $initialColorKey || ! $colorImageGroups->has($initialColorKey) || $colorImageGroups[$initialColorKey]->isEmpty()) {
+        $initialColorKey = '__default';
+    }
+
+    $initialThumbs = collect($colorImageGroups[$initialColorKey] ?? $colorImageGroups['__default'] ?? []);
+    if ($initialThumbs->isEmpty()) {
+        $initialThumbs = collect($colorImageGroups['__default'] ?? []);
+    }
+
+    $mainImage = $initialThumbs->first()['url'] ?? ($fallbackGallery->first() ?? $fallbackMain);
     $stock = max(0, (int) ($product->stock ?? 0));
     $canPurchase = $stock > 0;
     $description = $product->description ?: __('product.no_description');
-    $colorOptions = collect($product->available_colors ?? []);
-    $selectedColor = old('color');
+
+    $galleryPayload = $colorImageGroups->map(fn ($group) => collect($group)->map(function ($image, $index) use ($fallbackMain) {
+        return [
+            'id' => $image['id'] ?? 'tmp-' . $index,
+            'url' => $image['url'] ?? $fallbackMain,
+            'is_primary' => (bool) ($image['is_primary'] ?? false),
+            'color' => $image['color'] ?? null,
+        ];
+    })->filter(fn ($image) => filled($image['url']))->values());
+    $galleryJson = $galleryPayload->toJson(JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 @endphp
 
 <main id="main" class="container py-8 md:py-10" role="main">
@@ -34,13 +100,13 @@
         <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
           <img loading="lazy" src="{{ $mainImage }}" alt="{{ $product->name }}" class="w-full h-full object-cover" data-gallery-main-image/>
         </div>
-        <div class="grid grid-cols-4 gap-3">
-          @foreach($galleryImages as $gallery)
+        <div class="grid grid-cols-4 gap-3" data-gallery-thumbs>
+          @foreach($initialThumbs as $thumb)
             <button type="button"
                     data-gallery-thumb
-                    data-image="{{ $gallery }}"
-                    class="relative rounded-lg border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 transition hover:border-accent-400">
-              <img loading="lazy" src="{{ $gallery }}" alt="{{ $product->name }} thumbnail" class="w-full h-24 rounded-lg object-cover pointer-events-none"/>
+                    data-image="{{ $thumb['url'] }}"
+                    class="relative rounded-lg border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 transition hover:border-accent-400 {{ $loop->first ? 'ring-2 ring-accent-500 border-accent-400' : '' }}">
+              <img loading="lazy" src="{{ $thumb['url'] }}" alt="{{ $product->name }} thumbnail" class="w-full h-24 rounded-lg object-cover pointer-events-none"/>
             </button>
           @endforeach
         </div>
@@ -71,14 +137,14 @@
                   <label class="text-sm font-medium text-neutral-700 dark:text-neutral-200">{{ __('product.color') }}</label>
                   <span class="text-xs text-neutral-500 dark:text-neutral-400">{{ __('product.color_optional_hint') }}</span>
                 </div>
-                <div class="mt-2 flex flex-wrap gap-2">
+                <div class="mt-2 flex flex-wrap gap-2" data-color-options>
                   @foreach($colorOptions as $color)
                     @php
                       $colorId = 'color-' . $loop->index;
                       $isSelected = $selectedColor === $color;
                     @endphp
-                    <label for="{{ $colorId }}" class="cursor-pointer rounded-2xl border px-4 py-2 text-sm font-medium transition-all {{ $isSelected ? 'border-accent-500 bg-accent-500/10 text-accent-600 shadow-inner' : 'border-neutral-200 text-neutral-600 hover:border-accent-300 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-accent-400' }}">
-                      <input type="radio" name="color" id="{{ $colorId }}" value="{{ $color }}" class="sr-only" {{ $isSelected ? 'checked' : '' }}>
+                    <label for="{{ $colorId }}" data-color-option="{{ $color }}" class="cursor-pointer rounded-2xl border px-4 py-2 text-sm font-medium transition-all {{ $isSelected ? 'border-accent-500 bg-accent-500/10 text-accent-600 shadow-inner' : 'border-neutral-200 text-neutral-600 hover:border-accent-300 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-accent-400' }}">
+                      <input type="radio" name="color" id="{{ $colorId }}" value="{{ $color }}" class="sr-only" {{ $isSelected ? 'checked' : '' }} data-color-radio>
                       <span>{{ $color }}</span>
                     </label>
                   @endforeach
@@ -191,22 +257,85 @@
 </main>
 @endsection
 
+<script type="application/json" id="productGalleryData" data-default-color="{{ $initialColorKey }}">{!! $galleryJson !!}</script>
+
 @push('scripts')
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const mainImage = document.querySelector('[data-gallery-main-image]');
-    if (!mainImage) {
-      return;
+    const dataEl = document.getElementById('productGalleryData');
+    if (!dataEl) return;
+
+    let galleryData;
+    try {
+      galleryData = JSON.parse(dataEl.textContent || '{}');
+    } catch (error) {
+      galleryData = {};
     }
 
-    document.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
-      thumb.addEventListener('click', () => {
-        const target = thumb.getAttribute('data-image');
-        if (target) {
-          mainImage.src = target;
+    const mainImage = document.querySelector('[data-gallery-main-image]');
+    const thumbsWrapper = document.querySelector('[data-gallery-thumbs]');
+    if (!mainImage || !thumbsWrapper) return;
+
+    let activeColor = dataEl.dataset.defaultColor || '__default';
+
+    const getImagesForColor = (colorKey) => {
+      const key = colorKey && galleryData[colorKey]?.length ? colorKey : '__default';
+      return galleryData[key] || [];
+    };
+
+    const renderThumbnails = (colorKey) => {
+      const images = getImagesForColor(colorKey);
+      thumbsWrapper.innerHTML = '';
+
+      images.forEach((image, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.galleryThumb = 'true';
+        button.dataset.image = image.url;
+        button.className = 'relative rounded-lg border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 transition hover:border-accent-400';
+
+        if (index === 0 && image.url) {
+          mainImage.src = image.url;
+          button.classList.add('ring-2', 'ring-accent-500', 'border-accent-400');
+        }
+
+        button.innerHTML = `<img loading="lazy" src="${image.url}" alt="{{ $product->name }} thumbnail" class="w-full h-24 rounded-lg object-cover pointer-events-none"/>`;
+        thumbsWrapper.appendChild(button);
+      });
+    };
+
+    const selectColor = (colorKey) => {
+      activeColor = colorKey || '__default';
+      renderThumbnails(activeColor);
+      document.querySelectorAll('[data-color-option]').forEach((option) => {
+        const optionColor = option.dataset.colorOption;
+        option.classList.remove('border-accent-500', 'bg-accent-500/10', 'text-accent-600', 'shadow-inner');
+        if (optionColor === colorKey) {
+          option.classList.add('border-accent-500', 'bg-accent-500/10', 'text-accent-600', 'shadow-inner');
         }
       });
+    };
+
+    thumbsWrapper.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-gallery-thumb]');
+      if (!target) return;
+      const image = target.dataset.image;
+      if (!image) return;
+      mainImage.src = image;
+      thumbsWrapper.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => thumb.classList.remove('ring-2', 'ring-accent-500', 'border-accent-400'));
+      target.classList.add('ring-2', 'ring-accent-500', 'border-accent-400');
     });
+
+    document.querySelectorAll('[data-color-radio]').forEach((radio) => {
+      radio.addEventListener('change', (event) => {
+        if (!event.target.checked) return;
+        const wrapper = event.target.closest('[data-color-option]');
+        const colorKey = wrapper ? wrapper.dataset.colorOption : event.target.value;
+        selectColor(colorKey);
+      });
+    });
+
+    renderThumbnails(activeColor);
   });
 </script>
 @endpush

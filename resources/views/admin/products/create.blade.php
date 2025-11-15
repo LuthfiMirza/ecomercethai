@@ -91,6 +91,61 @@
             @error('gallery_images.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
         </div>
 
+        @php
+            $oldColorGalleries = old('color_galleries', []);
+        @endphp
+
+        <!-- Color Galleries -->
+        <div class="mb-8" data-color-gallery-root data-color-gallery-index="{{ count($oldColorGalleries) }}">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">Color Galleries</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Add separate images for each color variant.</p>
+                </div>
+                <button type="button" class="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:border-slate-400 dark:border-slate-600 dark:text-slate-200" data-color-gallery-add>
+                    <i class="fa-solid fa-plus"></i>
+                    {{ __('Add Color') }}
+                </button>
+            </div>
+            <div class="mt-4 space-y-4" data-color-gallery-list>
+                @foreach($oldColorGalleries as $index => $gallery)
+                    <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700" data-color-gallery-item>
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex-1">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-200">Color name / key</label>
+                                <input type="text" name="color_galleries[{{ $index }}][color_key]" value="{{ $gallery['color_key'] ?? '' }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white" placeholder="e.g. Merah" data-color-input>
+                            </div>
+                            <button type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-500" data-color-gallery-remove>&times; {{ __('Remove') }}</button>
+                        </div>
+                        <div class="mt-3">
+                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-200">Upload images</label>
+                            <input type="file" name="color_galleries[{{ $index }}][images][]" multiple class="mt-1 w-full text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300">
+                            <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">These images will show when the color is selected.</p>
+                            @error('color_galleries.' . $index . '.images.*')
+                                <p class="text-xs text-rose-500 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <template data-color-gallery-template>
+                <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700" data-color-gallery-item>
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <label class="text-xs font-semibold text-slate-600 dark:text-slate-200">Color name / key</label>
+                            <input type="text" name="color_galleries[__INDEX__][color_key]" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-white" placeholder="e.g. Navy" data-color-input>
+                        </div>
+                        <button type="button" class="text-xs font-semibold text-rose-600 hover:text-rose-500" data-color-gallery-remove>&times; {{ __('Remove') }}</button>
+                    </div>
+                    <div class="mt-3">
+                        <label class="text-xs font-semibold text-slate-600 dark:text-slate-200">Upload images</label>
+                        <input type="file" name="color_galleries[__INDEX__][images][]" multiple class="mt-1 w-full text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-slate-700 dark:file:text-indigo-300">
+                        <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Select one or more files for this color.</p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex items-center justify-end space-x-4">
             <a href="{{ localized_route('admin.products.index') }}" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Cancel</a>
@@ -101,3 +156,5 @@
     </form>
 </div>
 @endsection
+
+@include('admin.products.partials.color-gallery-scripts')

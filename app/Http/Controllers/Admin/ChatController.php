@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
@@ -65,7 +66,7 @@ class ChatController extends Controller
         ]);
     }
 
-    public function messages(Request $request, User $user): JsonResponse
+    public function messages(Request $request, string $locale, User $user): JsonResponse
     {
         $afterId = max((int) $request->query('after'), 0);
         $payload = $this->buildMessagesPayload($user, $afterId);
@@ -95,6 +96,7 @@ class ChatController extends Controller
             'conversation_id' => $conversationUser->id,
             'content' => $data['content'],
             'is_from_admin' => true,
+            'is_read' => true,
         ]);
 
         $message->loadMissing('user:id,name', 'conversation:id,name');
@@ -124,27 +126,36 @@ class ChatController extends Controller
         return back()->with('success', __('Message sent.'));
     }
 
-    public function unread(Request $request): JsonResponse
+    public function poll(Request $request): JsonResponse
     {
-        $afterId = max((int) $request->query('after'), 0);
+        $lastId = max((int) $request->query('last_id'), 0);
 
-        $messages = Message::query()
-            ->with(['user:id,name', 'conversation:id,name'])
+        $baseQuery = Message::query()
+            ->with('user:id,name')
             ->where('is_from_admin', false)
-            ->when($afterId > 0, fn ($query) => $query->where('id', '>', $afterId))
+            ->where('is_read', false);
+
+        $unreadCount = (clone $baseQuery)->count();
+
+        $messages = (clone $baseQuery)
+            ->when($lastId > 0, fn ($query) => $query->where('id', '>', $lastId))
             ->orderBy('id')
-            ->limit(200)
+            ->take(20)
             ->get()
             ->map(function (Message $message) {
+                $conversationId = $message->conversation_id ?: $message->user_id;
                 $conversationUser = $message->conversation ?: $message->user;
-                $conversationId = $message->conversation_id ?: optional($conversationUser)->id;
 
                 return [
                     'id' => $message->id,
-                    'content' => $message->content,
-                    'is_from_admin' => $message->is_from_admin,
                     'conversation_id' => $conversationId,
+                    'user_name' => $message->user?->name ?? __('Customer'),
+                    'preview' => Str::limit($message->content, 80),
+                    'message' => $message->content,
+                    'time' => $message->created_at?->diffForHumans(),
                     'created_at' => $message->created_at?->toIso8601String(),
+                    'content' => $message->content,
+                    'is_from_admin' => false,
                     'sender' => [
                         'id' => $message->user?->id,
                         'name' => $message->user?->name,
@@ -158,27 +169,37 @@ class ChatController extends Controller
             ->values();
 
         $latestMessage = $messages->last();
-        $latestId = $latestMessage['id'] ?? $afterId;
-
-        $perConversation = $messages
-            ->groupBy(fn ($message) => $message['conversation_id'] ?: 0)
-            ->map(function ($items, $conversationId) {
-                return [
-                    'conversation_id' => (int) $conversationId,
-                    'count' => $items->count(),
-                ];
-            })
-            ->values();
+        $lastMessageId = $latestMessage['id'] ?? $lastId;
 
         return response()->json([
             'ok' => true,
+            'unread_count' => $unreadCount,
             'messages' => $messages,
-            'latest_id' => $latestId,
-            'unread' => [
-                'total' => $messages->count(),
-                'conversations' => $perConversation,
-            ],
+            'last_id' => $lastMessageId,
         ]);
+    }
+
+    public function markRead(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'conversation_id' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $conversationId = (int) $data['conversation_id'];
+
+        Message::query()
+            ->where('is_from_admin', false)
+            ->where('is_read', false)
+            ->where(function ($query) use ($conversationId) {
+                $query->where('conversation_id', $conversationId)
+                    ->orWhere(function ($inner) use ($conversationId) {
+                        $inner->whereNull('conversation_id')
+                            ->where('user_id', $conversationId);
+                    });
+            })
+            ->update(['is_read' => true]);
+
+        return response()->json(['status' => 'ok']);
     }
 
     protected function conversationItems(): Collection

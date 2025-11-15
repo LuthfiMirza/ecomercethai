@@ -28,7 +28,7 @@ class CheckoutController extends Controller
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart')->with('error', __('checkout.empty_cart'));
+            return redirect()->to(localized_route('cart'))->with('error', __('checkout.empty_cart'));
         }
 
         $shippingAddresses = ShippingAddress::where('user_id', Auth::id())->get();
@@ -222,7 +222,7 @@ class CheckoutController extends Controller
             'address_line1' => ['required', 'string', 'max:255'],
             'address_line2' => ['nullable', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:120'],
-            'state' => ['nullable', 'string', 'max:120'],
+            'state' => ['required', 'string', 'max:120'],
             'postal_code' => ['required', 'string', 'max:30'],
             'country' => ['required', 'string', 'max:120'],
             'is_default' => ['sometimes', 'boolean']
@@ -266,7 +266,7 @@ class CheckoutController extends Controller
         }
 
         return redirect()
-            ->route('checkout')
+            ->to(localized_route('checkout'))
             ->with('success', __('checkout.address_added'));
     }
 
@@ -312,7 +312,7 @@ class CheckoutController extends Controller
         }
 
         return redirect()
-            ->route('checkout')
+            ->to(localized_route('checkout'))
             ->with('success', $message);
     }
 

@@ -8,7 +8,7 @@
       <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Tinjau produk yang ingin Anda beli sebelum melanjutkan ke checkout.') }}</p>
     </div>
     @if($cartItems->isNotEmpty())
-      <form method="POST" action="{{ route('cart.clear') }}">
+      <form method="POST" action="{{ localized_route('cart.clear') }}">
         @csrf
         @method('DELETE')
         <x-button type="submit" variant="ghost" class="text-sm text-red-600 hover:text-red-700">{{ __('Kosongkan Keranjang') }}</x-button>
@@ -33,7 +33,7 @@
       <div class="text-5xl">🛒</div>
       <h2 class="text-xl font-semibold text-neutral-800 dark:text-neutral-100">{{ __('Keranjang Anda masih kosong') }}</h2>
       <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ __('Mari temukan produk menarik dan tambahkan ke keranjang Anda.') }}</p>
-      <x-button href="{{ route('catalog') }}" class="inline-flex items-center gap-2">
+      <x-button href="{{ localized_route('catalog') }}" class="inline-flex items-center gap-2">
         <i class="fa-solid fa-store"></i>
         <span>{{ __('Jelajahi Katalog') }}</span>
       </x-button>
@@ -73,7 +73,7 @@
                 <span>{{ __('Subtotal:') }} <strong class="text-neutral-800 dark:text-neutral-100">{{ format_price($item->subtotal) }}</strong></span>
               </div>
               <div class="flex items-center gap-3 flex-wrap">
-                <form method="POST" action="{{ route('cart.update', $item->id) }}" class="flex items-center gap-3 flex-wrap">
+                <form method="POST" action="{{ localized_route('cart.update', ['id' => $item->id]) }}" class="flex items-center gap-3 flex-wrap">
                   @csrf
                   @method('PUT')
                   <label class="inline-flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-300">
@@ -82,7 +82,7 @@
                   </label>
                   <x-button type="submit" size="sm" variant="outline">{{ __('Perbarui') }}</x-button>
                 </form>
-                <form method="POST" action="{{ route('cart.remove', $item->id) }}">
+                <form method="POST" action="{{ localized_route('cart.remove', ['id' => $item->id]) }}">
                   @csrf
                   @method('DELETE')
                   <x-button type="submit" size="sm" variant="ghost" class="text-red-600 hover:text-red-700">{{ __('Hapus') }}</x-button>
@@ -116,7 +116,7 @@
           <span>{{ format_price($subtotal) }}</span>
         </div>
         @if(auth()->check())
-          <x-button href="{{ route('checkout') }}" class="w-full justify-center">{{ __('Lanjut ke Checkout') }}</x-button>
+          <x-button href="{{ localized_route('checkout') }}" class="w-full justify-center">{{ __('Lanjut ke Checkout') }}</x-button>
         @else
           <x-alert type="info" class="text-sm">{{ __('Masuk terlebih dahulu untuk melanjutkan checkout.') }}</x-alert>
           <x-button href="{{ localized_route('login') }}" class="w-full justify-center">{{ __('Masuk / Daftar') }}</x-button>

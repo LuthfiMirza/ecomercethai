@@ -35,18 +35,22 @@
   </div>
 </x-admin.header>
 
+<audio id="chatAudioNotification" class="hidden" preload="auto">
+  <source src="data:audio/wav;base64,UklGRqQMAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YYAMAAAAAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrgAAllG6fSlwHi9z2O6TBIFiqPf3O0v5e9BzfzYs4HOYQoCyovbvlUS7eQF3qT0F6GGdAYBhnQXoqT0Bd7t5lUT277KiQoBzmCzgfzbQc/l7O0v392KoBIHuk3PYHi8pcLp9llEAAGquRoLXj+LQjScSbPx+nlcJCMW0B4QwjIHJ1B+NZ75/Tl0KEGu7RYb/iFfC+xefYv9/n2L7F1fC/4hFhmu7ChBOXb5/jWfUH4HJMIwHhMW0CQieV/x+EmyNJ+LQ149GgmquAACWUbp9KXAeL3PY7pMEgWKo9/c7S/l70HN/Nizgc5hCgLKi9u+VRLt5AXepPQXoYZ0BgGGdBeipPQF3u3mVRPbvsqJCgHOYLOB/NtBz+Xs7S/f3YqgEge6Tc9geLylwun2WUQAAaq5GgteP4tCNJxJs/H6eVwkIxbQHhDCMgcnUH41nvn9OXQoQa7tFhv+IV8L7F59i/3+fYvsXV8L/iEWGa7sKEE5dvn+NZ9QfgckwjAeExbQJCJ5X/H4SbI0n4tDXj0aCaq4AAJZRun0pcB4vc9jukwSBYqj39ztL+XvQc382LOBzmEKAsqL275VEu3kBd6k9BehhnQGAYZ0F6Kk9AXe7eZVE9u+yokKAc5gs4H820HP5eztL9/diqASB7pNz2B4vKXC6fZZRAABqrkaC14/i0I0nEmz8fp5XCQjFtAeEMIyBydQfjWe+f05dChBru0WG/4hXwvsXn2L/f59i+xdXwv+IRYZruwoQTl2+f41n1B+ByTCMB4TFtAkInlf8fhJsjSfi0NePRoJqrg==">
+</audio>
+
 <div class="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-6"
      data-chat-auto-refresh="true"
      data-conversation-interval="10000"
      data-message-interval="6000"
-     data-unread-interval="7000">
+     data-unread-interval="5000">
   <!-- Conversations -->
   <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col h-[70vh]">
     <div class="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
       <div>
         <h3 class="font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           {{ __('Conversations') }}
-          <span id="chatUnreadBadge" class="hidden rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600 dark:bg-rose-500/20 dark:text-rose-100"></span>
+          <span id="chatSidebarBadge" class="hidden rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-600 dark:bg-rose-500/20 dark:text-rose-100"></span>
         </h3>
         <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('Select a customer to view messages.') }}</p>
       </div>
@@ -323,7 +327,8 @@
     adminId: @json(auth()->id()),
     conversationsUrl: @json(localized_route('admin.chat.conversations')),
     messagesUrlTemplate: @json(localized_route('admin.chat.conversations.show', ['user' => '__USER__'])),
-    unreadUrl: @json(localized_route('admin.chat.unread')),
+    pollUrl: @json(localized_route('admin.chat.poll')),
+    markReadUrl: @json(localized_route('admin.chat.markRead')),
     sendUrl: @json(localized_route('admin.chat.send')),
     indexUrlTemplate: @json(localized_route('admin.chat.index', ['conversation' => '__CONV__'])),
     initialConversation: @json(optional($initialConversation)?->only(['id', 'name'])),
@@ -357,9 +362,11 @@
     newConversationSelect: document.getElementById('newConversationSelect'),
     newConversationButton: document.getElementById('newConversationButton'),
     convoHidden: document.getElementById('chatConversationId'),
-    unreadBadge: document.getElementById('chatUnreadBadge'),
+    sidebarBadge: document.getElementById('chatSidebarBadge'),
     bellIndicator: document.getElementById('chatBellIndicator'),
+    bellBadge: document.getElementById('chatBellBadge'),
     bellList: document.getElementById('chatNotificationDynamic'),
+    audio: document.getElementById('chatAudioNotification'),
   };
   const alertEls = {
     root: document.getElementById('chatInlineAlert'),
@@ -378,17 +385,17 @@
     activeConversationId: config.initialConversation?.id || null,
     filter: 'all',
     loadingMessages: false,
-    unreadCursor: 0,
     unreadTotal: 0,
   };
 
   const conversationInterval = Number(root.dataset.conversationInterval || 10000);
   const messageInterval = Number(root.dataset.messageInterval || 7000);
-  const unreadInterval = Number(root.dataset.unreadInterval || 8000);
+  const unreadInterval = Number(root.dataset.unreadInterval || 5000);
 
   let convTimer = null;
   let msgTimer = null;
   let unreadTimer = null;
+  let lastChatId = null;
   let lastConvJson = '';
   let lastMsgJson = '';
   const messageCursor = new Map();
@@ -396,7 +403,7 @@
   const api = {
     list: config.conversationsUrl,
     messages: (id) => config.messagesUrlTemplate.replace('__USER__', encodeURIComponent(id)),
-    unread: config.unreadUrl,
+    poll: config.pollUrl,
   };
 
   const onlineAdmins = new Map();
@@ -408,14 +415,24 @@
   const BELL_NOTIFICATION_LIMIT = 5;
 
   function updateBellIndicator(count = 0) {
-    if (!els.bellIndicator) {
-      return;
-    }
     const total = Number(count) || 0;
-    if (total > 0 || bellNotifications.size > 0) {
-      els.bellIndicator.classList.remove('hidden');
-    } else {
-      els.bellIndicator.classList.add('hidden');
+    const hasNotifications = total > 0 || bellNotifications.size > 0;
+    if (els.bellIndicator) {
+      if (hasNotifications) {
+        els.bellIndicator.classList.remove('hidden');
+      } else {
+        els.bellIndicator.classList.add('hidden');
+      }
+    }
+    if (els.bellBadge) {
+      if (hasNotifications) {
+        const badgeValue = Math.max(total, bellNotifications.size);
+        els.bellBadge.textContent = badgeValue > 99 ? '99+' : badgeValue.toString();
+        els.bellBadge.classList.remove('hidden');
+      } else {
+        els.bellBadge.textContent = '';
+        els.bellBadge.classList.add('hidden');
+      }
     }
   }
 
@@ -424,8 +441,8 @@
     if (Number.isNaN(numericId) || numericId <= 0) {
       return;
     }
-    if (!state.unreadCursor || numericId > state.unreadCursor) {
-      state.unreadCursor = numericId;
+    if (!lastChatId || numericId > lastChatId) {
+      lastChatId = numericId;
     }
   }
 
@@ -546,8 +563,28 @@
   }
 
   function playNotification() {
+    if (els.audio) {
+      try {
+        els.audio.currentTime = 0;
+        const result = els.audio.play();
+        if (result?.catch) {
+          result.catch(() => {
+            const context = ensureAudioContext();
+            if (!context) return;
+            triggerTone(context);
+          });
+        }
+        return;
+      } catch (error) {
+        console.debug('Audio playback failed', error);
+      }
+    }
     const context = ensureAudioContext();
     if (!context) return;
+    triggerTone(context);
+  }
+
+  function triggerTone(context) {
     try {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
@@ -566,19 +603,21 @@
 
   document.addEventListener('click', () => ensureAudioContext(), { once: true });
 
-  const escapeHtml = (value = '') => String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  function escapeHtml(value = '') {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
-  const timeLabel = (iso) => {
+  function timeLabel(iso) {
     if (!iso) return '';
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return '';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  }
 
   function updateFormState(enabled) {
     const allow = Boolean(enabled);
@@ -591,20 +630,20 @@
   }
 
   function renderUnreadBadge(count) {
-    if (!els.unreadBadge) {
+    if (!els.sidebarBadge) {
       return;
     }
     const value = Number(count) || 0;
     state.unreadTotal = value;
     if (value <= 0) {
-      els.unreadBadge.classList.add('hidden');
-      els.unreadBadge.textContent = '';
+      els.sidebarBadge.classList.add('hidden');
+      els.sidebarBadge.textContent = '';
       updateBellIndicator(value);
       return;
     }
     const label = value > 99 ? '99+' : value.toString();
-    els.unreadBadge.textContent = label;
-    els.unreadBadge.classList.remove('hidden');
+    els.sidebarBadge.textContent = label;
+    els.sidebarBadge.classList.remove('hidden');
     updateBellIndicator(value);
   }
 
@@ -697,7 +736,7 @@
   }
 
   function startUnreadPolling(force = false) {
-    if (!api.unread) {
+    if (!api.poll) {
       return;
     }
     if (unreadTimer && !force) {
@@ -837,10 +876,15 @@
       const wrapper = document.createElement('div');
       wrapper.className = 'flex items-start gap-3 px-5 py-4 bg-amber-50/80 dark:bg-amber-900/30';
       wrapper.dataset.chatNotifyTarget = entry.id;
+      wrapper.dataset.conversationId = entry.id;
+      if (entry.messageId) {
+        wrapper.dataset.chatNotifyMessage = entry.messageId;
+        wrapper.dataset.messageId = entry.messageId;
+      }
       const title = labels.toastTemplate.replace(':name', entry.name || labels.adminFallback);
       const safeTitle = escapeHtml(title);
       const previewText = escapeHtml(entry.preview || '');
-      const timestamp = escapeHtml(timeLabel(entry.time));
+      const timestamp = escapeHtml(entry.timeLabel || timeLabel(entry.time));
       const buttonLabel = escapeHtml(labels.openChat || '');
       wrapper.innerHTML = `
         <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-500 text-white">
@@ -853,7 +897,7 @@
           <p class="text-xs text-slate-500 dark:text-slate-300 break-words">${previewText}</p>
           <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1">${timestamp}</p>
         </div>
-        <button type="button" class="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-200 dark:hover:text-amber-50" data-chat-notify-target="${entry.id}">
+        <button type="button" class="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-200 dark:hover:text-amber-50" data-chat-notify-target="${entry.id}" data-conversation-id="${entry.id}" ${entry.messageId ? `data-chat-notify-message="${entry.messageId}" data-message-id="${entry.messageId}"` : ''}>
           ${buttonLabel}
         </button>
       `;
@@ -872,9 +916,11 @@
 
     const entry = {
       id,
-      name: message?.sender?.name || message?.conversation?.name || labels.adminFallback,
-      preview: message?.content || '',
+      name: message?.sender?.name || message?.conversation?.name || message?.user_name || labels.adminFallback,
+      preview: message?.preview || message?.content || message?.message || '',
       time: message?.created_at || new Date().toISOString(),
+      timeLabel: message?.time || null,
+      messageId: message?.id ? Number(message.id) : null,
     };
 
     if (bellNotifications.has(id)) {
@@ -905,6 +951,36 @@
     if (bellNotifications.delete(id)) {
       renderBellNotifications();
     }
+  }
+
+  async function markConversationRead(conversationId) {
+    if (!config.markReadUrl) {
+      return;
+    }
+    const id = Number(conversationId);
+    if (!id || Number.isNaN(id)) {
+      return;
+    }
+    try {
+      await http.get(config.markReadUrl, {
+        params: { conversation_id: id },
+      });
+      pollUnreadMessages().catch(() => {});
+    } catch (error) {
+      console.debug('Mark read failed', error);
+    }
+  }
+
+  function openConversationFromNotification(conversationId, messageId) {
+    if (!conversationId) {
+      return;
+    }
+    markConversationRead(conversationId).catch(() => {});
+    switchConversation(conversationId)
+      .then(() => {
+        clearBellNotification(conversationId);
+      })
+      .catch(() => {});
   }
 
   async function switchConversation(conversationId, options = {}) {
@@ -1167,6 +1243,7 @@
         els.chatSubtitle.textContent = '{{ __('No messages yet.') }}';
       }
 
+      markConversationRead(conversation.id).catch(() => {});
       updateFormState(true);
       els.chatInput.focus();
     } catch (error) {
@@ -1284,6 +1361,7 @@
         if (document.hidden || !document.hasFocus()) {
           shouldPlaySound = true;
         }
+        markConversationRead(conversationId).catch(() => {});
       } else {
         pendingAlert = {
           text: labels.toastTemplate.replace(':name', user.name || labels.adminFallback),
@@ -1311,19 +1389,21 @@
   }
 
   async function pollUnreadMessages() {
-    if (!api.unread) {
+    if (!api.poll) {
       return;
     }
     const params = {};
-    if (state.unreadCursor && state.unreadCursor > 0) {
-      params.after = state.unreadCursor;
+    if (lastChatId && lastChatId > 0) {
+      params.last_id = lastChatId;
     }
     try {
-      const { data } = await http.get(api.unread, { params });
+      const { data } = await http.get(api.poll, { params });
       if (!data?.ok) {
         return;
       }
-      const latestId = Number(data.latest_id ?? 0);
+      const unreadCount = Number(data.unread_count ?? 0);
+      renderUnreadBadge(unreadCount);
+      const latestId = Number(data.last_id ?? 0);
       if (!Number.isNaN(latestId) && latestId > 0) {
         updateGlobalCursor(latestId);
       }
@@ -1504,12 +1584,10 @@
     if (!conversationId) {
       return;
     }
+    event.preventDefault();
+    const messageId = Number(target.dataset.chatNotifyMessage || 0);
     ensureAudioContext();
-    switchConversation(conversationId)
-      .then(() => {
-        clearBellNotification(conversationId);
-      })
-      .catch(() => {});
+    openConversationFromNotification(conversationId, messageId || null);
   });
 
   const handleVisibility = () => {

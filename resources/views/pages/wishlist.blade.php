@@ -81,9 +81,7 @@
           <div class="border-t border-white/60 pt-3 dark:border-neutral-800">
             <button type="button" class="w-full rounded-md bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow hover:bg-accent-600" x-on:click="moveAllToCart()">{{ __('wishlist.move_all_to_cart') }}</button>
           </div>
-          @if(auth()->check())
-          <a href="{{ route('checkout') }}" class="block w-full rounded-md border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800">{{ __('wishlist.proceed_to_checkout') }}</a>
-          @else
+          @if(! auth()->check())
           <a href="{{ localized_route('login') }}" class="block w-full rounded-md border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 hover:bg-neutral-50">{{ __('wishlist.login_to_checkout') }}</a>
           @endif
         </div>

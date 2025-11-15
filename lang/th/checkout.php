@@ -98,7 +98,7 @@ return [
     'field_address1_label' => 'ที่อยู่',
     'field_address2_label' => 'รายละเอียดเพิ่มเติม (ไม่บังคับ)',
     'field_city_label' => 'เมือง',
-    'field_state_label' => 'จังหวัด / รัฐ (ไม่บังคับ)',
+    'field_state_label' => 'จังหวัด / รัฐ',
     'field_postal_label' => 'รหัสไปรษณีย์',
     'field_country_label' => 'ประเทศ',
     'payment_not_selected' => 'ยังไม่ได้เลือก',

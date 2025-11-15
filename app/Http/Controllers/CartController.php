@@ -112,7 +112,7 @@ class CartController extends Controller
                 return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
             }
 
-            return redirect()->route('cart')->with('error', __('cart.not_found'));
+            return redirect()->to(localized_route('cart'))->with('error', __('cart.not_found'));
         }
 
         $cart->quantity = $request->quantity;
@@ -130,7 +130,7 @@ class CartController extends Controller
             ]));
         }
 
-        return redirect()->route('cart')->with('success', $payload['message']);
+        return redirect()->to(localized_route('cart'))->with('success', $payload['message']);
     }
 
     public function remove(string $locale, $id)
@@ -142,7 +142,7 @@ class CartController extends Controller
                 return response()->json(['success' => false, 'message' => __('cart.not_found')], 404);
             }
 
-            return redirect()->route('cart')->with('error', __('cart.not_found'));
+            return redirect()->to(localized_route('cart'))->with('error', __('cart.not_found'));
         }
 
         $cart->delete();
@@ -158,7 +158,7 @@ class CartController extends Controller
             ]));
         }
 
-        return redirect()->route('cart')->with('success', $payload['message']);
+        return redirect()->to(localized_route('cart'))->with('success', $payload['message']);
     }
 
     public function clear()
@@ -180,7 +180,7 @@ class CartController extends Controller
             ]));
         }
 
-        return redirect()->route('cart')->with('success', $payload['message']);
+        return redirect()->to(localized_route('cart'))->with('success', $payload['message']);
     }
 
     public function summary()
@@ -189,10 +189,17 @@ class CartController extends Controller
             $product = $cart->product;
             $image = null;
 
-            if ($product && $product->image) {
-                $image = Str::startsWith($product->image, ['http://', 'https://'])
-                    ? $product->image
-                    : asset('storage/' . ltrim($product->image, '/'));
+            if ($product) {
+                $product->loadMissing('images');
+                $colorImage = $product->resolveImageForColor($cart->color);
+
+                if ($colorImage?->url) {
+                    $image = $colorImage->url;
+                } elseif ($product->image) {
+                    $image = Str::startsWith($product->image, ['http://', 'https://'])
+                        ? $product->image
+                        : asset('storage/' . ltrim($product->image, '/'));
+                }
             }
 
             if (! $image) {
@@ -227,10 +234,10 @@ class CartController extends Controller
     private function getCartItems()
     {
         if (Auth::check()) {
-            return Cart::with('product')->where('user_id', Auth::id())->get();
-        } else {
-            return Cart::with('product')->where('session_id', session()->getId())->get();
+            return Cart::with(['product.images'])->where('user_id', Auth::id())->get();
         }
+
+        return Cart::with(['product.images'])->where('session_id', session()->getId())->get();
     }
 
     private function findCartItem($id)

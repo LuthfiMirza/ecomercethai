@@ -334,9 +334,10 @@
                             >
                                 <span id="chatBellIndicator" class="hidden absolute -top-1.5 -left-1.5 h-3 w-3 rounded-full bg-emerald-400 shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse"></span>
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                                @if($inlineNotifications->isNotEmpty())
-                                    <span class="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white shadow-[0_8px_16px_-8px_rgba(225,29,72,0.8)]">{{ $inlineNotifications->count() }}</span>
-                                @endif
+                                <span
+                                    id="chatBellBadge"
+                                    class="{{ $inlineNotifications->isNotEmpty() ? '' : 'hidden' }} absolute -top-1 -right-1 inline-flex h-4 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white shadow-[0_8px_16px_-8px_rgba(225,29,72,0.8)]"
+                                >{{ $inlineNotifications->count() }}</span>
                             </button>
 
                             <div

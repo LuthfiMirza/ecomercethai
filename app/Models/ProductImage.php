@@ -12,6 +12,8 @@ class ProductImage extends Model
 
     protected $fillable = [
         'product_id',
+        'color_key',
+        'file_path',
         'path',
         'is_primary',
         'sort_order',
@@ -29,16 +31,18 @@ class ProductImage extends Model
 
     public function getUrlAttribute(): ?string
     {
-        if (! $this->path) {
+        $path = $this->file_path ?: $this->path;
+
+        if (! $path) {
             return null;
         }
 
-        if (filter_var($this->path, FILTER_VALIDATE_URL)) {
-            return $this->path;
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
         }
 
-        if (Storage::disk('public')->exists($this->path)) {
-            return Storage::disk('public')->url($this->path);
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->url($path);
         }
 
         return null;

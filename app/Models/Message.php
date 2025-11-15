@@ -14,10 +14,12 @@ class Message extends Model
         'conversation_id',
         'content',
         'is_from_admin',
+        'is_read',
     ];
 
     protected $casts = [
         'is_from_admin' => 'boolean',
+        'is_read' => 'boolean',
     ];
 
     public function user()

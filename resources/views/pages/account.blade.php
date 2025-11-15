@@ -10,7 +10,7 @@
                 </h1>
                 <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{{ auth()->user()->email }}</p>
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="{{ route('cart') }}" class="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:border-accent-500" data-i18n="account.open_cart">Open cart</a>
+                    <a href="{{ localized_route('cart') }}" class="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:border-accent-500" data-i18n="account.open_cart">Open cart</a>
                     <a href="{{ route('wishlist') }}" class="px-4 py-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:border-accent-500" data-i18n="account.open_wishlist">View wishlist</a>
                 </div>
             </header>

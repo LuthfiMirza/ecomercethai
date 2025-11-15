@@ -54,6 +54,7 @@ class ChatMessageController extends Controller
             'conversation_id' => $user->id,
             'content' => $data['content'],
             'is_from_admin' => false,
+            'is_read' => false,
         ]);
 
         $message->loadMissing('user:id,name', 'conversation:id,name');

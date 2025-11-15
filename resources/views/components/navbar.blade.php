@@ -87,7 +87,7 @@
         @endif
 
         <!-- Cart -->
-        <a href="{{ route('cart') }}" data-open-cart class="relative inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:border-accent-500" aria-label="{{ __('common.cart_title') }}">
+        <a href="{{ localized_route('cart') }}" data-open-cart class="relative inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-sm hover:border-accent-500" aria-label="{{ __('common.cart_title') }}">
           <i class="fa-solid fa-cart-shopping text-neutral-700 dark:text-neutral-200"></i>
           <span id="cart-count" class="absolute -top-1 -right-1 bg-primary-600 text-white rounded-full min-w-[1.1rem] h-[1.1rem] text-[10px] leading-[1.1rem] text-center">0</span>
         </a>
@@ -129,7 +129,7 @@
         <!-- Cart summary with hover preview (desktop) -->
         <div class="relative" x-data="{open:false, items:[], subtotal:0, load(){ try{ this.items=JSON.parse(localStorage.getItem('cartItems')||'[]'); this.subtotal=this.items.reduce((s,i)=>s+Number(i.price||0),0);}catch(e){ this.items=[]; this.subtotal=0; } }}"
              x-on:mouseenter="open=true; load()" x-on:mouseleave="open=false">
-          <a href="{{ route('cart') }}" data-open-cart class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
+          <a href="{{ localized_route('cart') }}" data-open-cart class="inline-flex items-center gap-3 text-neutral-700 dark:text-neutral-100">
             <i class="fa-solid fa-cart-shopping text-xl"></i>
             <div class="leading-tight">
               <div class="text-sm font-semibold text-red-500">$0.00</div>
@@ -161,8 +161,8 @@
                   <div class="font-semibold text-neutral-900 dark:text-neutral-100" x-text="'$' + subtotal.toFixed(2)"></div>
                 </div>
                 <div class="p-3 pt-0 grid grid-cols-2 gap-2">
-                  <a href="{{ route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.view_cart') }}</a>
-                  <a href="{{ auth()->check() ? route('checkout') : $loginUrl }}" class="px-3 py-2 text-sm rounded-md {{ auth()->check() ? 'bg-accent-500 hover:bg-accent-600 text-white' : 'bg-neutral-200 text-neutral-600' }} text-center">
+                  <a href="{{ localized_route('cart') }}" class="px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-center hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.view_cart') }}</a>
+                  <a href="{{ auth()->check() ? localized_route('checkout') : $loginUrl }}" class="px-3 py-2 text-sm rounded-md {{ auth()->check() ? 'bg-accent-500 hover:bg-accent-600 text-white' : 'bg-neutral-200 text-neutral-600' }} text-center">
                     {{ auth()->check() ? __('common.checkout') : __('common.login') }}
                   </a>
                 </div>
@@ -342,7 +342,7 @@
               <a href="{{ route('admin.dashboard') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.admin_panel') }}</a>
             @endrole
             <a href="{{ route('wishlist') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.wishlist') }}</a>
-            <a href="{{ route('cart') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.view_cart') }}</a>
+            <a href="{{ localized_route('cart') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.view_cart') }}</a>
           @else
             <a href="{{ $loginUrl }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.login') }}</a>
             <a href="{{ localized_route('register') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.register') }}</a>

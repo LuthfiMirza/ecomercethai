@@ -221,7 +221,7 @@
 <!-- Rekomendasi Produk Section -->
 <div class="container mx-auto px-6">
     <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8 text-center">{{ __('home.recommended_title') }}</h2>
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 justify-items-center">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
         @forelse(($featuredProducts ?? collect()) as $product)
             @php
                 $image = $productImageResolver($product);
