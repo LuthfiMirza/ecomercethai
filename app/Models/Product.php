@@ -39,15 +39,13 @@ class Product extends Model
     {
         parent::boot();
 
-        static::creating(function ($product) {
-            if (empty($product->slug)) {
-                $product->slug = Str::slug($product->name);
-            }
+        static::creating(function (self $product) {
+            $product->slug = static::generateUniqueSlug($product, $product->slug ?: $product->name);
         });
 
-        static::updating(function ($product) {
-            if ($product->isDirty('name') && empty($product->slug)) {
-                $product->slug = Str::slug($product->name);
+        static::updating(function (self $product) {
+            if ($product->isDirty('slug') || ($product->isDirty('name') && empty($product->slug))) {
+                $product->slug = static::generateUniqueSlug($product, $product->slug ?: $product->name);
             }
         });
     }
@@ -160,5 +158,28 @@ class Product extends Model
         $value = trim((string) $color);
 
         return $value === '' ? null : $value;
+    }
+
+    protected static function generateUniqueSlug(self $product, ?string $value): string
+    {
+        $base = Str::slug((string) $value) ?: 'product';
+        $query = static::query()->where('slug', 'like', $base . '%');
+
+        if ($product->exists) {
+            $query->where('id', '!=', $product->id);
+        }
+
+        $existing = $query->pluck('slug')->filter()->values();
+
+        if (! $existing->contains($base)) {
+            return $base;
+        }
+
+        $suffix = 1;
+        while ($existing->contains($base . '-' . $suffix)) {
+            $suffix++;
+        }
+
+        return $base . '-' . $suffix;
     }
 }

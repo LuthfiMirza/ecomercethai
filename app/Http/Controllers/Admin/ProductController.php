@@ -64,7 +64,13 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'price' => [
+                'required',
+                'numeric',
+                'min:0',
+                'decimal:0,2',
+                'max:999999999999999999.99',
+            ],
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
@@ -139,7 +145,13 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'price' => [
+                'required',
+                'numeric',
+                'min:0',
+                'decimal:0,2',
+                'max:999999999999999999.99',
+            ],
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'status' => 'required|in:active,inactive',
