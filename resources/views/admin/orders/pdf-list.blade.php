@@ -4,7 +4,19 @@
     <meta charset="utf-8">
     <title>Orders Report</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #0f172a; }
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            font-style: normal;
+            font-weight: 400;
+            src: url('{{ storage_path('fonts/NotoSansThai-Regular.ttf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            font-style: normal;
+            font-weight: 700;
+            src: url('{{ storage_path('fonts/NotoSansThai-Bold.ttf') }}') format('truetype');
+        }
+        body { font-family: 'Noto Sans Thai', DejaVu Sans, sans-serif; font-size: 12px; color: #0f172a; }
         .brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .brand h2 { margin: 0; font-size: 18px; }
         .badge { display:inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 10px; }

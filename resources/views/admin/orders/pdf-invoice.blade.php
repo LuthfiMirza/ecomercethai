@@ -4,7 +4,19 @@
     <meta charset="utf-8">
     <title>Invoice #ORD{{ $order->id }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #0f172a; }
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            font-style: normal;
+            font-weight: 400;
+            src: url('{{ storage_path('fonts/NotoSansThai-Regular.ttf') }}') format('truetype');
+        }
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            font-style: normal;
+            font-weight: 700;
+            src: url('{{ storage_path('fonts/NotoSansThai-Bold.ttf') }}') format('truetype');
+        }
+        body { font-family: 'Noto Sans Thai', DejaVu Sans, sans-serif; font-size: 12px; color: #0f172a; }
         h2 { margin: 0; }
         .brand { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
         table { width:100%; border-collapse: collapse; }

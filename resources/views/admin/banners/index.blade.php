@@ -1,50 +1,93 @@
 @extends('layouts.admin')
-@section('title', 'Banners')
+
+@section('header', __('admin.nav.banners'))
+
 @section('content')
-<x-admin.header title="Banners" :breadcrumbs="[['label'=>'Admin','href'=>localized_route('admin.dashboard')],['label'=>'Banners']]">
-  <form method="GET" action="{{ localized_route('admin.banners.index') }}" class="flex items-center gap-2">
-    <input type="text" name="q" value="{{ request('q') }}" placeholder="Search banners..." class="h-10 w-64 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm" />
-    @if(request('q'))
-      <a href="{{ localized_route('admin.banners.index') }}" class="text-sm text-gray-600">Clear</a>
-    @endif
-    <a href="{{ localized_route('admin.banners.create') }}" class="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">New Banner</a>
-  </form>
-</x-admin.header>
-<div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-2 text-left">Title</th>
-        <th class="px-4 py-2">Placement</th>
-        <th class="px-4 py-2">Active Window</th>
-        <th class="px-4 py-2">Active</th>
-        <th class="px-4 py-2">Priority</th>
-        <th class="px-4 py-2"></th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      @foreach($banners as $banner)
-      <tr>
-        <td class="px-4 py-2">
-          <div class="font-medium text-gray-900">{{ $banner->title }}</div>
-          <div class="text-gray-500 text-sm line-clamp-1">{{ $banner->image_path }}</div>
-        </td>
-        <td class="px-4 py-2">{{ $banner->placement }}</td>
-        <td class="px-4 py-2">{{ optional($banner->starts_at)->format('Y-m-d') ?? '-' }} — {{ optional($banner->ends_at)->format('Y-m-d') ?? '-' }}</td>
-        <td class="px-4 py-2">{!! $banner->is_active ? '<span class="text-green-600">Yes</span>' : '<span class="text-gray-400">No</span>' !!}</td>
-        <td class="px-4 py-2">{{ $banner->priority }}</td>
-        <td class="px-4 py-2 text-right">
-          <a href="{{ localized_route('admin.banners.show', ['id' => $banner->id]) }}" class="text-slate-600 hover:underline mr-3">View</a>
-          <a href="{{ localized_route('admin.banners.edit', ['id' => $banner->id]) }}" class="text-blue-600 hover:underline mr-3">Edit</a>
-          <form action="{{ localized_route('admin.banners.destroy', ['id' => $banner->id]) }}" method="POST" class="inline" onsubmit="return confirm('Delete this banner?')">
-            @csrf @method('DELETE')
-            <button class="text-red-600 hover:underline">Delete</button>
-          </form>
-        </td>
-      </tr>
-      @endforeach
-    </tbody>
-  </table>
+<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <form action="{{ localized_route('admin.banners.index') }}" method="GET" class="flex items-center gap-2">
+        <input type="text"
+               name="q"
+               value="{{ $q }}"
+               placeholder="{{ __('admin.banners.search_placeholder') }}"
+               class="h-11 w-64 rounded-2xl border border-slate-200 bg-white/80 px-4 text-sm text-slate-700 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900/40 dark:text-white">
+        @if($q)
+            <a href="{{ localized_route('admin.banners.index') }}" class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-300">{{ __('admin.common.clear') }}</a>
+        @endif
+    </form>
+    <a href="{{ localized_route('admin.banners.create') }}"
+       class="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-orange-400/40 transition hover:bg-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-200">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5" />
+        </svg>
+        {{ __('admin.banners.new') }}
+    </a>
 </div>
-<div class="mt-4">{{ $banners->links() }}</div>
+
+<div class="table-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+            <thead class="bg-white/80 dark:bg-slate-900/60">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('admin.common.preview') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('admin.common.title_subtitle') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('admin.common.order') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('admin.common.status') }}</th>
+                    <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">{{ __('admin.common.actions') }}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white/70 dark:divide-slate-800 dark:bg-slate-900/40">
+            @forelse($banners as $banner)
+                @php
+                    $imgPath = $banner->image_path;
+                    $url = $imgPath
+                        ? (\Illuminate\Support\Str::startsWith($imgPath, ['http://', 'https://'])
+                            ? $imgPath
+                            : \Illuminate\Support\Facades\Storage::url($imgPath))
+                        : null;
+                @endphp
+                <tr>
+                    <td class="px-6 py-4">
+                        @if($url)
+                            <img src="{{ $url }}" alt="{{ $banner->title }}" class="h-16 w-36 rounded-xl object-cover shadow-sm">
+                        @else
+                            <div class="h-16 w-36 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-xs text-slate-400">{{ __('admin.common.no_image') }}</div>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4">
+                        <p class="font-semibold text-slate-800 dark:text-slate-100">{{ $banner->title }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{{ $banner->subtitle }}</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300">{{ $banner->sort_order }}</td>
+                    <td class="px-6 py-4">
+                        @if($banner->is_active)
+                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">{{ __('admin.common.active') }}</span>
+                        @else
+                            <span class="inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-700/40 dark:text-slate-300">{{ __('admin.common.hidden') }}</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-3">
+                            <a href="{{ localized_route('admin.banners.edit', ['banner' => $banner]) }}" class="text-sm font-medium text-orange-600 hover:text-orange-500">{{ __('admin.common.edit') }}</a>
+                            <form action="{{ localized_route('admin.banners.destroy', ['banner' => $banner]) }}" method="POST" onsubmit="return confirm('{{ __('admin.banners.delete_confirm') }}')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-sm font-medium text-rose-600 hover:text-rose-500">{{ __('admin.common.delete') }}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5" class="px-6 py-6 text-center text-sm text-slate-500 dark:text-slate-300">
+                        {{ __('admin.banners.empty') }}
+                    </td>
+                </tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="border-t border-slate-100 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/40">
+        {{ $banners->links() }}
+    </div>
+</div>
 @endsection

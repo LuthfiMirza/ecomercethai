@@ -322,7 +322,14 @@ class OrderController extends Controller
     public function exportPdf()
     {
         $orders = Order::with('user')->get();
-        $pdf = Pdf::loadView('admin.orders.pdf-list', compact('orders'));
+        $pdf = Pdf::setOptions([
+            'defaultFont' => 'Noto Sans Thai',
+            'font_dir' => storage_path('fonts'),
+            'font_cache' => storage_path('fonts'),
+            'chroot' => base_path(),
+            'isRemoteEnabled' => true,
+            'enable_font_subsetting' => true,
+        ])->loadView('admin.orders.pdf-list', compact('orders'));
         return $pdf->download('orders_'.now()->format('Ymd_His').'.pdf');
     }
 
@@ -341,7 +348,14 @@ class OrderController extends Controller
     public function invoicePdf(string $locale, $id)
     {
         $order = Order::with(['user', 'orderItems.product'])->findOrFail($id);
-        $pdf = Pdf::loadView('admin.orders.pdf-invoice', compact('order'));
+        $pdf = Pdf::setOptions([
+            'defaultFont' => 'Noto Sans Thai',
+            'font_dir' => storage_path('fonts'),
+            'font_cache' => storage_path('fonts'),
+            'chroot' => base_path(),
+            'isRemoteEnabled' => true,
+            'enable_font_subsetting' => true,
+        ])->loadView('admin.orders.pdf-invoice', compact('order'));
         return $pdf->download('invoice_ORD'.$order->id.'.pdf');
     }
 

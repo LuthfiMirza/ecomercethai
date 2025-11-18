@@ -2,29 +2,37 @@
 
 @section('content')
 @php
-    $bannerCollection = $banners ?? collect();
-    $findBanner = static function ($placement) use ($bannerCollection) {
-        return $bannerCollection->firstWhere('placement', $placement);
-    };
-    $bannerUrl = static function ($banner) {
-        if (! $banner) {
+    $resolveMediaUrl = static function (?string $path) {
+        if (! $path) {
             return null;
         }
-        $path = $banner->image_path;
+
         return \Illuminate\Support\Str::startsWith($path, ['http://', 'https://'])
             ? $path
             : \Illuminate\Support\Facades\Storage::url($path);
     };
-    $topBanner = $findBanner('homepage_top');
-    $midBanner = $findBanner('homepage_sidebar');
-    $bottomBanner = $findBanner('homepage_bottom');
-    $heroSlides = [
+
+    $sliderCollection = collect($sliders ?? [])->sortBy('sort_order')->values();
+    $heroSlides = $sliderCollection->map(function ($slider) use ($resolveMediaUrl) {
+        return [
+            'title' => $slider->title,
+            'subtitle' => $slider->subtitle,
+            'description' => null,
+            'image' => $resolveMediaUrl($slider->image_path) ?? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1600&q=80',
+            'alt' => $slider->title,
+            'link_url' => $slider->link_url,
+        ];
+    })->values()->all();
+
+    if (empty($heroSlides)) {
+        $heroSlides = [
         [
             'title' => __('Upgrade Your Battle Station'),
             'subtitle' => __('Custom gaming rigs, assembled and stress-tested'),
             'description' => __('Pilih build yang sesuai gaya bermainmu atau konsultasi dengan tim kami untuk spesifikasi terbaik.'),
             'image' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'Custom gaming PC setup',
+            'link_url' => route('catalog'),
         ],
         [
             'title' => __('Next-Gen CPU Power'),
@@ -32,6 +40,7 @@
             'description' => __('Temukan prosesor favoritmu dengan stok terjamin dan garansi resmi pabrikan.'),
             'image' => 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'Close-up of a high-end CPU',
+            'link_url' => route('catalog'),
         ],
         [
             'title' => __('Graphics Ready for Ray Tracing'),
@@ -39,8 +48,22 @@
             'description' => __('Rasakan performa GPU kelas atas untuk gaming 4K, VR, dan kebutuhan kreatif profesional.'),
             'image' => 'https://images.unsplash.com/photo-1618005198919-d3d4b5a92eee?auto=format&fit=crop&w=1600&q=80',
             'alt' => 'High-end graphics card on a desk',
+            'link_url' => route('catalog'),
         ],
-    ];
+        ];
+    }
+
+    $bannerCollection = collect($banners ?? [])->sortBy('sort_order')->values();
+    $bannerUrl = static function ($banner) use ($resolveMediaUrl) {
+        if (! $banner) {
+            return null;
+        }
+
+        return $resolveMediaUrl($banner->image_path);
+    };
+    $topBanner = $bannerCollection->get(0);
+    $midBanner = $bannerCollection->get(1);
+    $bottomBanner = $bannerCollection->get(2);
     $defaultBannerImages = [
         'homepage_top' => 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1600&q=80',
         'homepage_sidebar' => 'https://images.unsplash.com/photo-1517430816045-df4b7de49276?auto=format&fit=crop&w=900&q=80',
@@ -106,8 +129,8 @@
 
 <!-- Hero Section / Slider -->
 <section class="relative">
-  <div class="hero-slider relative overflow-hidden rounded-b-[42px] bg-neutral-900 text-white shadow-lg md:rounded-b-[56px]" data-slider data-slider-autoplay="7000" data-slider-wrap="true">
-    <div class="flex h-full min-h-[440px] sm:min-h-[500px] md:min-h-[560px] lg:min-h-[600px] transition-transform duration-700 ease-out" data-slider-track>
+  <div class="hero-slider relative overflow-hidden rounded-b-[42px] bg-neutral-900 text-white shadow-lg md:rounded-b-[56px] h-[420px] sm:h-[500px] md:h-[60vh] lg:h-[65vh] 2xl:h-[70vh]" data-slider data-slider-autoplay="7000" data-slider-wrap="true">
+    <div class="flex h-full w-full transition-transform duration-700 ease-out" data-slider-track>
       @foreach($heroSlides as $index => $slide)
         <article class="relative flex h-full w-full flex-shrink-0 basis-full items-center justify-center px-4 sm:px-6 md:px-0" data-slider-item>
           <img
@@ -130,10 +153,17 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70 sm:text-sm">{{ strtoupper(config('app.name', 'Lungpaeit')) }} Exclusive</p>
                   </div>
                   <h1 class="text-3xl font-black leading-tight sm:text-4xl md:text-5xl">{{ $slide['title'] }}</h1>
-                  <p class="text-lg font-semibold text-white/95 md:text-xl">{{ $slide['subtitle'] }}</p>
-                  <p class="text-sm text-white/85 md:text-base">{{ $slide['description'] }}</p>
+                  @if(!empty($slide['subtitle']))
+                    <p class="text-lg font-semibold text-white/95 md:text-xl">{{ $slide['subtitle'] }}</p>
+                  @endif
+                  @if(!empty($slide['description']))
+                    <p class="text-sm text-white/85 md:text-base">{{ $slide['description'] }}</p>
+                  @endif
                   <div class="flex flex-wrap items-center gap-3 pt-2">
-                    <a href="{{ route('catalog') }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500">
+                    @php
+                      $primaryLink = $slide['link_url'] ?? route('catalog');
+                    @endphp
+                    <a href="{{ $primaryLink }}" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent-500">
                       <i class="fa-solid fa-cart-shopping text-sm"></i> {{ __('Belanja Sekarang') }}
                     </a>
                     <a href="{{ route('catalog', ['category' => 'GPU']) }}" class="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white/90 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white">
@@ -209,11 +239,11 @@
         @if($topBanner && ($src = $bannerUrl($topBanner)))
             <img src="{{ $src }}"
                  alt="{{ optional($topBanner)->title ?? __('home.top_banner_alt') }}"
-                 class="mx-auto max-w-full h-auto rounded-lg object-cover">
+                 class="w-full rounded-lg object-cover">
         @else
             <img src="{{ $defaultBannerImages['homepage_top'] }}"
                  alt="{{ __('home.top_banner_fallback') }}"
-                 class="mx-auto max-w-full h-auto rounded-lg object-cover">
+                 class="w-full rounded-lg object-cover">
         @endif
     </div>
 </div>
@@ -221,7 +251,7 @@
 <!-- Rekomendasi Produk Section -->
 <div class="container mx-auto px-6">
     <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-8 text-center">{{ __('home.recommended_title') }}</h2>
-    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
+    <div class="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 justify-items-stretch">
         @forelse(($featuredProducts ?? collect()) as $product)
             @php
                 $image = $productImageResolver($product);
@@ -245,20 +275,11 @@
     <div class="bg-white dark:bg-neutral-900 border-2 border-orange-500/80 dark:border-orange-400/70 p-4 rounded-md text-center">
         <img src="{{ $midBannerSrc ?? $defaultBannerImages['homepage_sidebar'] }}"
              alt="{{ optional($midBanner)->title ?? __('home.mid_banner_alt') }}"
-             class="mx-auto max-w-full h-auto rounded-lg object-cover">
+             class="w-full rounded-lg object-cover">
     </div>
 </div>
 
-<!-- Horizontal Banner Between Sections -->
-<div class="container mx-auto px-6 py-8">
-    <div class="bg-white dark:bg-neutral-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border border-neutral-200 dark:border-neutral-800">
-        @if($bottomBanner && ($src = $bannerUrl($bottomBanner)))
-            <img src="{{ $src }}" alt="{{ $bottomBanner->title }}" class="w-full h-40 object-cover">
-        @else
-            <img src="{{ $defaultBannerImages['homepage_bottom'] }}" alt="{{ __('home.bottom_banner_alt') }}" class="w-full h-40 object-cover">
-        @endif
-    </div>
-</div>
+<!-- Horizontal Banner Between Sections (removed) -->
 
 <!-- Product Catalog Section (Redesigned from here downward) -->
 <section class="container mx-auto px-6 py-12">
@@ -383,9 +404,9 @@
   @php
     $valueProps = trans('home.value_props');
   @endphp
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+  <div class="grid grid-cols-2 md:grid-cols-4 justify-items-center gap-4">
     @foreach($valueProps as $vp)
-      <div class="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 text-center">
+      <div class="w-full max-w-[260px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 text-center">
         <i class="fa-solid {{ $vp['icon'] }} text-accent-600 text-2xl"></i>
         <div class="mt-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">{{ $vp['label'] }}</div>
       </div>

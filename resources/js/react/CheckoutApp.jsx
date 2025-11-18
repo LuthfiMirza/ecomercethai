@@ -737,18 +737,19 @@ const CheckoutApp = ({ initialData = {} }) => {
                   </div>
                   <div className="space-y-2">
                     <label className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                      <span>{t('fieldState', 'State / Province (Optional)')}</span>
-                      <span className={badgeClass(true)}>{t('fieldOptionalLabel', 'Optional')}</span>
+                      <span>{t('fieldState', 'Province')}</span>
+                      <span className={badgeClass(false)}>{t('fieldRequiredLabel', 'Required')}</span>
                     </label>
                     <input
                       type="text"
                       name="state"
+                      required
                       value={addressForm.state}
                       onChange={handleAddressFieldChange}
                       className={inputBaseClass}
                       placeholder={t('fieldStatePlaceholder', 'e.g., Bangkok')}
                       autoComplete="address-level1"
-                      aria-required="false"
+                      aria-required="true"
                       aria-invalid={Boolean(firstError(addressErrors, 'state'))}
                     />
                     {firstError(addressErrors, 'state') && (

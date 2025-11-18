@@ -20,7 +20,6 @@ return [
         ['icon' => 'fa-truck-fast', 'label' => 'ส่งฟรี'],
         ['icon' => 'fa-bolt', 'label' => 'จัดส่งวันถัดไป'],
         ['icon' => 'fa-rotate-left', 'label' => 'คืนสินค้าได้ภายใน 60 วัน'],
-        ['icon' => 'fa-headset', 'label' => 'บริการลูกค้าโดยผู้เชี่ยวชาญ'],
         ['icon' => 'fa-gem', 'label' => 'แบรนด์พิเศษเฉพาะเรา'],
     ],
 ];

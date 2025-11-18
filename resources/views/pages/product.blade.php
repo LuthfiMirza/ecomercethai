@@ -97,8 +97,8 @@
 
     <div class="grid gap-8 lg:grid-cols-2">
       <div class="space-y-3">
-        <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
-          <img loading="lazy" src="{{ $mainImage }}" alt="{{ $product->name }}" class="w-full h-full object-cover" data-gallery-main-image/>
+        <div class="relative overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800 aspect-square bg-neutral-50 dark:bg-neutral-900">
+          <img loading="lazy" src="{{ $mainImage }}" alt="{{ $product->name }}" class="h-full w-full object-cover" data-gallery-main-image/>
         </div>
         <div class="grid grid-cols-4 gap-3" data-gallery-thumbs>
           @foreach($initialThumbs as $thumb)
@@ -106,7 +106,9 @@
                     data-gallery-thumb
                     data-image="{{ $thumb['url'] }}"
                     class="relative rounded-lg border border-transparent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 transition hover:border-accent-400 {{ $loop->first ? 'ring-2 ring-accent-500 border-accent-400' : '' }}">
-              <img loading="lazy" src="{{ $thumb['url'] }}" alt="{{ $product->name }} thumbnail" class="w-full h-24 rounded-lg object-cover pointer-events-none"/>
+              <span class="block aspect-square rounded-lg bg-neutral-100 dark:bg-neutral-900 overflow-hidden flex items-center justify-center">
+                <img loading="lazy" src="{{ $thumb['url'] }}" alt="{{ $product->name }} thumbnail" class="w-full h-full object-cover pointer-events-none"/>
+              </span>
             </button>
           @endforeach
         </div>

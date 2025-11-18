@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\PromoController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\SliderController;
 use App\Http\Controllers\MegaMenuController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -35,12 +36,14 @@ Route::get('/', function () {
         ->take(12)
         ->get();
 
+    $sliders = \App\Models\Slider::active()->get();
     $banners = \App\Models\Banner::active()->get();
 
     return view('home', [
         'featuredProducts' => $featuredProducts,
         'catalogProducts' => $catalogProducts,
         'banners' => $banners,
+        'sliders' => $sliders,
     ]);
 })->name('home');
 
@@ -175,13 +178,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
+        Route::get('/sliders', [SliderController::class, 'index'])->name('sliders.index');
+        Route::get('/sliders/create', [SliderController::class, 'create'])->name('sliders.create');
+        Route::post('/sliders', [SliderController::class, 'store'])->name('sliders.store');
+        Route::get('/sliders/{slider}/edit', [SliderController::class, 'edit'])->name('sliders.edit');
+        Route::put('/sliders/{slider}', [SliderController::class, 'update'])->name('sliders.update');
+        Route::delete('/sliders/{slider}', [SliderController::class, 'destroy'])->name('sliders.destroy');
+
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
         Route::get('/banners/create', [BannerController::class, 'create'])->name('banners.create');
         Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
-        Route::get('/banners/{id}', [BannerController::class, 'show'])->name('banners.show');
-        Route::get('/banners/{id}/edit', [BannerController::class, 'edit'])->name('banners.edit');
-        Route::put('/banners/{id}', [BannerController::class, 'update'])->name('banners.update');
-        Route::delete('/banners/{id}', [BannerController::class, 'destroy'])->name('banners.destroy');
+        Route::get('/banners/{banner}/edit', [BannerController::class, 'edit'])->name('banners.edit');
+        Route::put('/banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+        Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/poll', [OrderController::class, 'poll'])->name('orders.poll');

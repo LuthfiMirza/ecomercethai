@@ -1,45 +1,89 @@
-<div class="space-y-1">
-  <label class="block text-sm font-medium">Title</label>
-  <input type="text" name="title" value="{{ old('title', $banner->title ?? '') }}" class="w-full border-gray-300 rounded" required>
-  @error('title')<div class="text-sm text-red-600">{{ $message }}</div>@enderror
-</div>
-<div class="space-y-1">
-  <label class="block text-sm font-medium">Image Path/URL</label>
-  <input type="text" name="image_path" value="{{ old('image_path', $banner->image_path ?? '') }}" class="w-full border-gray-300 rounded" required>
-  @error('image_path')<div class="text-sm text-red-600">{{ $message }}</div>@enderror
-</div>
-<div class="space-y-1">
-  <label class="block text-sm font-medium">Link URL</label>
-  <input type="url" name="link_url" value="{{ old('link_url', $banner->link_url ?? '') }}" class="w-full border-gray-300 rounded">
-  @error('link_url')<div class="text-sm text-red-600">{{ $message }}</div>@enderror
-</div>
-<div class="space-y-1">
-  <label class="block text-sm font-medium">Placement</label>
-  <select name="placement" class="w-full border-gray-300 rounded">
-    @foreach($placements as $p)
-      <option value="{{ $p }}" @selected(old('placement', $banner->placement ?? '') == $p)>{{ $p }}</option>
-    @endforeach
-  </select>
-  @error('placement')<div class="text-sm text-red-600">{{ $message }}</div>@enderror
-</div>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <div class="space-y-1">
-    <label class="block text-sm font-medium">Starts At</label>
-    <input type="datetime-local" name="starts_at" value="{{ old('starts_at', optional($banner->starts_at ?? null)->format('Y-m-d\TH:i')) }}" class="w-full border-gray-300 rounded">
-  </div>
-  <div class="space-y-1">
-    <label class="block text-sm font-medium">Ends At</label>
-    <input type="datetime-local" name="ends_at" value="{{ old('ends_at', optional($banner->ends_at ?? null)->format('Y-m-d\TH:i')) }}" class="w-full border-gray-300 rounded">
-  </div>
-</div>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  <div class="flex items-center gap-2">
-    <input type="checkbox" name="is_active" value="1" {{ old('is_active', ($banner->is_active ?? true)) ? 'checked' : '' }}>
-    <label>Active</label>
-  </div>
-  <div class="space-y-1">
-    <label class="block text-sm font-medium">Priority</label>
-    <input type="number" name="priority" value="{{ old('priority', $banner->priority ?? 0) }}" class="w-full border-gray-300 rounded">
-  </div>
-</div>
+@php
+    $existingPath = $banner->image_path ?? null;
+    $imageUrl = $existingPath
+        ? (\Illuminate\Support\Str::startsWith($existingPath, ['http://', 'https://'])
+            ? $existingPath
+            : \Illuminate\Support\Facades\Storage::url($existingPath))
+        : null;
+@endphp
 
+<div class="space-y-6">
+    <div class="grid gap-6 md:grid-cols-2">
+        <div>
+            <label class="text-sm font-semibold text-slate-700 dark:text-slate-100">{{ __('admin.banners.form.title') }}</label>
+            <input type="text"
+                   name="title"
+                   value="{{ old('title', $banner->title) }}"
+                   required
+                   class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900/40 dark:text-white">
+            @error('title')
+                <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+            @enderror
+        </div>
+        <div>
+            <label class="text-sm font-semibold text-slate-700 dark:text-slate-100">{{ __('admin.banners.form.link') }}</label>
+            <input type="url"
+                   name="link_url"
+                   value="{{ old('link_url', $banner->link_url) }}"
+                   class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900/40 dark:text-white"
+                   placeholder="https://example.com/deal">
+            @error('link_url')
+                <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+            @enderror
+        </div>
+    </div>
+
+    <div>
+        <label class="text-sm font-semibold text-slate-700 dark:text-slate-100">{{ __('admin.banners.form.subtitle') }}</label>
+        <textarea name="subtitle"
+                  rows="3"
+                  class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900/40 dark:text-white"
+                  placeholder="{{ __('admin.banners.form.subtitle_placeholder') }}">{{ old('subtitle', $banner->subtitle) }}</textarea>
+        @error('subtitle')
+            <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+        <div>
+            <label class="text-sm font-semibold text-slate-700 dark:text-slate-100">{{ __('admin.banners.form.sort_order') }}</label>
+            <input type="number"
+                   name="sort_order"
+                   value="{{ old('sort_order', $banner->sort_order ?? 0) }}"
+                   class="mt-1 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 py-2.5 text-sm text-slate-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-700 dark:bg-slate-900/40 dark:text-white">
+            @error('sort_order')
+                <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+            @enderror
+        </div>
+        <div class="flex items-center gap-3 pt-6 md:pt-0">
+            <input type="hidden" name="is_active" value="0">
+            <label class="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-100">
+                <input type="checkbox"
+                       name="is_active"
+                       value="1"
+                       class="h-5 w-5 rounded border-slate-300 text-orange-500 focus:ring-orange-400"
+                       {{ old('is_active', $banner->is_active ?? true) ? 'checked' : '' }}>
+                {{ __('admin.banners.form.is_active') }}
+            </label>
+        </div>
+    </div>
+
+    <div>
+        <label class="text-sm font-semibold text-slate-700 dark:text-slate-100">{{ __('admin.banners.form.image') }}</label>
+        <input type="file"
+               name="image"
+               accept="image/jpeg,image/png,image/webp"
+               class="mt-1 block w-full rounded-2xl border border-dashed border-slate-300 bg-white/60 px-4 py-3 text-sm text-slate-600 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:border-slate-600 dark:bg-slate-900/30 dark:text-slate-200">
+        <p class="mt-2 text-xs text-slate-500">{{ __('admin.banners.form.image_hint') }}</p>
+        @error('image')
+            <p class="mt-1 text-xs text-rose-500">{{ $message }}</p>
+        @enderror
+
+        @if($imageUrl)
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-900/40">
+                <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">{{ __('admin.banners.form.current_preview') }}</p>
+                <img src="{{ $imageUrl }}" alt="{{ $banner->title }}" class="w-full rounded-xl object-cover max-h-64">
+            </div>
+        @endif
+    </div>
+</div>

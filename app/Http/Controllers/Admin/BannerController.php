@@ -5,20 +5,21 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class BannerController extends Controller
 {
     public function index(Request $request)
     {
-        $q = trim($request->query('q', ''));
+        $q = trim((string) $request->query('q', ''));
 
         $banners = Banner::when($q !== '', function ($query) use ($q) {
                 $query->where(function ($sub) use ($q) {
-                    $sub->where('title', 'like', "%$q%")
-                        ->orWhere('placement', 'like', "%$q%");
+                    $sub->where('title', 'like', "%{$q}%")
+                        ->orWhere('subtitle', 'like', "%{$q}%");
                 });
             })
-            ->orderByDesc('priority')
+            ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->paginate(12)
             ->appends(['q' => $q]);
@@ -28,73 +29,84 @@ class BannerController extends Controller
 
     public function create()
     {
-        $placements = ['homepage_top','homepage_sidebar','homepage_bottom'];
+        $banner = new Banner([
+            'sort_order' => 0,
+            'is_active' => true,
+        ]);
 
-        return view('admin.banners.create', compact('placements'));
+        return view('admin.banners.create', compact('banner'));
     }
 
     public function store(Request $request, string $locale)
     {
-        $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'image_path' => 'required|string|max:1024',
-            'link_url' => 'nullable|url',
-            'placement' => 'required|string',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after_or_equal:starts_at',
-            'is_active' => 'sometimes|boolean',
-            'priority' => 'nullable|integer',
-        ]);
+        $data = $this->validatedData($request, true);
 
-        $data['is_active'] = (bool) ($data['is_active'] ?? false);
+        $data['image_path'] = $request->file('image')->store('banners', 'public');
 
         Banner::create($data);
 
-        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner created');
+        return redirect()
+            ->route('admin.banners.index', ['locale' => $locale])
+            ->with('status', __('Banner created successfully.'));
     }
 
-    public function show(string $locale, string $id)
+    public function edit(string $locale, Banner $banner)
     {
-        $banner = Banner::findOrFail($id);
-
-        return view('admin.banners.show', compact('banner'));
+        return view('admin.banners.edit', compact('banner'));
     }
 
-    public function edit(string $locale, string $id)
+    public function update(Request $request, string $locale, Banner $banner)
     {
-        $banner = Banner::findOrFail($id);
-        $placements = ['homepage_top','homepage_sidebar','homepage_bottom'];
+        $data = $this->validatedData($request, false);
 
-        return view('admin.banners.edit', compact('banner', 'placements'));
-    }
-
-    public function update(Request $request, string $locale, string $id)
-    {
-        $banner = Banner::findOrFail($id);
-
-        $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'image_path' => 'required|string|max:1024',
-            'link_url' => 'nullable|url',
-            'placement' => 'required|string',
-            'starts_at' => 'nullable|date',
-            'ends_at' => 'nullable|date|after_or_equal:starts_at',
-            'is_active' => 'sometimes|boolean',
-            'priority' => 'nullable|integer',
-        ]);
-
-        $data['is_active'] = (bool) ($data['is_active'] ?? false);
+        if ($request->hasFile('image')) {
+            $newPath = $request->file('image')->store('banners', 'public');
+            $this->deleteImage($banner->image_path);
+            $data['image_path'] = $newPath;
+        }
 
         $banner->update($data);
 
-        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner updated');
+        return redirect()
+            ->route('admin.banners.index', ['locale' => $locale])
+            ->with('status', __('Banner updated successfully.'));
     }
 
-    public function destroy(string $locale, string $id)
+    public function destroy(string $locale, Banner $banner)
     {
-        $banner = Banner::findOrFail($id);
+        $this->deleteImage($banner->image_path);
         $banner->delete();
 
-        return redirect()->route('admin.banners.index', ['locale' => $locale])->with('status', 'Banner deleted');
+        return redirect()
+            ->route('admin.banners.index', ['locale' => $locale])
+            ->with('status', __('Banner deleted successfully.'));
+    }
+
+    protected function validatedData(Request $request, bool $requireImage = false): array
+    {
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'subtitle' => ['nullable', 'string'],
+            'image' => [$requireImage ? 'required' : 'nullable', 'image', 'max:2048'],
+            'link_url' => ['nullable', 'url', 'max:255'],
+            'sort_order' => ['nullable', 'integer'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $data['sort_order'] = $data['sort_order'] ?? 0;
+        $data['is_active'] = $request->boolean('is_active', true);
+
+        unset($data['image']);
+
+        return $data;
+    }
+
+    protected function deleteImage(?string $path): void
+    {
+        if (! $path) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
     }
 }

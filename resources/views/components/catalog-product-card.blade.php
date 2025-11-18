@@ -53,7 +53,7 @@
         ? localized_route('product.show', ['slug' => $product->slug])
         : localized_route('catalog');
 @endphp
-<article class="group rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden">
+<article class="group h-full rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-soft hover:shadow-elevated transition overflow-hidden">
   <a href="{{ $detailUrl }}" class="flex h-full flex-col">
     <div class="relative aspect-square bg-neutral-100 dark:bg-neutral-800">
       <img src="{{ $imageSource }}" alt="{{ $product->name }}" class="absolute inset-0 h-full w-full object-cover"/>

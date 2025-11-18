@@ -11,31 +11,21 @@ class Banner extends Model
 
     protected $fillable = [
         'title',
+        'subtitle',
         'image_path',
         'link_url',
-        'placement',
-        'starts_at',
-        'ends_at',
+        'sort_order',
         'is_active',
-        'priority',
     ];
 
     protected $casts = [
-        'starts_at' => 'datetime',
-        'ends_at' => 'datetime',
         'is_active' => 'boolean',
     ];
 
     public function scopeActive($query)
     {
-        $now = now();
         return $query->where('is_active', true)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('starts_at')->orWhere('starts_at', '<=', $now);
-            })
-            ->where(function ($q) use ($now) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>=', $now);
-            })
-            ->orderByDesc('priority');
+            ->orderBy('sort_order')
+            ->orderByDesc('created_at');
     }
 }

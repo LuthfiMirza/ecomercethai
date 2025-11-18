@@ -12,9 +12,9 @@
       <div>
         <h2 class="text-sm font-semibold tracking-wide text-neutral-500">{{ __('footer.links_title') }}</h2>
         <ul class="mt-3 space-y-2 text-sm">
-          <li><a href="{{ route('catalog') }}" class="hover:text-accent-600">{{ __('common.catalog') }}</a></li>
-          <li><a href="{{ localized_url('deals') }}" class="hover:text-accent-600">{{ __('footer.links_deals') }}</a></li>
-          <li><a href="{{ localized_url('support') }}" class="hover:text-accent-600">{{ __('footer.links_support') }}</a></li>
+          <li><a href="{{ route('catalog') }}" class="hover:text-accent-600">{{ __('common.product') }}</a></li>
+          <li><a href="{{ route('contact') }}" class="hover:text-accent-600">{{ __('common.contact_us') }}</a></li>
+          <li><a href="{{ route('faqs') }}" class="hover:text-accent-600">{{ __('common.faqs') }}</a></li>
         </ul>
       </div>
       <div>
@@ -36,10 +36,19 @@
     </div>
     <div class="mt-8 flex items-center justify-between text-xs text-neutral-500">
       <p>&copy; {{ date('Y') }} {{ config('app.name', 'Lungpaeit') }}</p>
-      <div class="flex items-center gap-3">
-        <a href="#" aria-label="{{ __('footer.social_facebook') }}" class="hover:text-accent-600"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" aria-label="{{ __('footer.social_instagram') }}" class="hover:text-accent-600"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" aria-label="{{ __('footer.social_youtube') }}" class="hover:text-accent-600"><i class="fa-brands fa-youtube"></i></a>
+      <div class="flex items-center gap-4 text-sm md:text-base">
+        <a href="#" aria-label="{{ __('footer.social_facebook') }}" class="flex items-center gap-2 hover:text-accent-600">
+          <i class="fa-brands fa-facebook text-lg md:text-xl"></i>
+          <span class="hidden sm:inline">{{ __('footer.social_facebook') }}</span>
+        </a>
+        <a href="#" aria-label="{{ __('footer.social_instagram') }}" class="flex items-center gap-2 hover:text-accent-600">
+          <i class="fa-brands fa-instagram text-lg md:text-xl"></i>
+          <span class="hidden sm:inline">{{ __('footer.social_instagram') }}</span>
+        </a>
+        <a href="#" aria-label="{{ __('footer.social_youtube') }}" class="flex items-center gap-2 hover:text-accent-600">
+          <i class="fa-brands fa-youtube text-lg md:text-xl"></i>
+          <span class="hidden sm:inline">{{ __('footer.social_youtube') }}</span>
+        </a>
       </div>
     </div>
   </div>

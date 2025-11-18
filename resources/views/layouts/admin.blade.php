@@ -228,6 +228,25 @@
                     <span class="font-medium">{{ __('admin.nav.categories') }}</span>
                 </a>
 
+                <a href="{{ localized_route('admin.sliders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.sliders.*') ? 'admin-nav-link-active text-white' : '' }}">
+                    <span class="admin-nav-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 12h18M3 20h18M7 4v16M17 4v16"></path>
+                        </svg>
+                    </span>
+                    <span class="font-medium">{{ __('admin.nav.sliders') }}</span>
+                </a>
+
+                <a href="{{ localized_route('admin.banners.index') }}" class="admin-nav-link {{ request()->routeIs('admin.banners.*') ? 'admin-nav-link-active text-white' : '' }}">
+                    <span class="admin-nav-icon">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16v12H4z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16M9 6v12"></path>
+                        </svg>
+                    </span>
+                    <span class="font-medium">{{ __('admin.nav.banners') }}</span>
+                </a>
+
                 <a href="{{ localized_route('admin.orders.index') }}" class="admin-nav-link {{ request()->routeIs('admin.orders.*') ? 'admin-nav-link-active text-white' : '' }}">
                     <span class="admin-nav-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -267,12 +286,6 @@
                 </a>
             </nav>
 
-            <div class="mt-8 rounded-2xl border border-white/40 bg-white/40 p-4 shadow-inner backdrop-blur dark:border-slate-700 dark:bg-slate-900/60">
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">{{ __('admin.language.label') }}</p>
-                <div class="mt-3">
-                    <x-language-switcher />
-                </div>
-            </div>
         </aside>
         
         <!-- Main Content -->
@@ -304,7 +317,10 @@
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 flex-wrap justify-end">
+                        <div class="flex-shrink-0">
+                            <x-language-switcher />
+                        </div>
                         @php
                             $inlineNotifications = collect([
                                 ['type' => 'success', 'title' => __('Success'), 'message' => session('success')],
