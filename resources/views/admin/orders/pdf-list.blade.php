@@ -55,7 +55,7 @@
                     <td>
                         @php($s = $order->status)
                         <span class="badge {{ $s==='completed'?'badge-green':($s==='processing'?'badge-blue':($s==='pending'?'badge-yellow':($s==='shipped'?'badge-indigo':($s==='cancelled'?'badge-red':'badge-gray')))) }}">
-                            {{ ucfirst($s) }}
+                            {{ humanize_label($s, 'N/A') }}
                         </span>
                     </td>
                     <td>{{ $order->created_at?->format('d M Y H:i') }}</td>

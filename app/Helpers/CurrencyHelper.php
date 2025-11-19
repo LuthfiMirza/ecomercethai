@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Str;
+
 if (!function_exists('money')) {
     /**
      * Format money based on locale and currency
@@ -71,5 +73,35 @@ if (! function_exists('localized_route')) {
         $parameters = array_merge(['locale' => app()->getLocale()], $parameters);
 
         return route($name, $parameters, $absolute);
+    }
+}
+
+if (! function_exists('humanize_label')) {
+    /**
+     * Convert snake/slug strings into human readable labels with UTF-8 safety.
+     */
+    function humanize_label(?string $value, string $fallback = ''): string
+    {
+        $value = trim((string) ($value ?? ''));
+
+        if ($value === '') {
+            return $fallback;
+        }
+
+        $stringable = Str::of($value)
+            ->replace(['_', '-'], ' ')
+            ->squish();
+
+        $normalized = (string) $stringable;
+
+        if ($normalized === '') {
+            return $fallback;
+        }
+
+        if (preg_match('/[A-Za-z]/', $normalized)) {
+            return (string) $stringable->ucfirst();
+        }
+
+        return $normalized;
     }
 }

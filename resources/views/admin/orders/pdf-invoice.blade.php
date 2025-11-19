@@ -24,7 +24,7 @@
         th { background:#f8fafc; text-align:left; }
         .right { text-align:right; }
         .muted { color:#64748b; font-size:11px; }
-        .badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:600; }
+        .badge { display:inline-block; padding:2px 8px; border-radius:9999px; font-size:10px; font-weight:700; }
         .badge-success { background:#d1fae5; color:#047857; }
         .badge-info { background:#e0f2fe; color:#0369a1; }
         .badge-warn { background:#fef3c7; color:#b45309; }
@@ -44,8 +44,8 @@
             'pending' => 'badge-warn',
             default => 'badge-neutral',
         };
-        $paymentLabel = ucfirst(str_replace('_', ' ', $paymentStatus));
-        $paymentMethodLabel = $order->payment_method ? ucwords(str_replace(['_', '-'], ' ', $order->payment_method)) : 'N/A';
+        $paymentLabel = humanize_label($paymentStatus);
+        $paymentMethodLabel = humanize_label($order->payment_method, 'N/A');
         $shippingAddress = collect(json_decode($order->shipping_address ?? '[]', true));
         if ($shippingAddress->isEmpty() && filled($order->shipping_address)) {
             $shippingAddress = collect(['address_line1' => $order->shipping_address]);
@@ -67,7 +67,7 @@
         </div>
         <div>
             <div><strong>Invoice:</strong> #ORD{{ $order->id }}</div>
-            <div><strong>Status:</strong> {{ ucfirst($order->status) }}</div>
+            <div><strong>Status:</strong> {{ humanize_label($order->status, 'N/A') }}</div>
         </div>
     </div>
 
