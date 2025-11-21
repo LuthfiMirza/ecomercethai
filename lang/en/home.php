@@ -19,7 +19,6 @@ return [
     'value_props' => [
         ['icon' => 'fa-truck-fast', 'label' => 'Free Shipping'],
         ['icon' => 'fa-bolt', 'label' => 'Next-day Delivery'],
-        ['icon' => 'fa-rotate-left', 'label' => '60-day Returns'],
         ['icon' => 'fa-gem', 'label' => 'Exclusive Brands'],
     ],
 ];

@@ -396,7 +396,7 @@
       </div>
     @endif
   </div>
-  
+
 </section>
 
 <!-- Value Props (clean) -->
@@ -404,7 +404,7 @@
   @php
     $valueProps = trans('home.value_props');
   @endphp
-  <div class="grid grid-cols-2 md:grid-cols-4 justify-items-center gap-4">
+  <div class="mx-auto grid max-w-4xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 place-items-center gap-4">
     @foreach($valueProps as $vp)
       <div class="w-full max-w-[260px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 text-center">
         <i class="fa-solid {{ $vp['icon'] }} text-accent-600 text-2xl"></i>
