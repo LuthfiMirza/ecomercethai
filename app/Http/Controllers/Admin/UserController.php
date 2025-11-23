@@ -16,10 +16,33 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::paginate(10);
-        return view('admin.users.index', compact('users'));
+        $search = trim((string) $request->query('q', ''));
+        $role = $request->query('role');
+        $status = $request->query('status');
+
+        $users = User::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($role === 'admin', fn ($query) => $query->where('is_admin', true))
+            ->when($role === 'customer', fn ($query) => $query->where('is_admin', false))
+            ->when($status === 'active', fn ($query) => $query->where('is_banned', false))
+            ->when($status === 'banned', fn ($query) => $query->where('is_banned', true))
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->appends($request->query());
+
+        return view('admin.users.index', [
+            'users' => $users,
+            'search' => $search,
+            'role' => $role,
+            'status' => $status,
+        ]);
     }
 
     /**

@@ -302,19 +302,6 @@
                         </button>
                         
                         <h1 class="text-2xl font-semibold text-slate-700 dark:text-white">@yield('header')</h1>
-                        <!-- Header Search (md+) -->
-                        <div class="hidden md:block">
-                            <form action="#" method="GET">
-                                <div class="relative text-slate-600 dark:text-slate-300">
-                                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                        </svg>
-                                    </span>
-                                    <input type="text" name="q" placeholder="{{ __('admin.header.search_placeholder') }}" class="block w-72 rounded-2xl border border-white/60 bg-white/80 py-2.5 pl-11 pr-4 text-sm placeholder-slate-400 shadow-inner focus:border-sky-300 focus:ring-4 focus:ring-sky-200/70 outline-none backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/60">
-                                </div>
-                            </form>
-                        </div>
                     </div>
                     
                     <div class="flex items-center gap-4 flex-wrap justify-end">
@@ -428,7 +415,6 @@
                             
                             <div x-show="dropdownOpen" x-cloak @click.outside="dropdownOpen = false" class="absolute right-0 mt-3 w-52 soft-card rounded-2xl overflow-hidden z-20" x-transition.origin.top.right>
                                 <a href="{{ localized_route('admin.profile.show') }}" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">{{ __('admin.header.profile') }}</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">{{ __('admin.header.settings') }}</a>
                                 <div class="border-t border-slate-200 dark:border-slate-700"></div>
                                 <form action="{{ localized_route('admin.logout') }}" method="POST">
                                     @csrf

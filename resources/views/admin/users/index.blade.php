@@ -64,19 +64,33 @@
 <div class="table-card overflow-hidden">
     <!-- Filters -->
     <div class="p-6 border-b border-slate-200 dark:border-slate-700">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input type="text" placeholder="Search by name or email..." class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400">
-            <select class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                <option value="">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="customer">Customer</option>
+        <form method="GET" action="{{ localized_route('admin.users.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+                type="text"
+                name="q"
+                value="{{ $search }}"
+                placeholder="{{ __('admin.users.search_placeholder') }}"
+                class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:placeholder-slate-400"
+            >
+            <select
+                name="role"
+                onchange="this.form.submit()"
+                class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+            >
+                <option value="">{{ __('admin.users.filters.all_roles') }}</option>
+                <option value="admin" @selected($role === 'admin')>{{ __('admin.users.filters.admin') }}</option>
+                <option value="customer" @selected($role === 'customer')>{{ __('admin.users.filters.customer') }}</option>
             </select>
-            <select class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="banned">Banned</option>
+            <select
+                name="status"
+                onchange="this.form.submit()"
+                class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+            >
+                <option value="">{{ __('admin.users.filters.all_statuses') }}</option>
+                <option value="active" @selected($status === 'active')>{{ __('admin.users.filters.active') }}</option>
+                <option value="banned" @selected($status === 'banned')>{{ __('admin.users.filters.banned') }}</option>
             </select>
-        </div>
+        </form>
     </div>
 
     <!-- Table -->

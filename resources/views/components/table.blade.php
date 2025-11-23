@@ -78,7 +78,11 @@
   @if($pagination)
     <div class="flex flex-col gap-3 border-t border-white/50 p-4 text-sm text-slate-500 dark:border-slate-800/70 dark:text-slate-300 md:flex-row md:items-center md:justify-between">
       <div>
-        Showing {{ $pagination->firstItem() ?? 0 }} to {{ $pagination->lastItem() ?? 0 }} of {{ $pagination->total() ?? $pagination->count() }} entries
+        {{ __('pagination.showing', [
+          'from' => $pagination->firstItem() ?? 0,
+          'to' => $pagination->lastItem() ?? 0,
+          'total' => $pagination->total() ?? $pagination->count(),
+        ]) }}
       </div>
       <div class="self-start md:self-auto">
         {{ $pagination->onEachSide(1)->links() }}

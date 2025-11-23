@@ -260,9 +260,9 @@
                class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-elevated overflow-hidden z-[140]"
                x-on:mouseenter="open=true" x-on:mouseleave="open=false">
             <a href="{{ route('account') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.dashboard') }}</a>
-            @role('admin')
+            @if(auth()->user()?->is_admin || auth()->user()?->hasRole('admin'))
               <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2.5 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800">{{ __('common.admin_panel') }}</a>
-            @endrole
+            @endif
             <div class="border-t border-neutral-200 dark:border-neutral-800"></div>
             <form method="POST" action="{{ route('logout') }}">
               @csrf
@@ -338,9 +338,9 @@
           <p class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{{ __('common.account') }}</p>
           @auth
             <a href="{{ route('account') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.dashboard') }}</a>
-            @role('admin')
-              <a href="{{ route('admin.dashboard') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.admin_panel') }}</a>
-            @endrole
+          @if(auth()->user()?->is_admin || auth()->user()?->hasRole('admin'))
+            <a href="{{ route('admin.dashboard') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.admin_panel') }}</a>
+          @endif
             <a href="{{ route('wishlist') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.wishlist') }}</a>
             <a href="{{ localized_route('cart') }}" class="block rounded-xl border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:border-accent-500 dark:border-neutral-800 dark:text-neutral-100">{{ __('common.view_cart') }}</a>
           @else

@@ -67,6 +67,15 @@ return [
             'create' => 'Create admin',
             'success' => 'Admin account created successfully.',
         ],
+        'search_placeholder' => 'Search by name or email...',
+        'filters' => [
+            'all_roles' => 'All Roles',
+            'admin' => 'Admin',
+            'customer' => 'Customer',
+            'all_statuses' => 'All Statuses',
+            'active' => 'Active',
+            'banned' => 'Banned',
+        ],
     ],
     'common' => [
         'preview' => 'Preview',

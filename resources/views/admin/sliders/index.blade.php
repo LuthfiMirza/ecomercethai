@@ -68,11 +68,13 @@
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-3">
                             <a href="{{ localized_route('admin.sliders.edit', ['slider' => $slider]) }}" class="text-sm font-medium text-sky-600 hover:text-sky-500">{{ __('admin.common.edit') }}</a>
-                            <form action="{{ localized_route('admin.sliders.destroy', ['slider' => $slider]) }}" method="POST" onsubmit="return confirm('{{ __('admin.sliders.delete_confirm') }}')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-sm font-medium text-rose-600 hover:text-rose-500">{{ __('admin.common.delete') }}</button>
-                            </form>
+                            <x-confirm-delete
+                                :title="__('admin.common.delete')"
+                                :description="__('admin.sliders.delete_confirm')"
+                                :action="localized_route('admin.sliders.destroy', ['slider' => $slider])"
+                            >
+                                {{ __('admin.common.delete') }}
+                            </x-confirm-delete>
                         </div>
                     </td>
                 </tr>

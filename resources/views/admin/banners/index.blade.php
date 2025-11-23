@@ -68,11 +68,13 @@
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-3">
                             <a href="{{ localized_route('admin.banners.edit', ['banner' => $banner]) }}" class="text-sm font-medium text-orange-600 hover:text-orange-500">{{ __('admin.common.edit') }}</a>
-                            <form action="{{ localized_route('admin.banners.destroy', ['banner' => $banner]) }}" method="POST" onsubmit="return confirm('{{ __('admin.banners.delete_confirm') }}')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-sm font-medium text-rose-600 hover:text-rose-500">{{ __('admin.common.delete') }}</button>
-                            </form>
+                            <x-confirm-delete
+                                :title="__('admin.common.delete')"
+                                :description="__('admin.banners.delete_confirm')"
+                                :action="localized_route('admin.banners.destroy', ['banner' => $banner])"
+                            >
+                                {{ __('admin.common.delete') }}
+                            </x-confirm-delete>
                         </div>
                     </td>
                 </tr>

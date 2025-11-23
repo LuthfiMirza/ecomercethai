@@ -67,6 +67,15 @@ return [
             'create' => 'สร้างผู้ดูแล',
             'success' => 'สร้างบัญชีผู้ดูแลเรียบร้อยแล้ว',
         ],
+        'search_placeholder' => 'ค้นหาด้วยชื่อหรืออีเมล...',
+        'filters' => [
+            'all_roles' => 'ทุกบทบาท',
+            'admin' => 'ผู้ดูแล',
+            'customer' => 'ลูกค้า',
+            'all_statuses' => 'ทุกสถานะ',
+            'active' => 'ใช้งาน',
+            'banned' => 'ถูกแบน',
+        ],
     ],
     'common' => [
         'preview' => 'ตัวอย่าง',
